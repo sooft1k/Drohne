@@ -1,0 +1,301 @@
+ARM GAS  /tmp/ccofSdlk.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"stm32f4xx_it.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/stm32f4xx_it.c"
+  20              		.section	.text.NMI_Handler,"ax",%progbits
+  21              		.align	1
+  22              		.global	NMI_Handler
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	NMI_Handler:
+  28              	.LFB134:
+   1:Core/Src/stm32f4xx_it.c **** #include "main.h"
+   2:Core/Src/stm32f4xx_it.c **** 
+   3:Core/Src/stm32f4xx_it.c **** extern UART_HandleTypeDef huart2;
+   4:Core/Src/stm32f4xx_it.c **** 
+   5:Core/Src/stm32f4xx_it.c **** void NMI_Handler(void)
+   6:Core/Src/stm32f4xx_it.c **** {
+  29              		.loc 1 6 1 view -0
+  30              		.cfi_startproc
+  31              		@ Volatile: function does not return.
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		@ link register save eliminated.
+  35              	.L2:
+   7:Core/Src/stm32f4xx_it.c ****     while (1)
+  36              		.loc 1 7 5 view .LVU1
+   8:Core/Src/stm32f4xx_it.c ****     {
+   9:Core/Src/stm32f4xx_it.c ****     }
+  37              		.loc 1 9 5 view .LVU2
+   7:Core/Src/stm32f4xx_it.c ****     while (1)
+  38              		.loc 1 7 11 view .LVU3
+  39 0000 FEE7     		b	.L2
+  40              		.cfi_endproc
+  41              	.LFE134:
+  43              		.section	.text.HardFault_Handler,"ax",%progbits
+  44              		.align	1
+  45              		.global	HardFault_Handler
+  46              		.syntax unified
+  47              		.thumb
+  48              		.thumb_func
+  50              	HardFault_Handler:
+ARM GAS  /tmp/ccofSdlk.s 			page 2
+
+
+  51              	.LFB135:
+  10:Core/Src/stm32f4xx_it.c **** }
+  11:Core/Src/stm32f4xx_it.c **** void HardFault_Handler(void)
+  12:Core/Src/stm32f4xx_it.c **** {
+  52              		.loc 1 12 1 view -0
+  53              		.cfi_startproc
+  54              		@ Volatile: function does not return.
+  55              		@ args = 0, pretend = 0, frame = 0
+  56              		@ frame_needed = 0, uses_anonymous_args = 0
+  57              		@ link register save eliminated.
+  58              	.L4:
+  13:Core/Src/stm32f4xx_it.c ****     while (1)
+  59              		.loc 1 13 5 view .LVU5
+  14:Core/Src/stm32f4xx_it.c ****     {
+  15:Core/Src/stm32f4xx_it.c ****     }
+  60              		.loc 1 15 5 view .LVU6
+  13:Core/Src/stm32f4xx_it.c ****     while (1)
+  61              		.loc 1 13 11 view .LVU7
+  62 0000 FEE7     		b	.L4
+  63              		.cfi_endproc
+  64              	.LFE135:
+  66              		.section	.text.MemManage_Handler,"ax",%progbits
+  67              		.align	1
+  68              		.global	MemManage_Handler
+  69              		.syntax unified
+  70              		.thumb
+  71              		.thumb_func
+  73              	MemManage_Handler:
+  74              	.LFB136:
+  16:Core/Src/stm32f4xx_it.c **** }
+  17:Core/Src/stm32f4xx_it.c **** void MemManage_Handler(void)
+  18:Core/Src/stm32f4xx_it.c **** {
+  75              		.loc 1 18 1 view -0
+  76              		.cfi_startproc
+  77              		@ Volatile: function does not return.
+  78              		@ args = 0, pretend = 0, frame = 0
+  79              		@ frame_needed = 0, uses_anonymous_args = 0
+  80              		@ link register save eliminated.
+  81              	.L6:
+  19:Core/Src/stm32f4xx_it.c ****     while (1)
+  82              		.loc 1 19 5 view .LVU9
+  20:Core/Src/stm32f4xx_it.c ****     {
+  21:Core/Src/stm32f4xx_it.c ****     }
+  83              		.loc 1 21 5 view .LVU10
+  19:Core/Src/stm32f4xx_it.c ****     while (1)
+  84              		.loc 1 19 11 view .LVU11
+  85 0000 FEE7     		b	.L6
+  86              		.cfi_endproc
+  87              	.LFE136:
+  89              		.section	.text.BusFault_Handler,"ax",%progbits
+  90              		.align	1
+  91              		.global	BusFault_Handler
+  92              		.syntax unified
+  93              		.thumb
+  94              		.thumb_func
+  96              	BusFault_Handler:
+  97              	.LFB137:
+ARM GAS  /tmp/ccofSdlk.s 			page 3
+
+
+  22:Core/Src/stm32f4xx_it.c **** }
+  23:Core/Src/stm32f4xx_it.c **** void BusFault_Handler(void)
+  24:Core/Src/stm32f4xx_it.c **** {
+  98              		.loc 1 24 1 view -0
+  99              		.cfi_startproc
+ 100              		@ Volatile: function does not return.
+ 101              		@ args = 0, pretend = 0, frame = 0
+ 102              		@ frame_needed = 0, uses_anonymous_args = 0
+ 103              		@ link register save eliminated.
+ 104              	.L8:
+  25:Core/Src/stm32f4xx_it.c ****     while (1)
+ 105              		.loc 1 25 5 view .LVU13
+  26:Core/Src/stm32f4xx_it.c ****     {
+  27:Core/Src/stm32f4xx_it.c ****     }
+ 106              		.loc 1 27 5 view .LVU14
+  25:Core/Src/stm32f4xx_it.c ****     while (1)
+ 107              		.loc 1 25 11 view .LVU15
+ 108 0000 FEE7     		b	.L8
+ 109              		.cfi_endproc
+ 110              	.LFE137:
+ 112              		.section	.text.UsageFault_Handler,"ax",%progbits
+ 113              		.align	1
+ 114              		.global	UsageFault_Handler
+ 115              		.syntax unified
+ 116              		.thumb
+ 117              		.thumb_func
+ 119              	UsageFault_Handler:
+ 120              	.LFB138:
+  28:Core/Src/stm32f4xx_it.c **** }
+  29:Core/Src/stm32f4xx_it.c **** void UsageFault_Handler(void)
+  30:Core/Src/stm32f4xx_it.c **** {
+ 121              		.loc 1 30 1 view -0
+ 122              		.cfi_startproc
+ 123              		@ Volatile: function does not return.
+ 124              		@ args = 0, pretend = 0, frame = 0
+ 125              		@ frame_needed = 0, uses_anonymous_args = 0
+ 126              		@ link register save eliminated.
+ 127              	.L10:
+  31:Core/Src/stm32f4xx_it.c ****     while (1)
+ 128              		.loc 1 31 5 view .LVU17
+  32:Core/Src/stm32f4xx_it.c ****     {
+  33:Core/Src/stm32f4xx_it.c ****     }
+ 129              		.loc 1 33 5 view .LVU18
+  31:Core/Src/stm32f4xx_it.c ****     while (1)
+ 130              		.loc 1 31 11 view .LVU19
+ 131 0000 FEE7     		b	.L10
+ 132              		.cfi_endproc
+ 133              	.LFE138:
+ 135              		.section	.text.SVC_Handler,"ax",%progbits
+ 136              		.align	1
+ 137              		.global	SVC_Handler
+ 138              		.syntax unified
+ 139              		.thumb
+ 140              		.thumb_func
+ 142              	SVC_Handler:
+ 143              	.LFB139:
+  34:Core/Src/stm32f4xx_it.c **** }
+ARM GAS  /tmp/ccofSdlk.s 			page 4
+
+
+  35:Core/Src/stm32f4xx_it.c **** void SVC_Handler(void) {}
+ 144              		.loc 1 35 24 view -0
+ 145              		.cfi_startproc
+ 146              		@ args = 0, pretend = 0, frame = 0
+ 147              		@ frame_needed = 0, uses_anonymous_args = 0
+ 148              		@ link register save eliminated.
+ 149              		.loc 1 35 25 view .LVU21
+ 150 0000 7047     		bx	lr
+ 151              		.cfi_endproc
+ 152              	.LFE139:
+ 154              		.section	.text.DebugMon_Handler,"ax",%progbits
+ 155              		.align	1
+ 156              		.global	DebugMon_Handler
+ 157              		.syntax unified
+ 158              		.thumb
+ 159              		.thumb_func
+ 161              	DebugMon_Handler:
+ 162              	.LFB140:
+  36:Core/Src/stm32f4xx_it.c **** void DebugMon_Handler(void) {}
+ 163              		.loc 1 36 29 view -0
+ 164              		.cfi_startproc
+ 165              		@ args = 0, pretend = 0, frame = 0
+ 166              		@ frame_needed = 0, uses_anonymous_args = 0
+ 167              		@ link register save eliminated.
+ 168              		.loc 1 36 30 view .LVU23
+ 169 0000 7047     		bx	lr
+ 170              		.cfi_endproc
+ 171              	.LFE140:
+ 173              		.section	.text.PendSV_Handler,"ax",%progbits
+ 174              		.align	1
+ 175              		.global	PendSV_Handler
+ 176              		.syntax unified
+ 177              		.thumb
+ 178              		.thumb_func
+ 180              	PendSV_Handler:
+ 181              	.LFB141:
+  37:Core/Src/stm32f4xx_it.c **** void PendSV_Handler(void) {}
+ 182              		.loc 1 37 27 view -0
+ 183              		.cfi_startproc
+ 184              		@ args = 0, pretend = 0, frame = 0
+ 185              		@ frame_needed = 0, uses_anonymous_args = 0
+ 186              		@ link register save eliminated.
+ 187              		.loc 1 37 28 view .LVU25
+ 188 0000 7047     		bx	lr
+ 189              		.cfi_endproc
+ 190              	.LFE141:
+ 192              		.section	.text.USART2_IRQHandler,"ax",%progbits
+ 193              		.align	1
+ 194              		.global	USART2_IRQHandler
+ 195              		.syntax unified
+ 196              		.thumb
+ 197              		.thumb_func
+ 199              	USART2_IRQHandler:
+ 200              	.LFB142:
+  38:Core/Src/stm32f4xx_it.c **** 
+  39:Core/Src/stm32f4xx_it.c **** void USART2_IRQHandler(void)
+  40:Core/Src/stm32f4xx_it.c **** {
+ARM GAS  /tmp/ccofSdlk.s 			page 5
+
+
+ 201              		.loc 1 40 1 view -0
+ 202              		.cfi_startproc
+ 203              		@ args = 0, pretend = 0, frame = 0
+ 204              		@ frame_needed = 0, uses_anonymous_args = 0
+ 205 0000 08B5     		push	{r3, lr}
+ 206              	.LCFI0:
+ 207              		.cfi_def_cfa_offset 8
+ 208              		.cfi_offset 3, -8
+ 209              		.cfi_offset 14, -4
+  41:Core/Src/stm32f4xx_it.c ****     HAL_UART_IRQHandler(&huart2);
+ 210              		.loc 1 41 5 view .LVU27
+ 211 0002 0248     		ldr	r0, .L16
+ 212 0004 FFF7FEFF 		bl	HAL_UART_IRQHandler
+ 213              	.LVL0:
+  42:Core/Src/stm32f4xx_it.c **** }...
+ 214              		.loc 1 42 1 is_stmt 0 view .LVU28
+ 215 0008 08BD     		pop	{r3, pc}
+ 216              	.L17:
+ 217 000a 00BF     		.align	2
+ 218              	.L16:
+ 219 000c 00000000 		.word	huart2
+ 220              		.cfi_endproc
+ 221              	.LFE142:
+ 223              		.text
+ 224              	.Letext0:
+ 225              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 226              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
+ 227              		.file 4 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 228              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 229              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
+ARM GAS  /tmp/ccofSdlk.s 			page 6
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 stm32f4xx_it.c
+     /tmp/ccofSdlk.s:21     .text.NMI_Handler:00000000 $t
+     /tmp/ccofSdlk.s:27     .text.NMI_Handler:00000000 NMI_Handler
+     /tmp/ccofSdlk.s:44     .text.HardFault_Handler:00000000 $t
+     /tmp/ccofSdlk.s:50     .text.HardFault_Handler:00000000 HardFault_Handler
+     /tmp/ccofSdlk.s:67     .text.MemManage_Handler:00000000 $t
+     /tmp/ccofSdlk.s:73     .text.MemManage_Handler:00000000 MemManage_Handler
+     /tmp/ccofSdlk.s:90     .text.BusFault_Handler:00000000 $t
+     /tmp/ccofSdlk.s:96     .text.BusFault_Handler:00000000 BusFault_Handler
+     /tmp/ccofSdlk.s:113    .text.UsageFault_Handler:00000000 $t
+     /tmp/ccofSdlk.s:119    .text.UsageFault_Handler:00000000 UsageFault_Handler
+     /tmp/ccofSdlk.s:136    .text.SVC_Handler:00000000 $t
+     /tmp/ccofSdlk.s:142    .text.SVC_Handler:00000000 SVC_Handler
+     /tmp/ccofSdlk.s:155    .text.DebugMon_Handler:00000000 $t
+     /tmp/ccofSdlk.s:161    .text.DebugMon_Handler:00000000 DebugMon_Handler
+     /tmp/ccofSdlk.s:174    .text.PendSV_Handler:00000000 $t
+     /tmp/ccofSdlk.s:180    .text.PendSV_Handler:00000000 PendSV_Handler
+     /tmp/ccofSdlk.s:193    .text.USART2_IRQHandler:00000000 $t
+     /tmp/ccofSdlk.s:199    .text.USART2_IRQHandler:00000000 USART2_IRQHandler
+     /tmp/ccofSdlk.s:219    .text.USART2_IRQHandler:0000000c $d
+
+UNDEFINED SYMBOLS
+HAL_UART_IRQHandler
+huart2

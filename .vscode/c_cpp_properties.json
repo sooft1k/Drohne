@@ -1,0 +1,20 @@
+{
+  "configurations": [
+    {
+      "name": "WSL-STM32",
+      "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+      "intelliSenseMode": "linux-gcc-arm",
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "includePath": [
+        "${workspaceFolder}/Core/Inc",
+        "${workspaceFolder}/Sensors",
+        "${workspaceFolder}/Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc",
+        "${workspaceFolder}/Drivers/STM32F4/Drivers/CMSIS/Include",
+        "${workspaceFolder}/Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include"
+      ],
+      "defines": ["USE_HAL_DRIVER", "STM32F405xx"]
+    }
+  ],
+  "version": 4
+}

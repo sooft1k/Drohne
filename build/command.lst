@@ -1,0 +1,955 @@
+ARM GAS  /tmp/cc6qDS78.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"command.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/command.c"
+  20              		.section	.text.Command_Init,"ax",%progbits
+  21              		.align	1
+  22              		.global	Command_Init
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	Command_Init:
+  28              	.LVL0:
+  29              	.LFB137:
+   1:Sensors/command.c **** #include "command.h"
+   2:Sensors/command.c **** #include "motor.h"
+   3:Sensors/command.c **** #include <stdio.h>
+   4:Sensors/command.c **** #include <string.h>
+   5:Sensors/command.c **** #include <stdlib.h>
+   6:Sensors/command.c **** 
+   7:Sensors/command.c **** #define CMD_BUF_SIZE 32
+   8:Sensors/command.c **** 
+   9:Sensors/command.c **** static UART_HandleTypeDef *cmd_uart = 0;
+  10:Sensors/command.c **** static uint8_t rx_char;
+  11:Sensors/command.c **** static char line[CMD_BUF_SIZE];
+  12:Sensors/command.c **** static uint8_t line_len = 0;
+  13:Sensors/command.c **** static volatile uint8_t line_ready = 0;
+  14:Sensors/command.c **** static volatile uint8_t stream_on = 0; /* Sensor-Ausgabe standardmaessig AUS */
+  15:Sensors/command.c **** 
+  16:Sensors/command.c **** void Command_Init(UART_HandleTypeDef *huart)
+  17:Sensors/command.c **** {
+  30              		.loc 1 17 1 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		.loc 1 17 1 is_stmt 0 view .LVU1
+  35 0000 08B5     		push	{r3, lr}
+  36              	.LCFI0:
+  37              		.cfi_def_cfa_offset 8
+  38              		.cfi_offset 3, -8
+  39              		.cfi_offset 14, -4
+  18:Sensors/command.c ****     cmd_uart = huart;
+  40              		.loc 1 18 5 is_stmt 1 view .LVU2
+ARM GAS  /tmp/cc6qDS78.s 			page 2
+
+
+  41              		.loc 1 18 14 is_stmt 0 view .LVU3
+  42 0002 064B     		ldr	r3, .L3
+  43 0004 1860     		str	r0, [r3]
+  19:Sensors/command.c ****     line_len = 0;
+  44              		.loc 1 19 5 is_stmt 1 view .LVU4
+  45              		.loc 1 19 14 is_stmt 0 view .LVU5
+  46 0006 0023     		movs	r3, #0
+  47 0008 054A     		ldr	r2, .L3+4
+  48 000a 1370     		strb	r3, [r2]
+  20:Sensors/command.c ****     line_ready = 0;
+  49              		.loc 1 20 5 is_stmt 1 view .LVU6
+  50              		.loc 1 20 16 is_stmt 0 view .LVU7
+  51 000c 054A     		ldr	r2, .L3+8
+  52 000e 1370     		strb	r3, [r2]
+  21:Sensors/command.c ****     HAL_UART_Receive_IT(cmd_uart, &rx_char, 1);
+  53              		.loc 1 21 5 is_stmt 1 view .LVU8
+  54 0010 0122     		movs	r2, #1
+  55 0012 0549     		ldr	r1, .L3+12
+  56 0014 FFF7FEFF 		bl	HAL_UART_Receive_IT
+  57              	.LVL1:
+  22:Sensors/command.c **** }
+  58              		.loc 1 22 1 is_stmt 0 view .LVU9
+  59 0018 08BD     		pop	{r3, pc}
+  60              	.L4:
+  61 001a 00BF     		.align	2
+  62              	.L3:
+  63 001c 00000000 		.word	cmd_uart
+  64 0020 00000000 		.word	line_len
+  65 0024 00000000 		.word	line_ready
+  66 0028 00000000 		.word	rx_char
+  67              		.cfi_endproc
+  68              	.LFE137:
+  70              		.section	.text.Command_StreamOn,"ax",%progbits
+  71              		.align	1
+  72              		.global	Command_StreamOn
+  73              		.syntax unified
+  74              		.thumb
+  75              		.thumb_func
+  77              	Command_StreamOn:
+  78              	.LFB138:
+  23:Sensors/command.c **** 
+  24:Sensors/command.c **** uint8_t Command_StreamOn(void)
+  25:Sensors/command.c **** {
+  79              		.loc 1 25 1 is_stmt 1 view -0
+  80              		.cfi_startproc
+  81              		@ args = 0, pretend = 0, frame = 0
+  82              		@ frame_needed = 0, uses_anonymous_args = 0
+  83              		@ link register save eliminated.
+  26:Sensors/command.c ****     return stream_on;
+  84              		.loc 1 26 5 view .LVU11
+  85              		.loc 1 26 12 is_stmt 0 view .LVU12
+  86 0000 014B     		ldr	r3, .L6
+  87 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+  27:Sensors/command.c **** }
+  88              		.loc 1 27 1 view .LVU13
+  89 0004 7047     		bx	lr
+  90              	.L7:
+ARM GAS  /tmp/cc6qDS78.s 			page 3
+
+
+  91 0006 00BF     		.align	2
+  92              	.L6:
+  93 0008 00000000 		.word	stream_on
+  94              		.cfi_endproc
+  95              	.LFE138:
+  97              		.section	.text.Command_RxByte,"ax",%progbits
+  98              		.align	1
+  99              		.global	Command_RxByte
+ 100              		.syntax unified
+ 101              		.thumb
+ 102              		.thumb_func
+ 104              	Command_RxByte:
+ 105              	.LFB139:
+  28:Sensors/command.c **** 
+  29:Sensors/command.c **** void Command_RxByte(void)
+  30:Sensors/command.c **** {
+ 106              		.loc 1 30 1 is_stmt 1 view -0
+ 107              		.cfi_startproc
+ 108              		@ args = 0, pretend = 0, frame = 0
+ 109              		@ frame_needed = 0, uses_anonymous_args = 0
+ 110 0000 08B5     		push	{r3, lr}
+ 111              	.LCFI1:
+ 112              		.cfi_def_cfa_offset 8
+ 113              		.cfi_offset 3, -8
+ 114              		.cfi_offset 14, -4
+  31:Sensors/command.c ****     char c = (char)rx_char;
+ 115              		.loc 1 31 5 view .LVU15
+ 116              		.loc 1 31 10 is_stmt 0 view .LVU16
+ 117 0002 104B     		ldr	r3, .L13
+ 118 0004 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 119              	.LVL2:
+  32:Sensors/command.c **** 
+  33:Sensors/command.c ****     if (c == '\r' || c == '\n')
+ 120              		.loc 1 33 5 is_stmt 1 view .LVU17
+ 121              		.loc 1 33 8 is_stmt 0 view .LVU18
+ 122 0006 0D2B     		cmp	r3, #13
+ 123 0008 0BD0     		beq	.L9
+ 124              		.loc 1 33 19 discriminator 1 view .LVU19
+ 125 000a 0A2B     		cmp	r3, #10
+ 126 000c 09D0     		beq	.L9
+  34:Sensors/command.c ****     {
+  35:Sensors/command.c ****         if (line_len > 0)
+  36:Sensors/command.c ****         {
+  37:Sensors/command.c ****             line[line_len] = '\0';
+  38:Sensors/command.c ****             line_ready = 1;
+  39:Sensors/command.c ****         }
+  40:Sensors/command.c ****     }
+  41:Sensors/command.c ****     else if (line_len < (CMD_BUF_SIZE - 1))
+ 127              		.loc 1 41 10 is_stmt 1 view .LVU20
+ 128              		.loc 1 41 23 is_stmt 0 view .LVU21
+ 129 000e 0E4A     		ldr	r2, .L13+4
+ 130 0010 1278     		ldrb	r2, [r2]	@ zero_extendqisi2
+ 131              		.loc 1 41 13 view .LVU22
+ 132 0012 1E2A     		cmp	r2, #30
+ 133 0014 0ED8     		bhi	.L11
+  42:Sensors/command.c ****     {
+  43:Sensors/command.c ****         line[line_len++] = c;
+ARM GAS  /tmp/cc6qDS78.s 			page 4
+
+
+ 134              		.loc 1 43 9 is_stmt 1 view .LVU23
+ 135              		.loc 1 43 22 is_stmt 0 view .LVU24
+ 136 0016 501C     		adds	r0, r2, #1
+ 137 0018 0B49     		ldr	r1, .L13+4
+ 138 001a 0870     		strb	r0, [r1]
+ 139              		.loc 1 43 26 view .LVU25
+ 140 001c 0B49     		ldr	r1, .L13+8
+ 141 001e 8B54     		strb	r3, [r1, r2]
+ 142 0020 08E0     		b	.L11
+ 143              	.L9:
+  35:Sensors/command.c ****         {
+ 144              		.loc 1 35 9 is_stmt 1 view .LVU26
+  35:Sensors/command.c ****         {
+ 145              		.loc 1 35 22 is_stmt 0 view .LVU27
+ 146 0022 094B     		ldr	r3, .L13+4
+ 147              	.LVL3:
+  35:Sensors/command.c ****         {
+ 148              		.loc 1 35 22 view .LVU28
+ 149 0024 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  35:Sensors/command.c ****         {
+ 150              		.loc 1 35 12 view .LVU29
+ 151 0026 2BB1     		cbz	r3, .L11
+  37:Sensors/command.c ****             line_ready = 1;
+ 152              		.loc 1 37 13 is_stmt 1 view .LVU30
+  37:Sensors/command.c ****             line_ready = 1;
+ 153              		.loc 1 37 28 is_stmt 0 view .LVU31
+ 154 0028 084A     		ldr	r2, .L13+8
+ 155 002a 0021     		movs	r1, #0
+ 156 002c D154     		strb	r1, [r2, r3]
+  38:Sensors/command.c ****         }
+ 157              		.loc 1 38 13 is_stmt 1 view .LVU32
+  38:Sensors/command.c ****         }
+ 158              		.loc 1 38 24 is_stmt 0 view .LVU33
+ 159 002e 084B     		ldr	r3, .L13+12
+ 160 0030 0122     		movs	r2, #1
+ 161 0032 1A70     		strb	r2, [r3]
+ 162              	.L11:
+  44:Sensors/command.c ****     }
+  45:Sensors/command.c **** 
+  46:Sensors/command.c ****     HAL_UART_Receive_IT(cmd_uart, &rx_char, 1);
+ 163              		.loc 1 46 5 is_stmt 1 view .LVU34
+ 164 0034 0122     		movs	r2, #1
+ 165 0036 0349     		ldr	r1, .L13
+ 166              		.loc 1 46 5 is_stmt 0 view .LVU35
+ 167 0038 064B     		ldr	r3, .L13+16
+ 168 003a 1868     		ldr	r0, [r3]
+ 169 003c FFF7FEFF 		bl	HAL_UART_Receive_IT
+ 170              	.LVL4:
+  47:Sensors/command.c **** }
+ 171              		.loc 1 47 1 view .LVU36
+ 172 0040 08BD     		pop	{r3, pc}
+ 173              	.L14:
+ 174 0042 00BF     		.align	2
+ 175              	.L13:
+ 176 0044 00000000 		.word	rx_char
+ 177 0048 00000000 		.word	line_len
+ 178 004c 00000000 		.word	line
+ARM GAS  /tmp/cc6qDS78.s 			page 5
+
+
+ 179 0050 00000000 		.word	line_ready
+ 180 0054 00000000 		.word	cmd_uart
+ 181              		.cfi_endproc
+ 182              	.LFE139:
+ 184              		.section	.rodata.Command_Process.str1.4,"aMS",%progbits,1
+ 185              		.align	2
+ 186              	.LC0:
+ 187 0000 41524D45 		.ascii	"ARMED\000"
+ 187      4400
+ 188 0006 0000     		.align	2
+ 189              	.LC1:
+ 190 0008 44495341 		.ascii	"DISARMED\000"
+ 190      524D4544 
+ 190      00
+ 191 0011 000000   		.align	2
+ 192              	.LC2:
+ 193 0014 414E00   		.ascii	"AN\000"
+ 194 0017 00       		.align	2
+ 195              	.LC3:
+ 196 0018 41555300 		.ascii	"AUS\000"
+ 197              		.align	2
+ 198              	.LC4:
+ 199 001c 61726D00 		.ascii	"arm\000"
+ 200              		.align	2
+ 201              	.LC5:
+ 202 0020 3E3E2041 		.ascii	">> ARMED - Motor scharf! Speed mit 0-100 setzen.\015"
+ 202      524D4544 
+ 202      202D204D 
+ 202      6F746F72 
+ 202      20736368 
+ 203 0051 00       		.ascii	"\000"
+ 204 0052 0000     		.align	2
+ 205              	.LC6:
+ 206 0054 64697361 		.ascii	"disarm\000"
+ 206      726D00
+ 207 005b 00       		.align	2
+ 208              	.LC7:
+ 209 005c 73746F70 		.ascii	"stop\000"
+ 209      00
+ 210 0061 000000   		.align	2
+ 211              	.LC8:
+ 212 0064 3E3E2044 		.ascii	">> DISARMED - Motor gestoppt.\015\000"
+ 212      49534152 
+ 212      4D454420 
+ 212      2D204D6F 
+ 212      746F7220 
+ 213 0083 00       		.align	2
+ 214              	.LC9:
+ 215 0084 63616C00 		.ascii	"cal\000"
+ 216              		.align	2
+ 217              	.LC10:
+ 218 0088 3E3E2045 		.ascii	">> ESC-Kalibrierung startet... OHNE Propeller!\015\000"
+ 218      53432D4B 
+ 218      616C6962 
+ 218      72696572 
+ 218      756E6720 
+ 219              		.align	2
+ARM GAS  /tmp/cc6qDS78.s 			page 6
+
+
+ 220              	.LC11:
+ 221 00b8 3E3E204B 		.ascii	">> Kalibrierung fertig.\015\000"
+ 221      616C6962 
+ 221      72696572 
+ 221      756E6720 
+ 221      66657274 
+ 222 00d1 000000   		.align	2
+ 223              	.LC12:
+ 224 00d4 73746174 		.ascii	"status\000"
+ 224      757300
+ 225 00db 00       		.align	2
+ 226              	.LC13:
+ 227 00dc 3E3E2053 		.ascii	">> Status: %s | Stream: %s\015\012\000"
+ 227      74617475 
+ 227      733A2025 
+ 227      73207C20 
+ 227      53747265 
+ 228 00f9 000000   		.align	2
+ 229              	.LC14:
+ 230 00fc 73747265 		.ascii	"stream on\000"
+ 230      616D206F 
+ 230      6E00
+ 231 0106 0000     		.align	2
+ 232              	.LC15:
+ 233 0108 3E3E2053 		.ascii	">> Stream AN (Roll/Pitch/Yaw wird gesendet)\015\000"
+ 233      74726561 
+ 233      6D20414E 
+ 233      2028526F 
+ 233      6C6C2F50 
+ 234 0135 000000   		.align	2
+ 235              	.LC16:
+ 236 0138 73747265 		.ascii	"stream off\000"
+ 236      616D206F 
+ 236      666600
+ 237 0143 00       		.align	2
+ 238              	.LC17:
+ 239 0144 3E3E2053 		.ascii	">> Stream AUS (Monitor ruhig)\015\000"
+ 239      74726561 
+ 239      6D204155 
+ 239      5320284D 
+ 239      6F6E6974 
+ 240 0163 00       		.align	2
+ 241              	.LC18:
+ 242 0164 3E3E2053 		.ascii	">> Speed: %ld%%\015\012\000"
+ 242      70656564 
+ 242      3A20256C 
+ 242      6425250D 
+ 242      0A00
+ 243 0176 0000     		.align	2
+ 244              	.LC19:
+ 245 0178 3E3E2045 		.ascii	">> Erst 'arm' senden! (Motor disarmed)\015\000"
+ 245      72737420 
+ 245      2761726D 
+ 245      27207365 
+ 245      6E64656E 
+ 246              		.align	2
+ 247              	.LC20:
+ARM GAS  /tmp/cc6qDS78.s 			page 7
+
+
+ 248 01a0 3E3E2055 		.ascii	">> Unbekannt: '%s'  (arm/disarm/stop/cal/status/str"
+ 248      6E62656B 
+ 248      616E6E74 
+ 248      3A202725 
+ 248      73272020 
+ 249 01d3 65616D20 		.ascii	"eam on/stream off/0-100)\015\012\000"
+ 249      6F6E2F73 
+ 249      74726561 
+ 249      6D206F66 
+ 249      662F302D 
+ 250              		.section	.text.Command_Process,"ax",%progbits
+ 251              		.align	1
+ 252              		.global	Command_Process
+ 253              		.syntax unified
+ 254              		.thumb
+ 255              		.thumb_func
+ 257              	Command_Process:
+ 258              	.LFB140:
+  48:Sensors/command.c **** 
+  49:Sensors/command.c **** void Command_Process(void)
+  50:Sensors/command.c **** {
+ 259              		.loc 1 50 1 is_stmt 1 view -0
+ 260              		.cfi_startproc
+ 261              		@ args = 0, pretend = 0, frame = 8
+ 262              		@ frame_needed = 0, uses_anonymous_args = 0
+  51:Sensors/command.c ****     if (!line_ready)
+ 263              		.loc 1 51 5 view .LVU38
+ 264              		.loc 1 51 9 is_stmt 0 view .LVU39
+ 265 0000 464B     		ldr	r3, .L43
+ 266 0002 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 267              		.loc 1 51 8 view .LVU40
+ 268 0004 002B     		cmp	r3, #0
+ 269 0006 00F08880 		beq	.L36
+  50:Sensors/command.c ****     if (!line_ready)
+ 270              		.loc 1 50 1 view .LVU41
+ 271 000a 30B5     		push	{r4, r5, lr}
+ 272              	.LCFI2:
+ 273              		.cfi_def_cfa_offset 12
+ 274              		.cfi_offset 4, -12
+ 275              		.cfi_offset 5, -8
+ 276              		.cfi_offset 14, -4
+ 277 000c 83B0     		sub	sp, sp, #12
+ 278              	.LCFI3:
+ 279              		.cfi_def_cfa_offset 24
+  52:Sensors/command.c ****         return;
+  53:Sensors/command.c **** 
+  54:Sensors/command.c ****     if (strcmp(line, "arm") == 0)
+ 280              		.loc 1 54 5 is_stmt 1 view .LVU42
+ 281              		.loc 1 54 9 is_stmt 0 view .LVU43
+ 282 000e 4449     		ldr	r1, .L43+4
+ 283 0010 4448     		ldr	r0, .L43+8
+ 284 0012 FFF7FEFF 		bl	strcmp
+ 285              	.LVL5:
+ 286              		.loc 1 54 8 discriminator 1 view .LVU44
+ 287 0016 A8B1     		cbz	r0, .L39
+  55:Sensors/command.c ****     {
+  56:Sensors/command.c ****         Motor_Arm();
+ARM GAS  /tmp/cc6qDS78.s 			page 8
+
+
+  57:Sensors/command.c ****         printf(">> ARMED - Motor scharf! Speed mit 0-100 setzen.\r\n");
+  58:Sensors/command.c ****     }
+  59:Sensors/command.c ****     else if (strcmp(line, "disarm") == 0 || strcmp(line, "stop") == 0)
+ 288              		.loc 1 59 10 is_stmt 1 view .LVU45
+ 289              		.loc 1 59 14 is_stmt 0 view .LVU46
+ 290 0018 4349     		ldr	r1, .L43+12
+ 291 001a 4248     		ldr	r0, .L43+8
+ 292 001c FFF7FEFF 		bl	strcmp
+ 293              	.LVL6:
+ 294              		.loc 1 59 13 discriminator 1 view .LVU47
+ 295 0020 20B1     		cbz	r0, .L19
+ 296              		.loc 1 59 45 discriminator 1 view .LVU48
+ 297 0022 4249     		ldr	r1, .L43+16
+ 298 0024 3F48     		ldr	r0, .L43+8
+ 299 0026 FFF7FEFF 		bl	strcmp
+ 300              	.LVL7:
+ 301              		.loc 1 59 42 discriminator 1 view .LVU49
+ 302 002a 88B9     		cbnz	r0, .L20
+ 303              	.L19:
+  60:Sensors/command.c ****     {
+  61:Sensors/command.c ****         Motor_Disarm();
+ 304              		.loc 1 61 9 is_stmt 1 view .LVU50
+ 305 002c FFF7FEFF 		bl	Motor_Disarm
+ 306              	.LVL8:
+  62:Sensors/command.c ****         printf(">> DISARMED - Motor gestoppt.\r\n");
+ 307              		.loc 1 62 9 view .LVU51
+ 308 0030 3F48     		ldr	r0, .L43+20
+ 309 0032 FFF7FEFF 		bl	puts
+ 310              	.LVL9:
+ 311              	.L18:
+  63:Sensors/command.c ****     }
+  64:Sensors/command.c ****     else if (strcmp(line, "cal") == 0)
+  65:Sensors/command.c ****     {
+  66:Sensors/command.c ****         printf(">> ESC-Kalibrierung startet... OHNE Propeller!\r\n");
+  67:Sensors/command.c ****         Motor_CalibrateESC();
+  68:Sensors/command.c ****         printf(">> Kalibrierung fertig.\r\n");
+  69:Sensors/command.c ****     }
+  70:Sensors/command.c ****     else if (strcmp(line, "status") == 0)
+  71:Sensors/command.c ****     {
+  72:Sensors/command.c ****         printf(">> Status: %s | Stream: %s\r\n",
+  73:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+  74:Sensors/command.c ****                stream_on ? "AN" : "AUS");
+  75:Sensors/command.c ****     }
+  76:Sensors/command.c ****     else if (strcmp(line, "stream on") == 0)
+  77:Sensors/command.c ****     {
+  78:Sensors/command.c ****         stream_on = 1;
+  79:Sensors/command.c ****         printf(">> Stream AN (Roll/Pitch/Yaw wird gesendet)\r\n");
+  80:Sensors/command.c ****     }
+  81:Sensors/command.c ****     else if (strcmp(line, "stream off") == 0)
+  82:Sensors/command.c ****     {
+  83:Sensors/command.c ****         stream_on = 0;
+  84:Sensors/command.c ****         printf(">> Stream AUS (Monitor ruhig)\r\n");
+  85:Sensors/command.c ****     }
+  86:Sensors/command.c ****     else
+  87:Sensors/command.c ****     {
+  88:Sensors/command.c ****         char *end;
+  89:Sensors/command.c ****         long val = strtol(line, &end, 10);
+ARM GAS  /tmp/cc6qDS78.s 			page 9
+
+
+  90:Sensors/command.c ****         if (end != line && *end == '\0')
+  91:Sensors/command.c ****         {
+  92:Sensors/command.c ****             if (val < 0)
+  93:Sensors/command.c ****                 val = 0;
+  94:Sensors/command.c ****             if (val > 100)
+  95:Sensors/command.c ****                 val = 100;
+  96:Sensors/command.c **** 
+  97:Sensors/command.c ****             if (Motor_IsArmed())
+  98:Sensors/command.c ****             {
+  99:Sensors/command.c ****                 Motor_SetPercent((float)val);
+ 100:Sensors/command.c ****                 printf(">> Speed: %ld%%\r\n", val);
+ 101:Sensors/command.c ****             }
+ 102:Sensors/command.c ****             else
+ 103:Sensors/command.c ****             {
+ 104:Sensors/command.c ****                 printf(">> Erst 'arm' senden! (Motor disarmed)\r\n");
+ 105:Sensors/command.c ****             }
+ 106:Sensors/command.c ****         }
+ 107:Sensors/command.c ****         else
+ 108:Sensors/command.c ****         {
+ 109:Sensors/command.c ****             printf(">> Unbekannt: '%s'  (arm/disarm/stop/cal/status/stream on/stream off/0-100)\r\n
+ 110:Sensors/command.c ****         }
+ 111:Sensors/command.c ****     }
+ 112:Sensors/command.c **** 
+ 113:Sensors/command.c ****     line_len = 0;
+ 312              		.loc 1 113 5 view .LVU52
+ 313              		.loc 1 113 14 is_stmt 0 view .LVU53
+ 314 0036 0023     		movs	r3, #0
+ 315 0038 3E4A     		ldr	r2, .L43+24
+ 316 003a 1370     		strb	r3, [r2]
+ 114:Sensors/command.c ****     line_ready = 0;
+ 317              		.loc 1 114 5 is_stmt 1 view .LVU54
+ 318              		.loc 1 114 16 is_stmt 0 view .LVU55
+ 319 003c 374A     		ldr	r2, .L43
+ 320 003e 1370     		strb	r3, [r2]
+ 115:Sensors/command.c **** }
+ 321              		.loc 1 115 1 view .LVU56
+ 322 0040 03B0     		add	sp, sp, #12
+ 323              	.LCFI4:
+ 324              		.cfi_remember_state
+ 325              		.cfi_def_cfa_offset 12
+ 326              		@ sp needed
+ 327 0042 30BD     		pop	{r4, r5, pc}
+ 328              	.L39:
+ 329              	.LCFI5:
+ 330              		.cfi_restore_state
+  56:Sensors/command.c ****         printf(">> ARMED - Motor scharf! Speed mit 0-100 setzen.\r\n");
+ 331              		.loc 1 56 9 is_stmt 1 view .LVU57
+ 332 0044 FFF7FEFF 		bl	Motor_Arm
+ 333              	.LVL10:
+  57:Sensors/command.c ****     }
+ 334              		.loc 1 57 9 view .LVU58
+ 335 0048 3B48     		ldr	r0, .L43+28
+ 336 004a FFF7FEFF 		bl	puts
+ 337              	.LVL11:
+ 338 004e F2E7     		b	.L18
+ 339              	.L20:
+  64:Sensors/command.c ****     {
+ARM GAS  /tmp/cc6qDS78.s 			page 10
+
+
+ 340              		.loc 1 64 10 view .LVU59
+  64:Sensors/command.c ****     {
+ 341              		.loc 1 64 14 is_stmt 0 view .LVU60
+ 342 0050 3A49     		ldr	r1, .L43+32
+ 343 0052 3448     		ldr	r0, .L43+8
+ 344 0054 FFF7FEFF 		bl	strcmp
+ 345              	.LVL12:
+  64:Sensors/command.c ****     {
+ 346              		.loc 1 64 13 discriminator 1 view .LVU61
+ 347 0058 A8B1     		cbz	r0, .L40
+  70:Sensors/command.c ****     {
+ 348              		.loc 1 70 10 is_stmt 1 view .LVU62
+  70:Sensors/command.c ****     {
+ 349              		.loc 1 70 14 is_stmt 0 view .LVU63
+ 350 005a 3949     		ldr	r1, .L43+36
+ 351 005c 3148     		ldr	r0, .L43+8
+ 352 005e FFF7FEFF 		bl	strcmp
+ 353              	.LVL13:
+  70:Sensors/command.c ****     {
+ 354              		.loc 1 70 13 discriminator 1 view .LVU64
+ 355 0062 C8B1     		cbz	r0, .L41
+  76:Sensors/command.c ****     {
+ 356              		.loc 1 76 10 is_stmt 1 view .LVU65
+  76:Sensors/command.c ****     {
+ 357              		.loc 1 76 14 is_stmt 0 view .LVU66
+ 358 0064 3749     		ldr	r1, .L43+40
+ 359 0066 2F48     		ldr	r0, .L43+8
+ 360 0068 FFF7FEFF 		bl	strcmp
+ 361              	.LVL14:
+  76:Sensors/command.c ****     {
+ 362              		.loc 1 76 13 discriminator 1 view .LVU67
+ 363 006c 20B3     		cbz	r0, .L42
+  81:Sensors/command.c ****     {
+ 364              		.loc 1 81 10 is_stmt 1 view .LVU68
+  81:Sensors/command.c ****     {
+ 365              		.loc 1 81 14 is_stmt 0 view .LVU69
+ 366 006e 3649     		ldr	r1, .L43+44
+ 367 0070 2C48     		ldr	r0, .L43+8
+ 368 0072 FFF7FEFF 		bl	strcmp
+ 369              	.LVL15:
+  81:Sensors/command.c ****     {
+ 370              		.loc 1 81 13 discriminator 1 view .LVU70
+ 371 0076 30BB     		cbnz	r0, .L26
+  83:Sensors/command.c ****         printf(">> Stream AUS (Monitor ruhig)\r\n");
+ 372              		.loc 1 83 9 is_stmt 1 view .LVU71
+  83:Sensors/command.c ****         printf(">> Stream AUS (Monitor ruhig)\r\n");
+ 373              		.loc 1 83 19 is_stmt 0 view .LVU72
+ 374 0078 344B     		ldr	r3, .L43+48
+ 375 007a 0022     		movs	r2, #0
+ 376 007c 1A70     		strb	r2, [r3]
+  84:Sensors/command.c ****     }
+ 377              		.loc 1 84 9 is_stmt 1 view .LVU73
+ 378 007e 3448     		ldr	r0, .L43+52
+ 379 0080 FFF7FEFF 		bl	puts
+ 380              	.LVL16:
+ 381 0084 D7E7     		b	.L18
+ 382              	.L40:
+ARM GAS  /tmp/cc6qDS78.s 			page 11
+
+
+  66:Sensors/command.c ****         Motor_CalibrateESC();
+ 383              		.loc 1 66 9 view .LVU74
+ 384 0086 3348     		ldr	r0, .L43+56
+ 385 0088 FFF7FEFF 		bl	puts
+ 386              	.LVL17:
+  67:Sensors/command.c ****         printf(">> Kalibrierung fertig.\r\n");
+ 387              		.loc 1 67 9 view .LVU75
+ 388 008c FFF7FEFF 		bl	Motor_CalibrateESC
+ 389              	.LVL18:
+  68:Sensors/command.c ****     }
+ 390              		.loc 1 68 9 view .LVU76
+ 391 0090 3148     		ldr	r0, .L43+60
+ 392 0092 FFF7FEFF 		bl	puts
+ 393              	.LVL19:
+ 394 0096 CEE7     		b	.L18
+ 395              	.L41:
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 396              		.loc 1 72 9 view .LVU77
+  73:Sensors/command.c ****                stream_on ? "AN" : "AUS");
+ 397              		.loc 1 73 16 is_stmt 0 view .LVU78
+ 398 0098 FFF7FEFF 		bl	Motor_IsArmed
+ 399              	.LVL20:
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 400              		.loc 1 72 9 view .LVU79
+ 401 009c 40B1     		cbz	r0, .L31
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 402              		.loc 1 72 9 discriminator 1 view .LVU80
+ 403 009e 2F49     		ldr	r1, .L43+64
+ 404              	.L23:
+  74:Sensors/command.c ****     }
+ 405              		.loc 1 74 26 view .LVU81
+ 406 00a0 2A4B     		ldr	r3, .L43+48
+ 407 00a2 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 408              		.loc 1 72 9 discriminator 4 view .LVU82
+ 409 00a4 33B1     		cbz	r3, .L32
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 410              		.loc 1 72 9 discriminator 5 view .LVU83
+ 411 00a6 2E4A     		ldr	r2, .L43+68
+ 412              	.L24:
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 413              		.loc 1 72 9 discriminator 8 view .LVU84
+ 414 00a8 2E48     		ldr	r0, .L43+72
+ 415 00aa FFF7FEFF 		bl	printf
+ 416              	.LVL21:
+ 417 00ae C2E7     		b	.L18
+ 418              	.L31:
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 419              		.loc 1 72 9 discriminator 2 view .LVU85
+ 420 00b0 2D49     		ldr	r1, .L43+76
+ 421 00b2 F5E7     		b	.L23
+ 422              	.L32:
+  72:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
+ 423              		.loc 1 72 9 discriminator 6 view .LVU86
+ 424 00b4 2D4A     		ldr	r2, .L43+80
+ 425 00b6 F7E7     		b	.L24
+ 426              	.L42:
+ARM GAS  /tmp/cc6qDS78.s 			page 12
+
+
+  78:Sensors/command.c ****         printf(">> Stream AN (Roll/Pitch/Yaw wird gesendet)\r\n");
+ 427              		.loc 1 78 9 is_stmt 1 view .LVU87
+  78:Sensors/command.c ****         printf(">> Stream AN (Roll/Pitch/Yaw wird gesendet)\r\n");
+ 428              		.loc 1 78 19 is_stmt 0 view .LVU88
+ 429 00b8 244B     		ldr	r3, .L43+48
+ 430 00ba 0122     		movs	r2, #1
+ 431 00bc 1A70     		strb	r2, [r3]
+  79:Sensors/command.c ****     }
+ 432              		.loc 1 79 9 is_stmt 1 view .LVU89
+ 433 00be 2C48     		ldr	r0, .L43+84
+ 434 00c0 FFF7FEFF 		bl	puts
+ 435              	.LVL22:
+ 436 00c4 B7E7     		b	.L18
+ 437              	.L26:
+ 438              	.LBB2:
+  88:Sensors/command.c ****         long val = strtol(line, &end, 10);
+ 439              		.loc 1 88 9 view .LVU90
+  89:Sensors/command.c ****         if (end != line && *end == '\0')
+ 440              		.loc 1 89 9 view .LVU91
+  89:Sensors/command.c ****         if (end != line && *end == '\0')
+ 441              		.loc 1 89 20 is_stmt 0 view .LVU92
+ 442 00c6 174D     		ldr	r5, .L43+8
+ 443 00c8 0A22     		movs	r2, #10
+ 444 00ca 01A9     		add	r1, sp, #4
+ 445 00cc 2846     		mov	r0, r5
+ 446 00ce FFF7FEFF 		bl	strtol
+ 447              	.LVL23:
+ 448 00d2 0446     		mov	r4, r0
+ 449              	.LVL24:
+  90:Sensors/command.c ****         {
+ 450              		.loc 1 90 9 is_stmt 1 view .LVU93
+  90:Sensors/command.c ****         {
+ 451              		.loc 1 90 17 is_stmt 0 view .LVU94
+ 452 00d4 019B     		ldr	r3, [sp, #4]
+  90:Sensors/command.c ****         {
+ 453              		.loc 1 90 12 view .LVU95
+ 454 00d6 AB42     		cmp	r3, r5
+ 455 00d8 1AD0     		beq	.L27
+  90:Sensors/command.c ****         {
+ 456              		.loc 1 90 28 discriminator 1 view .LVU96
+ 457 00da 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  90:Sensors/command.c ****         {
+ 458              		.loc 1 90 25 discriminator 1 view .LVU97
+ 459 00dc C3B9     		cbnz	r3, .L27
+  92:Sensors/command.c ****                 val = 0;
+ 460              		.loc 1 92 13 is_stmt 1 view .LVU98
+  92:Sensors/command.c ****                 val = 0;
+ 461              		.loc 1 92 16 is_stmt 0 view .LVU99
+ 462 00de 0028     		cmp	r0, #0
+ 463 00e0 03DB     		blt	.L33
+  94:Sensors/command.c ****                 val = 100;
+ 464              		.loc 1 94 13 is_stmt 1 view .LVU100
+  94:Sensors/command.c ****                 val = 100;
+ 465              		.loc 1 94 16 is_stmt 0 view .LVU101
+ 466 00e2 6428     		cmp	r0, #100
+ 467 00e4 02DD     		ble	.L28
+  95:Sensors/command.c **** 
+ARM GAS  /tmp/cc6qDS78.s 			page 13
+
+
+ 468              		.loc 1 95 21 view .LVU102
+ 469 00e6 6424     		movs	r4, #100
+ 470 00e8 00E0     		b	.L28
+ 471              	.L33:
+  93:Sensors/command.c ****             if (val > 100)
+ 472              		.loc 1 93 21 view .LVU103
+ 473 00ea 0024     		movs	r4, #0
+ 474              	.L28:
+ 475              	.LVL25:
+  97:Sensors/command.c ****             {
+ 476              		.loc 1 97 13 is_stmt 1 view .LVU104
+  97:Sensors/command.c ****             {
+ 477              		.loc 1 97 17 is_stmt 0 view .LVU105
+ 478 00ec FFF7FEFF 		bl	Motor_IsArmed
+ 479              	.LVL26:
+  97:Sensors/command.c ****             {
+ 480              		.loc 1 97 16 discriminator 1 view .LVU106
+ 481 00f0 50B1     		cbz	r0, .L29
+  99:Sensors/command.c ****                 printf(">> Speed: %ld%%\r\n", val);
+ 482              		.loc 1 99 17 is_stmt 1 view .LVU107
+ 483 00f2 07EE904A 		vmov	s15, r4	@ int
+ 484 00f6 B8EEE70A 		vcvt.f32.s32	s0, s15
+ 485 00fa FFF7FEFF 		bl	Motor_SetPercent
+ 486              	.LVL27:
+ 100:Sensors/command.c ****             }
+ 487              		.loc 1 100 17 view .LVU108
+ 488 00fe 2146     		mov	r1, r4
+ 489 0100 1C48     		ldr	r0, .L43+88
+ 490 0102 FFF7FEFF 		bl	printf
+ 491              	.LVL28:
+ 492 0106 96E7     		b	.L18
+ 493              	.L29:
+ 104:Sensors/command.c ****             }
+ 494              		.loc 1 104 17 view .LVU109
+ 495 0108 1B48     		ldr	r0, .L43+92
+ 496 010a FFF7FEFF 		bl	puts
+ 497              	.LVL29:
+ 498 010e 92E7     		b	.L18
+ 499              	.LVL30:
+ 500              	.L27:
+ 109:Sensors/command.c ****         }
+ 501              		.loc 1 109 13 view .LVU110
+ 502 0110 0449     		ldr	r1, .L43+8
+ 503 0112 1A48     		ldr	r0, .L43+96
+ 504              	.LVL31:
+ 109:Sensors/command.c ****         }
+ 505              		.loc 1 109 13 is_stmt 0 view .LVU111
+ 506 0114 FFF7FEFF 		bl	printf
+ 507              	.LVL32:
+ 508 0118 8DE7     		b	.L18
+ 509              	.LVL33:
+ 510              	.L36:
+ 511              	.LCFI6:
+ 512              		.cfi_def_cfa_offset 0
+ 513              		.cfi_restore 4
+ 514              		.cfi_restore 5
+ 515              		.cfi_restore 14
+ARM GAS  /tmp/cc6qDS78.s 			page 14
+
+
+ 109:Sensors/command.c ****         }
+ 516              		.loc 1 109 13 view .LVU112
+ 517 011a 7047     		bx	lr
+ 518              	.L44:
+ 519              		.align	2
+ 520              	.L43:
+ 521 011c 00000000 		.word	line_ready
+ 522 0120 1C000000 		.word	.LC4
+ 523 0124 00000000 		.word	line
+ 524 0128 54000000 		.word	.LC6
+ 525 012c 5C000000 		.word	.LC7
+ 526 0130 64000000 		.word	.LC8
+ 527 0134 00000000 		.word	line_len
+ 528 0138 20000000 		.word	.LC5
+ 529 013c 84000000 		.word	.LC9
+ 530 0140 D4000000 		.word	.LC12
+ 531 0144 FC000000 		.word	.LC14
+ 532 0148 38010000 		.word	.LC16
+ 533 014c 00000000 		.word	stream_on
+ 534 0150 44010000 		.word	.LC17
+ 535 0154 88000000 		.word	.LC10
+ 536 0158 B8000000 		.word	.LC11
+ 537 015c 00000000 		.word	.LC0
+ 538 0160 14000000 		.word	.LC2
+ 539 0164 DC000000 		.word	.LC13
+ 540 0168 08000000 		.word	.LC1
+ 541 016c 18000000 		.word	.LC3
+ 542 0170 08010000 		.word	.LC15
+ 543 0174 64010000 		.word	.LC18
+ 544 0178 78010000 		.word	.LC19
+ 545 017c A0010000 		.word	.LC20
+ 546              	.LBE2:
+ 547              		.cfi_endproc
+ 548              	.LFE140:
+ 550              		.section	.text.HAL_UART_RxCpltCallback,"ax",%progbits
+ 551              		.align	1
+ 552              		.global	HAL_UART_RxCpltCallback
+ 553              		.syntax unified
+ 554              		.thumb
+ 555              		.thumb_func
+ 557              	HAL_UART_RxCpltCallback:
+ 558              	.LVL34:
+ 559              	.LFB141:
+ 116:Sensors/command.c **** 
+ 117:Sensors/command.c **** /* Wird von HAL automatisch gerufen wenn 1 Zeichen empfangen wurde */
+ 118:Sensors/command.c **** void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+ 119:Sensors/command.c **** {
+ 560              		.loc 1 119 1 is_stmt 1 view -0
+ 561              		.cfi_startproc
+ 562              		@ args = 0, pretend = 0, frame = 0
+ 563              		@ frame_needed = 0, uses_anonymous_args = 0
+ 564              		.loc 1 119 1 is_stmt 0 view .LVU114
+ 565 0000 08B5     		push	{r3, lr}
+ 566              	.LCFI7:
+ 567              		.cfi_def_cfa_offset 8
+ 568              		.cfi_offset 3, -8
+ 569              		.cfi_offset 14, -4
+ARM GAS  /tmp/cc6qDS78.s 			page 15
+
+
+ 120:Sensors/command.c ****     if (huart->Instance == USART2)
+ 570              		.loc 1 120 5 is_stmt 1 view .LVU115
+ 571              		.loc 1 120 14 is_stmt 0 view .LVU116
+ 572 0002 0268     		ldr	r2, [r0]
+ 573              		.loc 1 120 8 view .LVU117
+ 574 0004 034B     		ldr	r3, .L49
+ 575 0006 9A42     		cmp	r2, r3
+ 576 0008 00D0     		beq	.L48
+ 577              	.LVL35:
+ 578              	.L45:
+ 121:Sensors/command.c ****         Command_RxByte();
+ 122:Sensors/command.c **** }...
+ 579              		.loc 1 122 1 view .LVU118
+ 580 000a 08BD     		pop	{r3, pc}
+ 581              	.LVL36:
+ 582              	.L48:
+ 121:Sensors/command.c ****         Command_RxByte();
+ 583              		.loc 1 121 9 is_stmt 1 view .LVU119
+ 584 000c FFF7FEFF 		bl	Command_RxByte
+ 585              	.LVL37:
+ 586              		.loc 1 122 1 is_stmt 0 view .LVU120
+ 587 0010 FBE7     		b	.L45
+ 588              	.L50:
+ 589 0012 00BF     		.align	2
+ 590              	.L49:
+ 591 0014 00440040 		.word	1073759232
+ 592              		.cfi_endproc
+ 593              	.LFE141:
+ 595              		.section	.bss.stream_on,"aw",%nobits
+ 598              	stream_on:
+ 599 0000 00       		.space	1
+ 600              		.section	.bss.line_ready,"aw",%nobits
+ 603              	line_ready:
+ 604 0000 00       		.space	1
+ 605              		.section	.bss.line_len,"aw",%nobits
+ 608              	line_len:
+ 609 0000 00       		.space	1
+ 610              		.section	.bss.line,"aw",%nobits
+ 611              		.align	2
+ 614              	line:
+ 615 0000 00000000 		.space	32
+ 615      00000000 
+ 615      00000000 
+ 615      00000000 
+ 615      00000000 
+ 616              		.section	.bss.rx_char,"aw",%nobits
+ 619              	rx_char:
+ 620 0000 00       		.space	1
+ 621              		.section	.bss.cmd_uart,"aw",%nobits
+ 622              		.align	2
+ 625              	cmd_uart:
+ 626 0000 00000000 		.space	4
+ 627              		.text
+ 628              	.Letext0:
+ 629              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 630              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
+ 631              		.file 4 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ARM GAS  /tmp/cc6qDS78.s 			page 16
+
+
+ 632              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 633              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
+ 634              		.file 7 "/usr/include/newlib/stdlib.h"
+ 635              		.file 8 "/usr/include/newlib/stdio.h"
+ 636              		.file 9 "Sensors/motor.h"
+ 637              		.file 10 "/usr/include/newlib/string.h"
+ 638              		.file 11 "<built-in>"
+ARM GAS  /tmp/cc6qDS78.s 			page 17
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 command.c
+     /tmp/cc6qDS78.s:21     .text.Command_Init:00000000 $t
+     /tmp/cc6qDS78.s:27     .text.Command_Init:00000000 Command_Init
+     /tmp/cc6qDS78.s:63     .text.Command_Init:0000001c $d
+     /tmp/cc6qDS78.s:625    .bss.cmd_uart:00000000 cmd_uart
+     /tmp/cc6qDS78.s:608    .bss.line_len:00000000 line_len
+     /tmp/cc6qDS78.s:603    .bss.line_ready:00000000 line_ready
+     /tmp/cc6qDS78.s:619    .bss.rx_char:00000000 rx_char
+     /tmp/cc6qDS78.s:71     .text.Command_StreamOn:00000000 $t
+     /tmp/cc6qDS78.s:77     .text.Command_StreamOn:00000000 Command_StreamOn
+     /tmp/cc6qDS78.s:93     .text.Command_StreamOn:00000008 $d
+     /tmp/cc6qDS78.s:598    .bss.stream_on:00000000 stream_on
+     /tmp/cc6qDS78.s:98     .text.Command_RxByte:00000000 $t
+     /tmp/cc6qDS78.s:104    .text.Command_RxByte:00000000 Command_RxByte
+     /tmp/cc6qDS78.s:176    .text.Command_RxByte:00000044 $d
+     /tmp/cc6qDS78.s:614    .bss.line:00000000 line
+     /tmp/cc6qDS78.s:185    .rodata.Command_Process.str1.4:00000000 $d
+     /tmp/cc6qDS78.s:251    .text.Command_Process:00000000 $t
+     /tmp/cc6qDS78.s:257    .text.Command_Process:00000000 Command_Process
+     /tmp/cc6qDS78.s:521    .text.Command_Process:0000011c $d
+     /tmp/cc6qDS78.s:551    .text.HAL_UART_RxCpltCallback:00000000 $t
+     /tmp/cc6qDS78.s:557    .text.HAL_UART_RxCpltCallback:00000000 HAL_UART_RxCpltCallback
+     /tmp/cc6qDS78.s:591    .text.HAL_UART_RxCpltCallback:00000014 $d
+     /tmp/cc6qDS78.s:599    .bss.stream_on:00000000 $d
+     /tmp/cc6qDS78.s:604    .bss.line_ready:00000000 $d
+     /tmp/cc6qDS78.s:609    .bss.line_len:00000000 $d
+     /tmp/cc6qDS78.s:611    .bss.line:00000000 $d
+     /tmp/cc6qDS78.s:620    .bss.rx_char:00000000 $d
+     /tmp/cc6qDS78.s:622    .bss.cmd_uart:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_UART_Receive_IT
+strcmp
+Motor_Disarm
+puts
+Motor_Arm
+Motor_CalibrateESC
+Motor_IsArmed
+printf
+strtol
+Motor_SetPercent
