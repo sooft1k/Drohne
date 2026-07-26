@@ -9,6 +9,7 @@ I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
 TIM_HandleTypeDef htim3;
 uint8_t who = 0;
+uint8_t mpu_ok = 0; /* 1 = Sensor erkannt und nutzbar */
 MPU6050_Data_t sensor;
 
 static void SystemClock_Config(void);
@@ -40,32 +41,40 @@ int main(void)
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
-    printf("Motor PWM (PB0): 50 Hz, Start 1000 us (Stopp, disarmed)\r\n");
-    printf("Befehle: arm | disarm | stop | cal | status | 0-100 | stream on/off\r\n");
+    printf("Motoren PWM: M1=PB0 M2=PB1 M3=PA6 M4=PA7, 50 Hz, Start 1000 us (disarmed)\r\n");
+    printf("Befehle: arm | disarm | status | stream on/off | 0-100 | m1..m4 <wert>\r\n");
 
+    /* --- MPU6050 nur nutzen wenn er wirklich da ist --- */
     who = 0;
-    if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK)
-        printf("MPU6050 WHO_AM_I = 0x%02X (expected 0x68)\r\n", who);
+    if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
+    {
+        printf("MPU6050 WHO_AM_I = 0x%02X\r\n", who);
+
+        if (MPU6050_Init(&hi2c1) == HAL_OK)
+        {
+            printf("MPU6050 init OK\r\n");
+            printf("Kalibriere Gyro... NICHT bewegen!\r\n");
+            MPU6050_Calibrate(&hi2c1, &sensor, 1000);
+            printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
+                   sensor.gyro_x_offset, sensor.gyro_y_offset, sensor.gyro_z_offset);
+
+            sensor.roll = 0.0f;
+            sensor.pitch = 0.0f;
+            sensor.yaw = 0.0f;
+
+            mpu_ok = 1;
+        }
+        else
+        {
+            printf("MPU6050 init FAILED - laufe ohne Sensor weiter\r\n");
+        }
+    }
     else
-        printf("ERROR: MPU6050 not responding on I2C!\r\n");
+    {
+        printf("Kein MPU6050 erkannt - Motorbetrieb ohne Sensor moeglich\r\n");
+    }
 
-    if (MPU6050_Init(&hi2c1) == HAL_OK)
-        printf("MPU6050 init OK\r\n");
-    else
-        printf("MPU6050 init FAILED\r\n");
-
-    /* Gyro kalibrieren (Sensor MUSS still liegen!) */
-    printf("Kalibriere Gyro... NICHT bewegen!\r\n");
-    MPU6050_Calibrate(&hi2c1, &sensor, 1000);
-    printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
-           sensor.gyro_x_offset, sensor.gyro_y_offset, sensor.gyro_z_offset);
-
-    /* Winkel-Startwerte zuruecksetzen */
-    sensor.roll = 0.0f;
-    sensor.pitch = 0.0f;
-    sensor.yaw = 0.0f;
-
-    printf(">> Bereit. 'stream on' fuer Wuerfel, 'arm' fuer Motor.\r\n");
+    printf(">> Bereit.\r\n");
 
     uint32_t last = HAL_GetTick();
 
@@ -73,7 +82,7 @@ int main(void)
     {
         Command_Process();
 
-        if (MPU6050_ReadAll(&hi2c1, &sensor) == HAL_OK)
+        if (mpu_ok && MPU6050_ReadAll(&hi2c1, &sensor) == HAL_OK)
         {
             uint32_t now = HAL_GetTick();
             float dt = (now - last) / 1000.0f;
@@ -88,10 +97,9 @@ int main(void)
                        sensor.roll, sensor.pitch, sensor.yaw,
                        sensor.gyro_x_dps, sensor.gyro_y_dps, sensor.gyro_z_dps);
             }
-
-            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
         }
 
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
         HAL_Delay(10); /* ~100 Hz */
     }
 }

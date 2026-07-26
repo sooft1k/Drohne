@@ -1,14 +1,20 @@
 #include "motor.h"
 
-/* Interner Zustand */
 static TIM_HandleTypeDef *motor_tim = 0;
 static uint8_t armed = 0;
 
-/* Hilfsfunktion: schreibt einen us-Wert direkt ins Timer-Register.
- * Keine Sicherheitspruefung - nur intern verwenden! */
-static void motor_write_raw(uint16_t us)
+/* Motor 1..4 -> TIM3-Kanal (Index 0..3) */
+static const uint32_t motor_ch[MOTOR_COUNT] = {
+    TIM_CHANNEL_3, /* Motor 1 -> PB0 */
+    TIM_CHANNEL_4, /* Motor 2 -> PB1 */
+    TIM_CHANNEL_1, /* Motor 3 -> PA6 */
+    TIM_CHANNEL_2  /* Motor 4 -> PA7 */
+};
+
+/* Schreibt direkt ins Timer-Register, ohne Pruefung. Nur intern! */
+static void motor_write_raw(uint8_t idx, uint16_t us)
 {
-    __HAL_TIM_SET_COMPARE(motor_tim, TIM_CHANNEL_3, us);
+    __HAL_TIM_SET_COMPARE(motor_tim, motor_ch[idx], us);
 }
 
 void Motor_Init(TIM_HandleTypeDef *htim)
@@ -16,69 +22,95 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     motor_tim = htim;
 
     __HAL_RCC_TIM3_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
 
-    /* PB0 als TIM3_CH3 Alternate Function */
     GPIO_InitTypeDef g = {0};
-    g.Pin = GPIO_PIN_0;
     g.Mode = GPIO_MODE_AF_PP;
     g.Pull = GPIO_NOPULL;
     g.Speed = GPIO_SPEED_FREQ_HIGH;
     g.Alternate = GPIO_AF2_TIM3;
+
+    /* PB0 = M1, PB1 = M2 */
+    g.Pin = GPIO_PIN_0 | GPIO_PIN_1;
     HAL_GPIO_Init(GPIOB, &g);
+
+    /* PA6 = M3, PA7 = M4 */
+    g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    HAL_GPIO_Init(GPIOA, &g);
 
     /* Timer-Basis: 1 MHz Tick (1 us), 20 ms Periode (50 Hz) */
     motor_tim->Instance = TIM3;
-    motor_tim->Init.Prescaler = 84 - 1; /* 84 MHz / 84 = 1 MHz */
+    motor_tim->Init.Prescaler = 84 - 1;
     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-    motor_tim->Init.Period = 20000 - 1; /* 20 ms = 50 Hz */
+    motor_tim->Init.Period = 20000 - 1;
     motor_tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     motor_tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     if (HAL_TIM_PWM_Init(motor_tim) != HAL_OK)
         Error_Handler();
 
+    /* Alle vier Kanaele gleich konfigurieren */
     TIM_OC_InitTypeDef oc = {0};
     oc.OCMode = TIM_OCMODE_PWM1;
-    oc.Pulse = MOTOR_US_IDLE; /* SICHER: 1000us = Stopp */
+    oc.Pulse = MOTOR_US_IDLE; /* SICHER: 1000 us = Stopp */
     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
     oc.OCFastMode = TIM_OCFAST_DISABLE;
-    if (HAL_TIM_PWM_ConfigChannel(motor_tim, &oc, TIM_CHANNEL_3) != HAL_OK)
-        Error_Handler();
 
-    HAL_TIM_PWM_Start(motor_tim, TIM_CHANNEL_3);
+    for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+    {
+        if (HAL_TIM_PWM_ConfigChannel(motor_tim, &oc, motor_ch[i]) != HAL_OK)
+            Error_Handler();
+        HAL_TIM_PWM_Start(motor_tim, motor_ch[i]);
+    }
 
-    armed = 0; /* Start immer disarmed! */
-    motor_write_raw(MOTOR_US_IDLE);
+    armed = 0; /* Start immer disarmed */
+    Motor_SetAllUs(MOTOR_US_IDLE);
 }
 
-void Motor_SetUs(uint16_t us)
+void Motor_SetUs(uint8_t motor, uint16_t us)
 {
-    /* Sicherheit: nur wenn scharf, sonst Stopp */
+    if (motor < 1 || motor > MOTOR_COUNT)
+        return;
+
+    uint8_t idx = motor - 1;
+
+    /* Sicherheit: ohne arm immer Stopp */
     if (!armed)
     {
-        motor_write_raw(MOTOR_US_IDLE);
+        motor_write_raw(idx, MOTOR_US_IDLE);
         return;
     }
 
-    /* Begrenzen auf gueltigen Bereich */
     if (us < MOTOR_US_MIN)
         us = MOTOR_US_MIN;
     if (us > MOTOR_US_MAX)
         us = MOTOR_US_MAX;
 
-    motor_write_raw(us);
+    motor_write_raw(idx, us);
 }
 
-void Motor_SetPercent(float percent)
+void Motor_SetPercent(uint8_t motor, float percent)
 {
     if (percent < 0.0f)
         percent = 0.0f;
     if (percent > 100.0f)
         percent = 100.0f;
 
-    /* 0% -> 1000us, 100% -> 2000us */
-    uint16_t us = (uint16_t)(MOTOR_US_MIN + (percent / 100.0f) * (MOTOR_US_MAX - MOTOR_US_MIN));
-    Motor_SetUs(us);
+    uint16_t us = (uint16_t)(MOTOR_US_MIN +
+                             (percent / 100.0f) * (MOTOR_US_MAX - MOTOR_US_MIN));
+    Motor_SetUs(motor, us);
+}
+
+void Motor_SetAllUs(uint16_t us)
+{
+    for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+        Motor_SetUs(m, us);
+}
+
+void Motor_SetAllPercent(float percent)
+{
+    for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+        Motor_SetPercent(m, percent);
 }
 
 void Motor_Arm(void)
@@ -89,27 +121,11 @@ void Motor_Arm(void)
 void Motor_Disarm(void)
 {
     armed = 0;
-    motor_write_raw(MOTOR_US_IDLE); /* Sofort Stopp */
+    for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+        motor_write_raw(i, MOTOR_US_IDLE); /* sofort Stopp */
 }
 
 uint8_t Motor_IsArmed(void)
 {
     return armed;
-}
-
-void Motor_CalibrateESC(void)
-{
-    /* WICHTIG: Nur OHNE Propeller, ESC noch stromlos starten!
-     * Ablauf (typisch fuer BLHeli_S):
-     * 1. Max-Signal senden (2000us)
-     * 2. ESC mit Strom verbinden -> ESC hoert Max, merkt sich "oben"
-     * 3. Nach Toenen: Min-Signal (1000us) -> ESC merkt sich "unten"
-     * Diese Funktion sendet die Signale; das Strom-Timing machst du manuell
-     * nach Anleitung am UART. */
-
-    motor_write_raw(MOTOR_US_MAX); /* 2000us = Max */
-    HAL_Delay(4000);               /* 4 Sek warten (Strom anstecken) */
-    motor_write_raw(MOTOR_US_MIN); /* 1000us = Min */
-    HAL_Delay(3000);               /* 3 Sek warten (ESC bestaetigt) */
-    /* Danach ist der ESC kalibriert und bereit. */
 }

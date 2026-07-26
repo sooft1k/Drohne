@@ -11,7 +11,7 @@ static uint8_t rx_char;
 static char line[CMD_BUF_SIZE];
 static uint8_t line_len = 0;
 static volatile uint8_t line_ready = 0;
-static volatile uint8_t stream_on = 0; /* Sensor-Ausgabe standardmaessig AUS */
+static volatile uint8_t stream_on = 0;
 
 void Command_Init(UART_HandleTypeDef *huart)
 {
@@ -54,18 +54,12 @@ void Command_Process(void)
     if (strcmp(line, "arm") == 0)
     {
         Motor_Arm();
-        printf(">> ARMED - Motor scharf! Speed mit 0-100 setzen.\r\n");
+        printf(">> ARMED - Speed mit 0-100 (alle) oder m1..m4 <wert>\r\n");
     }
     else if (strcmp(line, "disarm") == 0 || strcmp(line, "stop") == 0)
     {
         Motor_Disarm();
-        printf(">> DISARMED - Motor gestoppt.\r\n");
-    }
-    else if (strcmp(line, "cal") == 0)
-    {
-        printf(">> ESC-Kalibrierung startet... OHNE Propeller!\r\n");
-        Motor_CalibrateESC();
-        printf(">> Kalibrierung fertig.\r\n");
+        printf(">> DISARMED - alle Motoren gestoppt.\r\n");
     }
     else if (strcmp(line, "status") == 0)
     {
@@ -76,15 +70,45 @@ void Command_Process(void)
     else if (strcmp(line, "stream on") == 0)
     {
         stream_on = 1;
-        printf(">> Stream AN (Roll/Pitch/Yaw wird gesendet)\r\n");
+        printf(">> Stream AN\r\n");
     }
     else if (strcmp(line, "stream off") == 0)
     {
         stream_on = 0;
-        printf(">> Stream AUS (Monitor ruhig)\r\n");
+        printf(">> Stream AUS\r\n");
+    }
+    /* Einzelmotor:  m1 20  /  m3 15 */
+    else if (line[0] == 'm' && line[1] >= '1' && line[1] <= '4')
+    {
+        uint8_t motor = (uint8_t)(line[1] - '0');
+        char *end;
+        long val = strtol(line + 2, &end, 10);
+
+        if (end != line + 2 && *end == '\0')
+        {
+            if (val < 0)
+                val = 0;
+            if (val > 100)
+                val = 100;
+
+            if (Motor_IsArmed())
+            {
+                Motor_SetPercent(motor, (float)val);
+                printf(">> Motor %u: %ld%%\r\n", motor, val);
+            }
+            else
+            {
+                printf(">> Erst 'arm' senden!\r\n");
+            }
+        }
+        else
+        {
+            printf(">> Format: m1 20\r\n");
+        }
     }
     else
     {
+        /* Nackte Zahl -> alle vier Motoren */
         char *end;
         long val = strtol(line, &end, 10);
         if (end != line && *end == '\0')
@@ -96,17 +120,18 @@ void Command_Process(void)
 
             if (Motor_IsArmed())
             {
-                Motor_SetPercent((float)val);
-                printf(">> Speed: %ld%%\r\n", val);
+                Motor_SetAllPercent((float)val);
+                printf(">> Alle Motoren: %ld%%\r\n", val);
             }
             else
             {
-                printf(">> Erst 'arm' senden! (Motor disarmed)\r\n");
+                printf(">> Erst 'arm' senden!\r\n");
             }
         }
         else
         {
-            printf(">> Unbekannt: '%s'  (arm/disarm/stop/cal/status/stream on/stream off/0-100)\r\n", line);
+            printf(">> Unbekannt: '%s'\r\n", line);
+            printf(">> arm | disarm | status | stream on/off | 0-100 | m1..m4 <wert>\r\n");
         }
     }
 
@@ -114,7 +139,6 @@ void Command_Process(void)
     line_ready = 0;
 }
 
-/* Wird von HAL automatisch gerufen wenn 1 Zeichen empfangen wurde */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
