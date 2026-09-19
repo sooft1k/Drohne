@@ -1,6 +1,7 @@
 #include "main.h"
 
 extern UART_HandleTypeDef huart2;
+extern TIM_HandleTypeDef htim2;
 
 void NMI_Handler(void)
 {
@@ -39,4 +40,9 @@ void PendSV_Handler(void) {}
 void USART2_IRQHandler(void)
 {
     HAL_UART_IRQHandler(&huart2);
+}
+
+void TIM2_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&htim2);
 }
