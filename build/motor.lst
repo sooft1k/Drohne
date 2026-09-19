@@ -1,0 +1,1049 @@
+ARM GAS  /tmp/cccFHr4P.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"motor.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/motor.c"
+  20              		.section	.text.motor_write_raw,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	motor_write_raw:
+  27              	.LVL0:
+  28              	.LFB134:
+   1:Sensors/motor.c **** #include "motor.h"
+   2:Sensors/motor.c **** 
+   3:Sensors/motor.c **** static TIM_HandleTypeDef *motor_tim = 0;
+   4:Sensors/motor.c **** static uint8_t armed = 0;
+   5:Sensors/motor.c **** 
+   6:Sensors/motor.c **** /* Motor 1..4 -> TIM3-Kanal (Index 0..3) */
+   7:Sensors/motor.c **** static const uint32_t motor_ch[MOTOR_COUNT] = {
+   8:Sensors/motor.c ****     TIM_CHANNEL_3, /* Motor 1 -> PB0 */
+   9:Sensors/motor.c ****     TIM_CHANNEL_4, /* Motor 2 -> PB1 */
+  10:Sensors/motor.c ****     TIM_CHANNEL_1, /* Motor 3 -> PA6 */
+  11:Sensors/motor.c ****     TIM_CHANNEL_2  /* Motor 4 -> PA7 */
+  12:Sensors/motor.c **** };
+  13:Sensors/motor.c **** 
+  14:Sensors/motor.c **** /* Schreibt direkt ins Timer-Register, ohne Pruefung. Nur intern! */
+  15:Sensors/motor.c **** static void motor_write_raw(uint8_t idx, uint16_t us)
+  16:Sensors/motor.c **** {
+  29              		.loc 1 16 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		@ link register save eliminated.
+  17:Sensors/motor.c ****     __HAL_TIM_SET_COMPARE(motor_tim, motor_ch[idx], us);
+  34              		.loc 1 17 5 view .LVU1
+  35 0000 0D4B     		ldr	r3, .L8
+  36 0002 53F82030 		ldr	r3, [r3, r0, lsl #2]
+  37 0006 23B9     		cbnz	r3, .L2
+  38              		.loc 1 17 5 is_stmt 0 discriminator 1 view .LVU2
+  39 0008 0C4B     		ldr	r3, .L8+4
+  40 000a 1B68     		ldr	r3, [r3]
+  41 000c 1B68     		ldr	r3, [r3]
+ARM GAS  /tmp/cccFHr4P.s 			page 2
+
+
+  42 000e 5963     		str	r1, [r3, #52]
+  43 0010 7047     		bx	lr
+  44              	.L2:
+  45              		.loc 1 17 5 discriminator 2 view .LVU3
+  46 0012 042B     		cmp	r3, #4
+  47 0014 06D0     		beq	.L6
+  48              		.loc 1 17 5 discriminator 4 view .LVU4
+  49 0016 082B     		cmp	r3, #8
+  50 0018 09D0     		beq	.L7
+  51              		.loc 1 17 5 discriminator 7 view .LVU5
+  52 001a 084B     		ldr	r3, .L8+4
+  53 001c 1B68     		ldr	r3, [r3]
+  54 001e 1B68     		ldr	r3, [r3]
+  55 0020 1964     		str	r1, [r3, #64]
+  18:Sensors/motor.c **** }
+  56              		.loc 1 18 1 view .LVU6
+  57 0022 7047     		bx	lr
+  58              	.L6:
+  17:Sensors/motor.c ****     __HAL_TIM_SET_COMPARE(motor_tim, motor_ch[idx], us);
+  59              		.loc 1 17 5 discriminator 3 view .LVU7
+  60 0024 054B     		ldr	r3, .L8+4
+  61 0026 1B68     		ldr	r3, [r3]
+  62 0028 1B68     		ldr	r3, [r3]
+  63 002a 9963     		str	r1, [r3, #56]
+  64 002c 7047     		bx	lr
+  65              	.L7:
+  17:Sensors/motor.c ****     __HAL_TIM_SET_COMPARE(motor_tim, motor_ch[idx], us);
+  66              		.loc 1 17 5 discriminator 6 view .LVU8
+  67 002e 034B     		ldr	r3, .L8+4
+  68 0030 1B68     		ldr	r3, [r3]
+  69 0032 1B68     		ldr	r3, [r3]
+  70 0034 D963     		str	r1, [r3, #60]
+  71 0036 7047     		bx	lr
+  72              	.L9:
+  73              		.align	2
+  74              	.L8:
+  75 0038 00000000 		.word	motor_ch
+  76 003c 00000000 		.word	motor_tim
+  77              		.cfi_endproc
+  78              	.LFE134:
+  80              		.section	.text.Motor_SetUs,"ax",%progbits
+  81              		.align	1
+  82              		.global	Motor_SetUs
+  83              		.syntax unified
+  84              		.thumb
+  85              		.thumb_func
+  87              	Motor_SetUs:
+  88              	.LVL1:
+  89              	.LFB136:
+  19:Sensors/motor.c **** 
+  20:Sensors/motor.c **** void Motor_Init(TIM_HandleTypeDef *htim)
+  21:Sensors/motor.c **** {
+  22:Sensors/motor.c ****     motor_tim = htim;
+  23:Sensors/motor.c **** 
+  24:Sensors/motor.c ****     __HAL_RCC_TIM3_CLK_ENABLE();
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+  26:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ARM GAS  /tmp/cccFHr4P.s 			page 3
+
+
+  27:Sensors/motor.c **** 
+  28:Sensors/motor.c ****     GPIO_InitTypeDef g = {0};
+  29:Sensors/motor.c ****     g.Mode = GPIO_MODE_AF_PP;
+  30:Sensors/motor.c ****     g.Pull = GPIO_NOPULL;
+  31:Sensors/motor.c ****     g.Speed = GPIO_SPEED_FREQ_HIGH;
+  32:Sensors/motor.c ****     g.Alternate = GPIO_AF2_TIM3;
+  33:Sensors/motor.c **** 
+  34:Sensors/motor.c ****     /* PB0 = M1, PB1 = M2 */
+  35:Sensors/motor.c ****     g.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+  36:Sensors/motor.c ****     HAL_GPIO_Init(GPIOB, &g);
+  37:Sensors/motor.c **** 
+  38:Sensors/motor.c ****     /* PA6 = M3, PA7 = M4 */
+  39:Sensors/motor.c ****     g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+  40:Sensors/motor.c ****     HAL_GPIO_Init(GPIOA, &g);
+  41:Sensors/motor.c **** 
+  42:Sensors/motor.c ****     /* Timer-Basis: 1 MHz Tick (1 us), 20 ms Periode (50 Hz) */
+  43:Sensors/motor.c ****     motor_tim->Instance = TIM3;
+  44:Sensors/motor.c ****     motor_tim->Init.Prescaler = 84 - 1;
+  45:Sensors/motor.c ****     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+  46:Sensors/motor.c ****     motor_tim->Init.Period = 20000 - 1;
+  47:Sensors/motor.c ****     motor_tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  48:Sensors/motor.c ****     motor_tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  49:Sensors/motor.c ****     if (HAL_TIM_PWM_Init(motor_tim) != HAL_OK)
+  50:Sensors/motor.c ****         Error_Handler();
+  51:Sensors/motor.c **** 
+  52:Sensors/motor.c ****     /* Alle vier Kanaele gleich konfigurieren */
+  53:Sensors/motor.c ****     TIM_OC_InitTypeDef oc = {0};
+  54:Sensors/motor.c ****     oc.OCMode = TIM_OCMODE_PWM1;
+  55:Sensors/motor.c ****     oc.Pulse = MOTOR_US_IDLE; /* SICHER: 1000 us = Stopp */
+  56:Sensors/motor.c ****     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+  57:Sensors/motor.c ****     oc.OCFastMode = TIM_OCFAST_DISABLE;
+  58:Sensors/motor.c **** 
+  59:Sensors/motor.c ****     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+  60:Sensors/motor.c ****     {
+  61:Sensors/motor.c ****         if (HAL_TIM_PWM_ConfigChannel(motor_tim, &oc, motor_ch[i]) != HAL_OK)
+  62:Sensors/motor.c ****             Error_Handler();
+  63:Sensors/motor.c ****         HAL_TIM_PWM_Start(motor_tim, motor_ch[i]);
+  64:Sensors/motor.c ****     }
+  65:Sensors/motor.c **** 
+  66:Sensors/motor.c ****     armed = 0; /* Start immer disarmed */
+  67:Sensors/motor.c ****     Motor_SetAllUs(MOTOR_US_IDLE);
+  68:Sensors/motor.c **** }
+  69:Sensors/motor.c **** 
+  70:Sensors/motor.c **** void Motor_SetUs(uint8_t motor, uint16_t us)
+  71:Sensors/motor.c **** {
+  90              		.loc 1 71 1 is_stmt 1 view -0
+  91              		.cfi_startproc
+  92              		@ args = 0, pretend = 0, frame = 0
+  93              		@ frame_needed = 0, uses_anonymous_args = 0
+  72:Sensors/motor.c ****     if (motor < 1 || motor > MOTOR_COUNT)
+  94              		.loc 1 72 5 view .LVU10
+  95              		.loc 1 72 19 is_stmt 0 view .LVU11
+  96 0000 0138     		subs	r0, r0, #1
+  97              	.LVL2:
+  98              		.loc 1 72 19 view .LVU12
+  99 0002 C0B2     		uxtb	r0, r0
+ 100              	.LVL3:
+ARM GAS  /tmp/cccFHr4P.s 			page 4
+
+
+ 101              		.loc 1 72 8 view .LVU13
+ 102 0004 0328     		cmp	r0, #3
+ 103 0006 16D8     		bhi	.L17
+  71:Sensors/motor.c ****     if (motor < 1 || motor > MOTOR_COUNT)
+ 104              		.loc 1 71 1 view .LVU14
+ 105 0008 08B5     		push	{r3, lr}
+ 106              	.LCFI0:
+ 107              		.cfi_def_cfa_offset 8
+ 108              		.cfi_offset 3, -8
+ 109              		.cfi_offset 14, -4
+  73:Sensors/motor.c ****         return;
+  74:Sensors/motor.c **** 
+  75:Sensors/motor.c ****     uint8_t idx = motor - 1;
+ 110              		.loc 1 75 5 is_stmt 1 view .LVU15
+ 111              	.LVL4:
+  76:Sensors/motor.c **** 
+  77:Sensors/motor.c ****     /* Sicherheit: ohne arm immer Stopp */
+  78:Sensors/motor.c ****     if (!armed)
+ 112              		.loc 1 78 5 view .LVU16
+ 113              		.loc 1 78 9 is_stmt 0 view .LVU17
+ 114 000a 0B4B     		ldr	r3, .L21
+ 115 000c 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 116              		.loc 1 78 8 view .LVU18
+ 117 000e 43B1     		cbz	r3, .L20
+  79:Sensors/motor.c ****     {
+  80:Sensors/motor.c ****         motor_write_raw(idx, MOTOR_US_IDLE);
+  81:Sensors/motor.c ****         return;
+  82:Sensors/motor.c ****     }
+  83:Sensors/motor.c **** 
+  84:Sensors/motor.c ****     if (us < MOTOR_US_MIN)
+ 118              		.loc 1 84 5 is_stmt 1 view .LVU19
+ 119              		.loc 1 84 8 is_stmt 0 view .LVU20
+ 120 0010 B1F57A7F 		cmp	r1, #1000
+ 121 0014 0AD3     		bcc	.L14
+  85:Sensors/motor.c ****         us = MOTOR_US_MIN;
+  86:Sensors/motor.c ****     if (us > MOTOR_US_MAX)
+ 122              		.loc 1 86 5 is_stmt 1 view .LVU21
+ 123              		.loc 1 86 8 is_stmt 0 view .LVU22
+ 124 0016 B1F5FA6F 		cmp	r1, #2000
+ 125 001a 09D9     		bls	.L13
+  87:Sensors/motor.c ****         us = MOTOR_US_MAX;
+ 126              		.loc 1 87 12 view .LVU23
+ 127 001c 4FF4FA61 		mov	r1, #2000
+ 128              	.LVL5:
+ 129              		.loc 1 87 12 view .LVU24
+ 130 0020 06E0     		b	.L13
+ 131              	.LVL6:
+ 132              	.L20:
+  80:Sensors/motor.c ****         return;
+ 133              		.loc 1 80 9 is_stmt 1 view .LVU25
+ 134 0022 4FF47A71 		mov	r1, #1000
+ 135              	.LVL7:
+  80:Sensors/motor.c ****         return;
+ 136              		.loc 1 80 9 is_stmt 0 view .LVU26
+ 137 0026 FFF7FEFF 		bl	motor_write_raw
+ 138              	.LVL8:
+  81:Sensors/motor.c ****     }
+ARM GAS  /tmp/cccFHr4P.s 			page 5
+
+
+ 139              		.loc 1 81 9 is_stmt 1 view .LVU27
+ 140 002a 03E0     		b	.L10
+ 141              	.LVL9:
+ 142              	.L14:
+  85:Sensors/motor.c ****     if (us > MOTOR_US_MAX)
+ 143              		.loc 1 85 12 is_stmt 0 view .LVU28
+ 144 002c 4FF47A71 		mov	r1, #1000
+ 145              	.LVL10:
+ 146              	.L13:
+  88:Sensors/motor.c **** 
+  89:Sensors/motor.c ****     motor_write_raw(idx, us);
+ 147              		.loc 1 89 5 is_stmt 1 view .LVU29
+ 148 0030 FFF7FEFF 		bl	motor_write_raw
+ 149              	.LVL11:
+ 150              	.L10:
+  90:Sensors/motor.c **** }
+ 151              		.loc 1 90 1 is_stmt 0 view .LVU30
+ 152 0034 08BD     		pop	{r3, pc}
+ 153              	.LVL12:
+ 154              	.L17:
+ 155              	.LCFI1:
+ 156              		.cfi_def_cfa_offset 0
+ 157              		.cfi_restore 3
+ 158              		.cfi_restore 14
+ 159              		.loc 1 90 1 view .LVU31
+ 160 0036 7047     		bx	lr
+ 161              	.L22:
+ 162              		.align	2
+ 163              	.L21:
+ 164 0038 00000000 		.word	armed
+ 165              		.cfi_endproc
+ 166              	.LFE136:
+ 168              		.section	.text.Motor_SetPercent,"ax",%progbits
+ 169              		.align	1
+ 170              		.global	Motor_SetPercent
+ 171              		.syntax unified
+ 172              		.thumb
+ 173              		.thumb_func
+ 175              	Motor_SetPercent:
+ 176              	.LVL13:
+ 177              	.LFB137:
+  91:Sensors/motor.c **** 
+  92:Sensors/motor.c **** void Motor_SetPercent(uint8_t motor, float percent)
+  93:Sensors/motor.c **** {
+ 178              		.loc 1 93 1 is_stmt 1 view -0
+ 179              		.cfi_startproc
+ 180              		@ args = 0, pretend = 0, frame = 0
+ 181              		@ frame_needed = 0, uses_anonymous_args = 0
+ 182              		.loc 1 93 1 is_stmt 0 view .LVU33
+ 183 0000 08B5     		push	{r3, lr}
+ 184              	.LCFI2:
+ 185              		.cfi_def_cfa_offset 8
+ 186              		.cfi_offset 3, -8
+ 187              		.cfi_offset 14, -4
+  94:Sensors/motor.c ****     if (percent < 0.0f)
+ 188              		.loc 1 94 5 is_stmt 1 view .LVU34
+ 189              		.loc 1 94 8 is_stmt 0 view .LVU35
+ARM GAS  /tmp/cccFHr4P.s 			page 6
+
+
+ 190 0002 B5EEC00A 		vcmpe.f32	s0, #0
+ 191 0006 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 192 000a 09D4     		bmi	.L25
+  95:Sensors/motor.c ****         percent = 0.0f;
+  96:Sensors/motor.c ****     if (percent > 100.0f)
+ 193              		.loc 1 96 5 is_stmt 1 view .LVU36
+ 194              		.loc 1 96 8 is_stmt 0 view .LVU37
+ 195 000c DFED0E7A 		vldr.32	s15, .L28
+ 196 0010 B4EEE70A 		vcmpe.f32	s0, s15
+ 197 0014 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 198 0018 04DD     		ble	.L24
+  97:Sensors/motor.c ****         percent = 100.0f;
+ 199              		.loc 1 97 17 view .LVU38
+ 200 001a 9FED0B0A 		vldr.32	s0, .L28
+ 201              	.LVL14:
+ 202              		.loc 1 97 17 view .LVU39
+ 203 001e 01E0     		b	.L24
+ 204              	.LVL15:
+ 205              	.L25:
+  95:Sensors/motor.c ****         percent = 0.0f;
+ 206              		.loc 1 95 17 view .LVU40
+ 207 0020 9FED0A0A 		vldr.32	s0, .L28+4
+ 208              	.LVL16:
+ 209              	.L24:
+  98:Sensors/motor.c **** 
+  99:Sensors/motor.c ****     uint16_t us = (uint16_t)(MOTOR_US_MIN +
+ 210              		.loc 1 99 5 is_stmt 1 view .LVU41
+ 100:Sensors/motor.c ****                              (percent / 100.0f) * (MOTOR_US_MAX - MOTOR_US_MIN));
+ 211              		.loc 1 100 39 is_stmt 0 view .LVU42
+ 212 0024 9FED087A 		vldr.32	s14, .L28
+ 213 0028 C0EE077A 		vdiv.f32	s15, s0, s14
+ 214              		.loc 1 100 49 view .LVU43
+ 215 002c 9FED087A 		vldr.32	s14, .L28+8
+ 216 0030 67EE877A 		vmul.f32	s15, s15, s14
+  99:Sensors/motor.c ****                              (percent / 100.0f) * (MOTOR_US_MAX - MOTOR_US_MIN));
+ 217              		.loc 1 99 43 view .LVU44
+ 218 0034 77EE877A 		vadd.f32	s15, s15, s14
+  99:Sensors/motor.c ****                              (percent / 100.0f) * (MOTOR_US_MAX - MOTOR_US_MIN));
+ 219              		.loc 1 99 14 view .LVU45
+ 220 0038 FCEEE77A 		vcvt.u32.f32	s15, s15
+ 221              	.LVL17:
+ 101:Sensors/motor.c ****     Motor_SetUs(motor, us);
+ 222              		.loc 1 101 5 is_stmt 1 view .LVU46
+ 223 003c 17EE903A 		vmov	r3, s15	@ int
+ 224 0040 99B2     		uxth	r1, r3
+ 225 0042 FFF7FEFF 		bl	Motor_SetUs
+ 226              	.LVL18:
+ 102:Sensors/motor.c **** }
+ 227              		.loc 1 102 1 is_stmt 0 view .LVU47
+ 228 0046 08BD     		pop	{r3, pc}
+ 229              	.L29:
+ 230              		.align	2
+ 231              	.L28:
+ 232 0048 0000C842 		.word	1120403456
+ 233 004c 00000000 		.word	0
+ 234 0050 00007A44 		.word	1148846080
+ 235              		.cfi_endproc
+ARM GAS  /tmp/cccFHr4P.s 			page 7
+
+
+ 236              	.LFE137:
+ 238              		.section	.text.Motor_SetAllUs,"ax",%progbits
+ 239              		.align	1
+ 240              		.global	Motor_SetAllUs
+ 241              		.syntax unified
+ 242              		.thumb
+ 243              		.thumb_func
+ 245              	Motor_SetAllUs:
+ 246              	.LVL19:
+ 247              	.LFB138:
+ 103:Sensors/motor.c **** 
+ 104:Sensors/motor.c **** void Motor_SetAllUs(uint16_t us)
+ 105:Sensors/motor.c **** {
+ 248              		.loc 1 105 1 is_stmt 1 view -0
+ 249              		.cfi_startproc
+ 250              		@ args = 0, pretend = 0, frame = 0
+ 251              		@ frame_needed = 0, uses_anonymous_args = 0
+ 252              		.loc 1 105 1 is_stmt 0 view .LVU49
+ 253 0000 38B5     		push	{r3, r4, r5, lr}
+ 254              	.LCFI3:
+ 255              		.cfi_def_cfa_offset 16
+ 256              		.cfi_offset 3, -16
+ 257              		.cfi_offset 4, -12
+ 258              		.cfi_offset 5, -8
+ 259              		.cfi_offset 14, -4
+ 260 0002 0546     		mov	r5, r0
+ 106:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 261              		.loc 1 106 5 is_stmt 1 view .LVU50
+ 262              	.LBB2:
+ 263              		.loc 1 106 10 view .LVU51
+ 264              	.LVL20:
+ 265              		.loc 1 106 18 is_stmt 0 view .LVU52
+ 266 0004 0124     		movs	r4, #1
+ 267              		.loc 1 106 5 view .LVU53
+ 268 0006 05E0     		b	.L31
+ 269              	.LVL21:
+ 270              	.L32:
+ 107:Sensors/motor.c ****         Motor_SetUs(m, us);
+ 271              		.loc 1 107 9 is_stmt 1 view .LVU54
+ 272 0008 2946     		mov	r1, r5
+ 273 000a 2046     		mov	r0, r4
+ 274 000c FFF7FEFF 		bl	Motor_SetUs
+ 275              	.LVL22:
+ 106:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 276              		.loc 1 106 44 discriminator 3 view .LVU55
+ 277 0010 0134     		adds	r4, r4, #1
+ 278              	.LVL23:
+ 106:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 279              		.loc 1 106 44 is_stmt 0 discriminator 3 view .LVU56
+ 280 0012 E4B2     		uxtb	r4, r4
+ 281              	.LVL24:
+ 282              	.L31:
+ 106:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 283              		.loc 1 106 27 is_stmt 1 discriminator 1 view .LVU57
+ 284 0014 042C     		cmp	r4, #4
+ 285 0016 F7D9     		bls	.L32
+ 286              	.LBE2:
+ARM GAS  /tmp/cccFHr4P.s 			page 8
+
+
+ 108:Sensors/motor.c **** }
+ 287              		.loc 1 108 1 is_stmt 0 view .LVU58
+ 288 0018 38BD     		pop	{r3, r4, r5, pc}
+ 289              		.loc 1 108 1 view .LVU59
+ 290              		.cfi_endproc
+ 291              	.LFE138:
+ 293              		.section	.text.Motor_Init,"ax",%progbits
+ 294              		.align	1
+ 295              		.global	Motor_Init
+ 296              		.syntax unified
+ 297              		.thumb
+ 298              		.thumb_func
+ 300              	Motor_Init:
+ 301              	.LVL25:
+ 302              	.LFB135:
+  21:Sensors/motor.c ****     motor_tim = htim;
+ 303              		.loc 1 21 1 is_stmt 1 view -0
+ 304              		.cfi_startproc
+ 305              		@ args = 0, pretend = 0, frame = 64
+ 306              		@ frame_needed = 0, uses_anonymous_args = 0
+  21:Sensors/motor.c ****     motor_tim = htim;
+ 307              		.loc 1 21 1 is_stmt 0 view .LVU61
+ 308 0000 30B5     		push	{r4, r5, lr}
+ 309              	.LCFI4:
+ 310              		.cfi_def_cfa_offset 12
+ 311              		.cfi_offset 4, -12
+ 312              		.cfi_offset 5, -8
+ 313              		.cfi_offset 14, -4
+ 314 0002 91B0     		sub	sp, sp, #68
+ 315              	.LCFI5:
+ 316              		.cfi_def_cfa_offset 80
+  22:Sensors/motor.c **** 
+ 317              		.loc 1 22 5 is_stmt 1 view .LVU62
+  22:Sensors/motor.c **** 
+ 318              		.loc 1 22 15 is_stmt 0 view .LVU63
+ 319 0004 3B4D     		ldr	r5, .L42
+ 320 0006 2860     		str	r0, [r5]
+  24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+ 321              		.loc 1 24 5 is_stmt 1 view .LVU64
+ 322              	.LBB3:
+  24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+ 323              		.loc 1 24 5 view .LVU65
+ 324 0008 0024     		movs	r4, #0
+ 325 000a 0194     		str	r4, [sp, #4]
+  24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+ 326              		.loc 1 24 5 view .LVU66
+ 327 000c 3A4B     		ldr	r3, .L42+4
+ 328 000e 1A6C     		ldr	r2, [r3, #64]
+ 329 0010 42F00202 		orr	r2, r2, #2
+ 330 0014 1A64     		str	r2, [r3, #64]
+  24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+ 331              		.loc 1 24 5 view .LVU67
+ 332 0016 1A6C     		ldr	r2, [r3, #64]
+ 333 0018 02F00202 		and	r2, r2, #2
+ 334 001c 0192     		str	r2, [sp, #4]
+  24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+ 335              		.loc 1 24 5 view .LVU68
+ARM GAS  /tmp/cccFHr4P.s 			page 9
+
+
+ 336 001e 019A     		ldr	r2, [sp, #4]
+ 337              	.LBE3:
+  24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
+ 338              		.loc 1 24 5 view .LVU69
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ 339              		.loc 1 25 5 view .LVU70
+ 340              	.LBB4:
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ 341              		.loc 1 25 5 view .LVU71
+ 342 0020 0294     		str	r4, [sp, #8]
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ 343              		.loc 1 25 5 view .LVU72
+ 344 0022 1A6B     		ldr	r2, [r3, #48]
+ 345 0024 42F00102 		orr	r2, r2, #1
+ 346 0028 1A63     		str	r2, [r3, #48]
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ 347              		.loc 1 25 5 view .LVU73
+ 348 002a 1A6B     		ldr	r2, [r3, #48]
+ 349 002c 02F00102 		and	r2, r2, #1
+ 350 0030 0292     		str	r2, [sp, #8]
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ 351              		.loc 1 25 5 view .LVU74
+ 352 0032 029A     		ldr	r2, [sp, #8]
+ 353              	.LBE4:
+  25:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
+ 354              		.loc 1 25 5 view .LVU75
+  26:Sensors/motor.c **** 
+ 355              		.loc 1 26 5 view .LVU76
+ 356              	.LBB5:
+  26:Sensors/motor.c **** 
+ 357              		.loc 1 26 5 view .LVU77
+ 358 0034 0394     		str	r4, [sp, #12]
+  26:Sensors/motor.c **** 
+ 359              		.loc 1 26 5 view .LVU78
+ 360 0036 1A6B     		ldr	r2, [r3, #48]
+ 361 0038 42F00202 		orr	r2, r2, #2
+ 362 003c 1A63     		str	r2, [r3, #48]
+  26:Sensors/motor.c **** 
+ 363              		.loc 1 26 5 view .LVU79
+ 364 003e 1B6B     		ldr	r3, [r3, #48]
+ 365 0040 03F00203 		and	r3, r3, #2
+ 366 0044 0393     		str	r3, [sp, #12]
+  26:Sensors/motor.c **** 
+ 367              		.loc 1 26 5 view .LVU80
+ 368 0046 039B     		ldr	r3, [sp, #12]
+ 369              	.LBE5:
+  26:Sensors/motor.c **** 
+ 370              		.loc 1 26 5 view .LVU81
+  28:Sensors/motor.c ****     g.Mode = GPIO_MODE_AF_PP;
+ 371              		.loc 1 28 5 view .LVU82
+  28:Sensors/motor.c ****     g.Mode = GPIO_MODE_AF_PP;
+ 372              		.loc 1 28 22 is_stmt 0 view .LVU83
+ 373 0048 0B94     		str	r4, [sp, #44]
+ 374 004a 0C94     		str	r4, [sp, #48]
+ 375 004c 0D94     		str	r4, [sp, #52]
+ 376 004e 0E94     		str	r4, [sp, #56]
+ 377 0050 0F94     		str	r4, [sp, #60]
+ARM GAS  /tmp/cccFHr4P.s 			page 10
+
+
+  29:Sensors/motor.c ****     g.Pull = GPIO_NOPULL;
+ 378              		.loc 1 29 5 is_stmt 1 view .LVU84
+  29:Sensors/motor.c ****     g.Pull = GPIO_NOPULL;
+ 379              		.loc 1 29 12 is_stmt 0 view .LVU85
+ 380 0052 0223     		movs	r3, #2
+ 381 0054 0C93     		str	r3, [sp, #48]
+  30:Sensors/motor.c ****     g.Speed = GPIO_SPEED_FREQ_HIGH;
+ 382              		.loc 1 30 5 is_stmt 1 view .LVU86
+  31:Sensors/motor.c ****     g.Alternate = GPIO_AF2_TIM3;
+ 383              		.loc 1 31 5 view .LVU87
+  31:Sensors/motor.c ****     g.Alternate = GPIO_AF2_TIM3;
+ 384              		.loc 1 31 13 is_stmt 0 view .LVU88
+ 385 0056 0E93     		str	r3, [sp, #56]
+  32:Sensors/motor.c **** 
+ 386              		.loc 1 32 5 is_stmt 1 view .LVU89
+  32:Sensors/motor.c **** 
+ 387              		.loc 1 32 17 is_stmt 0 view .LVU90
+ 388 0058 0F93     		str	r3, [sp, #60]
+  35:Sensors/motor.c ****     HAL_GPIO_Init(GPIOB, &g);
+ 389              		.loc 1 35 5 is_stmt 1 view .LVU91
+  35:Sensors/motor.c ****     HAL_GPIO_Init(GPIOB, &g);
+ 390              		.loc 1 35 11 is_stmt 0 view .LVU92
+ 391 005a 0323     		movs	r3, #3
+ 392 005c 0B93     		str	r3, [sp, #44]
+  36:Sensors/motor.c **** 
+ 393              		.loc 1 36 5 is_stmt 1 view .LVU93
+ 394 005e 0BA9     		add	r1, sp, #44
+ 395 0060 2648     		ldr	r0, .L42+8
+ 396              	.LVL26:
+  36:Sensors/motor.c **** 
+ 397              		.loc 1 36 5 is_stmt 0 view .LVU94
+ 398 0062 FFF7FEFF 		bl	HAL_GPIO_Init
+ 399              	.LVL27:
+  39:Sensors/motor.c ****     HAL_GPIO_Init(GPIOA, &g);
+ 400              		.loc 1 39 5 is_stmt 1 view .LVU95
+  39:Sensors/motor.c ****     HAL_GPIO_Init(GPIOA, &g);
+ 401              		.loc 1 39 11 is_stmt 0 view .LVU96
+ 402 0066 C023     		movs	r3, #192
+ 403 0068 0B93     		str	r3, [sp, #44]
+  40:Sensors/motor.c **** 
+ 404              		.loc 1 40 5 is_stmt 1 view .LVU97
+ 405 006a 0BA9     		add	r1, sp, #44
+ 406 006c 2448     		ldr	r0, .L42+12
+ 407 006e FFF7FEFF 		bl	HAL_GPIO_Init
+ 408              	.LVL28:
+  43:Sensors/motor.c ****     motor_tim->Init.Prescaler = 84 - 1;
+ 409              		.loc 1 43 5 view .LVU98
+  43:Sensors/motor.c ****     motor_tim->Init.Prescaler = 84 - 1;
+ 410              		.loc 1 43 14 is_stmt 0 view .LVU99
+ 411 0072 2868     		ldr	r0, [r5]
+  43:Sensors/motor.c ****     motor_tim->Init.Prescaler = 84 - 1;
+ 412              		.loc 1 43 25 view .LVU100
+ 413 0074 234B     		ldr	r3, .L42+16
+ 414 0076 0360     		str	r3, [r0]
+  44:Sensors/motor.c ****     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+ 415              		.loc 1 44 5 is_stmt 1 view .LVU101
+  44:Sensors/motor.c ****     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
+ARM GAS  /tmp/cccFHr4P.s 			page 11
+
+
+ 416              		.loc 1 44 31 is_stmt 0 view .LVU102
+ 417 0078 5323     		movs	r3, #83
+ 418 007a 4360     		str	r3, [r0, #4]
+  45:Sensors/motor.c ****     motor_tim->Init.Period = 20000 - 1;
+ 419              		.loc 1 45 5 is_stmt 1 view .LVU103
+  45:Sensors/motor.c ****     motor_tim->Init.Period = 20000 - 1;
+ 420              		.loc 1 45 33 is_stmt 0 view .LVU104
+ 421 007c 8460     		str	r4, [r0, #8]
+  46:Sensors/motor.c ****     motor_tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+ 422              		.loc 1 46 5 is_stmt 1 view .LVU105
+  46:Sensors/motor.c ****     motor_tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+ 423              		.loc 1 46 28 is_stmt 0 view .LVU106
+ 424 007e 44F61F63 		movw	r3, #19999
+ 425 0082 C360     		str	r3, [r0, #12]
+  47:Sensors/motor.c ****     motor_tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+ 426              		.loc 1 47 5 is_stmt 1 view .LVU107
+  47:Sensors/motor.c ****     motor_tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+ 427              		.loc 1 47 35 is_stmt 0 view .LVU108
+ 428 0084 0461     		str	r4, [r0, #16]
+  48:Sensors/motor.c ****     if (HAL_TIM_PWM_Init(motor_tim) != HAL_OK)
+ 429              		.loc 1 48 5 is_stmt 1 view .LVU109
+  48:Sensors/motor.c ****     if (HAL_TIM_PWM_Init(motor_tim) != HAL_OK)
+ 430              		.loc 1 48 39 is_stmt 0 view .LVU110
+ 431 0086 8023     		movs	r3, #128
+ 432 0088 8361     		str	r3, [r0, #24]
+  49:Sensors/motor.c ****         Error_Handler();
+ 433              		.loc 1 49 5 is_stmt 1 view .LVU111
+  49:Sensors/motor.c ****         Error_Handler();
+ 434              		.loc 1 49 9 is_stmt 0 view .LVU112
+ 435 008a FFF7FEFF 		bl	HAL_TIM_PWM_Init
+ 436              	.LVL29:
+  49:Sensors/motor.c ****         Error_Handler();
+ 437              		.loc 1 49 8 discriminator 1 view .LVU113
+ 438 008e 68B9     		cbnz	r0, .L40
+ 439              	.L35:
+  53:Sensors/motor.c ****     oc.OCMode = TIM_OCMODE_PWM1;
+ 440              		.loc 1 53 5 is_stmt 1 view .LVU114
+  53:Sensors/motor.c ****     oc.OCMode = TIM_OCMODE_PWM1;
+ 441              		.loc 1 53 24 is_stmt 0 view .LVU115
+ 442 0090 0024     		movs	r4, #0
+ 443 0092 0494     		str	r4, [sp, #16]
+ 444 0094 0594     		str	r4, [sp, #20]
+ 445 0096 0694     		str	r4, [sp, #24]
+ 446 0098 0794     		str	r4, [sp, #28]
+ 447 009a 0894     		str	r4, [sp, #32]
+ 448 009c 0994     		str	r4, [sp, #36]
+ 449 009e 0A94     		str	r4, [sp, #40]
+  54:Sensors/motor.c ****     oc.Pulse = MOTOR_US_IDLE; /* SICHER: 1000 us = Stopp */
+ 450              		.loc 1 54 5 is_stmt 1 view .LVU116
+  54:Sensors/motor.c ****     oc.Pulse = MOTOR_US_IDLE; /* SICHER: 1000 us = Stopp */
+ 451              		.loc 1 54 15 is_stmt 0 view .LVU117
+ 452 00a0 6023     		movs	r3, #96
+ 453 00a2 0493     		str	r3, [sp, #16]
+  55:Sensors/motor.c ****     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+ 454              		.loc 1 55 5 is_stmt 1 view .LVU118
+  55:Sensors/motor.c ****     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
+ 455              		.loc 1 55 14 is_stmt 0 view .LVU119
+ARM GAS  /tmp/cccFHr4P.s 			page 12
+
+
+ 456 00a4 4FF47A73 		mov	r3, #1000
+ 457 00a8 0593     		str	r3, [sp, #20]
+  56:Sensors/motor.c ****     oc.OCFastMode = TIM_OCFAST_DISABLE;
+ 458              		.loc 1 56 5 is_stmt 1 view .LVU120
+  57:Sensors/motor.c **** 
+ 459              		.loc 1 57 5 view .LVU121
+  59:Sensors/motor.c ****     {
+ 460              		.loc 1 59 5 view .LVU122
+ 461              	.LBB6:
+  59:Sensors/motor.c ****     {
+ 462              		.loc 1 59 10 view .LVU123
+ 463              	.LVL30:
+  59:Sensors/motor.c ****     {
+ 464              		.loc 1 59 5 is_stmt 0 view .LVU124
+ 465 00aa 09E0     		b	.L36
+ 466              	.LVL31:
+ 467              	.L40:
+  59:Sensors/motor.c ****     {
+ 468              		.loc 1 59 5 view .LVU125
+ 469              	.LBE6:
+  50:Sensors/motor.c **** 
+ 470              		.loc 1 50 9 is_stmt 1 view .LVU126
+ 471 00ac FFF7FEFF 		bl	Error_Handler
+ 472              	.LVL32:
+ 473 00b0 EEE7     		b	.L35
+ 474              	.LVL33:
+ 475              	.L37:
+ 476              	.LBB7:
+  63:Sensors/motor.c ****     }
+ 477              		.loc 1 63 9 view .LVU127
+ 478 00b2 2946     		mov	r1, r5
+ 479 00b4 0F4B     		ldr	r3, .L42
+ 480 00b6 1868     		ldr	r0, [r3]
+ 481 00b8 FFF7FEFF 		bl	HAL_TIM_PWM_Start
+ 482              	.LVL34:
+  59:Sensors/motor.c ****     {
+ 483              		.loc 1 59 43 discriminator 2 view .LVU128
+ 484 00bc 0134     		adds	r4, r4, #1
+ 485              	.LVL35:
+  59:Sensors/motor.c ****     {
+ 486              		.loc 1 59 43 is_stmt 0 discriminator 2 view .LVU129
+ 487 00be E4B2     		uxtb	r4, r4
+ 488              	.LVL36:
+ 489              	.L36:
+  59:Sensors/motor.c ****     {
+ 490              		.loc 1 59 27 is_stmt 1 discriminator 1 view .LVU130
+ 491 00c0 032C     		cmp	r4, #3
+ 492 00c2 0DD8     		bhi	.L41
+  61:Sensors/motor.c ****             Error_Handler();
+ 493              		.loc 1 61 9 view .LVU131
+  61:Sensors/motor.c ****             Error_Handler();
+ 494              		.loc 1 61 63 is_stmt 0 view .LVU132
+ 495 00c4 104B     		ldr	r3, .L42+20
+ 496 00c6 53F82450 		ldr	r5, [r3, r4, lsl #2]
+  61:Sensors/motor.c ****             Error_Handler();
+ 497              		.loc 1 61 13 view .LVU133
+ 498 00ca 2A46     		mov	r2, r5
+ARM GAS  /tmp/cccFHr4P.s 			page 13
+
+
+ 499 00cc 04A9     		add	r1, sp, #16
+ 500 00ce 094B     		ldr	r3, .L42
+ 501 00d0 1868     		ldr	r0, [r3]
+ 502 00d2 FFF7FEFF 		bl	HAL_TIM_PWM_ConfigChannel
+ 503              	.LVL37:
+  61:Sensors/motor.c ****             Error_Handler();
+ 504              		.loc 1 61 12 discriminator 1 view .LVU134
+ 505 00d6 0028     		cmp	r0, #0
+ 506 00d8 EBD0     		beq	.L37
+  62:Sensors/motor.c ****         HAL_TIM_PWM_Start(motor_tim, motor_ch[i]);
+ 507              		.loc 1 62 13 is_stmt 1 view .LVU135
+ 508 00da FFF7FEFF 		bl	Error_Handler
+ 509              	.LVL38:
+ 510 00de E8E7     		b	.L37
+ 511              	.L41:
+ 512              	.LBE7:
+  66:Sensors/motor.c ****     Motor_SetAllUs(MOTOR_US_IDLE);
+ 513              		.loc 1 66 5 view .LVU136
+  66:Sensors/motor.c ****     Motor_SetAllUs(MOTOR_US_IDLE);
+ 514              		.loc 1 66 11 is_stmt 0 view .LVU137
+ 515 00e0 0A4B     		ldr	r3, .L42+24
+ 516 00e2 0022     		movs	r2, #0
+ 517 00e4 1A70     		strb	r2, [r3]
+  67:Sensors/motor.c **** }
+ 518              		.loc 1 67 5 is_stmt 1 view .LVU138
+ 519 00e6 4FF47A70 		mov	r0, #1000
+ 520 00ea FFF7FEFF 		bl	Motor_SetAllUs
+ 521              	.LVL39:
+  68:Sensors/motor.c **** 
+ 522              		.loc 1 68 1 is_stmt 0 view .LVU139
+ 523 00ee 11B0     		add	sp, sp, #68
+ 524              	.LCFI6:
+ 525              		.cfi_def_cfa_offset 12
+ 526              		@ sp needed
+ 527 00f0 30BD     		pop	{r4, r5, pc}
+ 528              	.LVL40:
+ 529              	.L43:
+  68:Sensors/motor.c **** 
+ 530              		.loc 1 68 1 view .LVU140
+ 531 00f2 00BF     		.align	2
+ 532              	.L42:
+ 533 00f4 00000000 		.word	motor_tim
+ 534 00f8 00380240 		.word	1073887232
+ 535 00fc 00040240 		.word	1073873920
+ 536 0100 00000240 		.word	1073872896
+ 537 0104 00040040 		.word	1073742848
+ 538 0108 00000000 		.word	motor_ch
+ 539 010c 00000000 		.word	armed
+ 540              		.cfi_endproc
+ 541              	.LFE135:
+ 543              		.section	.text.Motor_SetAllPercent,"ax",%progbits
+ 544              		.align	1
+ 545              		.global	Motor_SetAllPercent
+ 546              		.syntax unified
+ 547              		.thumb
+ 548              		.thumb_func
+ 550              	Motor_SetAllPercent:
+ARM GAS  /tmp/cccFHr4P.s 			page 14
+
+
+ 551              	.LVL41:
+ 552              	.LFB139:
+ 109:Sensors/motor.c **** 
+ 110:Sensors/motor.c **** void Motor_SetAllPercent(float percent)
+ 111:Sensors/motor.c **** {
+ 553              		.loc 1 111 1 is_stmt 1 view -0
+ 554              		.cfi_startproc
+ 555              		@ args = 0, pretend = 0, frame = 0
+ 556              		@ frame_needed = 0, uses_anonymous_args = 0
+ 557              		.loc 1 111 1 is_stmt 0 view .LVU142
+ 558 0000 10B5     		push	{r4, lr}
+ 559              	.LCFI7:
+ 560              		.cfi_def_cfa_offset 8
+ 561              		.cfi_offset 4, -8
+ 562              		.cfi_offset 14, -4
+ 563 0002 2DED028B 		vpush.64	{d8}
+ 564              	.LCFI8:
+ 565              		.cfi_def_cfa_offset 16
+ 566              		.cfi_offset 80, -16
+ 567              		.cfi_offset 81, -12
+ 568 0006 B0EE408A 		vmov.f32	s16, s0
+ 112:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 569              		.loc 1 112 5 is_stmt 1 view .LVU143
+ 570              	.LBB8:
+ 571              		.loc 1 112 10 view .LVU144
+ 572              	.LVL42:
+ 573              		.loc 1 112 18 is_stmt 0 view .LVU145
+ 574 000a 0124     		movs	r4, #1
+ 575              		.loc 1 112 5 view .LVU146
+ 576 000c 06E0     		b	.L45
+ 577              	.LVL43:
+ 578              	.L46:
+ 113:Sensors/motor.c ****         Motor_SetPercent(m, percent);
+ 579              		.loc 1 113 9 is_stmt 1 view .LVU147
+ 580 000e B0EE480A 		vmov.f32	s0, s16
+ 581 0012 2046     		mov	r0, r4
+ 582 0014 FFF7FEFF 		bl	Motor_SetPercent
+ 583              	.LVL44:
+ 112:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 584              		.loc 1 112 44 discriminator 3 view .LVU148
+ 585 0018 0134     		adds	r4, r4, #1
+ 586              	.LVL45:
+ 112:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 587              		.loc 1 112 44 is_stmt 0 discriminator 3 view .LVU149
+ 588 001a E4B2     		uxtb	r4, r4
+ 589              	.LVL46:
+ 590              	.L45:
+ 112:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
+ 591              		.loc 1 112 27 is_stmt 1 discriminator 1 view .LVU150
+ 592 001c 042C     		cmp	r4, #4
+ 593 001e F6D9     		bls	.L46
+ 594              	.LBE8:
+ 114:Sensors/motor.c **** }
+ 595              		.loc 1 114 1 is_stmt 0 view .LVU151
+ 596 0020 BDEC028B 		vldm	sp!, {d8}
+ 597              	.LCFI9:
+ 598              		.cfi_restore 80
+ARM GAS  /tmp/cccFHr4P.s 			page 15
+
+
+ 599              		.cfi_restore 81
+ 600              		.cfi_def_cfa_offset 8
+ 601              	.LVL47:
+ 602              		.loc 1 114 1 view .LVU152
+ 603 0024 10BD     		pop	{r4, pc}
+ 604              		.loc 1 114 1 view .LVU153
+ 605              		.cfi_endproc
+ 606              	.LFE139:
+ 608              		.section	.text.Motor_Arm,"ax",%progbits
+ 609              		.align	1
+ 610              		.global	Motor_Arm
+ 611              		.syntax unified
+ 612              		.thumb
+ 613              		.thumb_func
+ 615              	Motor_Arm:
+ 616              	.LFB140:
+ 115:Sensors/motor.c **** 
+ 116:Sensors/motor.c **** void Motor_Arm(void)
+ 117:Sensors/motor.c **** {
+ 617              		.loc 1 117 1 is_stmt 1 view -0
+ 618              		.cfi_startproc
+ 619              		@ args = 0, pretend = 0, frame = 0
+ 620              		@ frame_needed = 0, uses_anonymous_args = 0
+ 621              		@ link register save eliminated.
+ 118:Sensors/motor.c ****     armed = 1;
+ 622              		.loc 1 118 5 view .LVU155
+ 623              		.loc 1 118 11 is_stmt 0 view .LVU156
+ 624 0000 014B     		ldr	r3, .L49
+ 625 0002 0122     		movs	r2, #1
+ 626 0004 1A70     		strb	r2, [r3]
+ 119:Sensors/motor.c **** }
+ 627              		.loc 1 119 1 view .LVU157
+ 628 0006 7047     		bx	lr
+ 629              	.L50:
+ 630              		.align	2
+ 631              	.L49:
+ 632 0008 00000000 		.word	armed
+ 633              		.cfi_endproc
+ 634              	.LFE140:
+ 636              		.section	.text.Motor_Disarm,"ax",%progbits
+ 637              		.align	1
+ 638              		.global	Motor_Disarm
+ 639              		.syntax unified
+ 640              		.thumb
+ 641              		.thumb_func
+ 643              	Motor_Disarm:
+ 644              	.LFB141:
+ 120:Sensors/motor.c **** 
+ 121:Sensors/motor.c **** void Motor_Disarm(void)
+ 122:Sensors/motor.c **** {
+ 645              		.loc 1 122 1 is_stmt 1 view -0
+ 646              		.cfi_startproc
+ 647              		@ args = 0, pretend = 0, frame = 0
+ 648              		@ frame_needed = 0, uses_anonymous_args = 0
+ 649 0000 10B5     		push	{r4, lr}
+ 650              	.LCFI10:
+ 651              		.cfi_def_cfa_offset 8
+ARM GAS  /tmp/cccFHr4P.s 			page 16
+
+
+ 652              		.cfi_offset 4, -8
+ 653              		.cfi_offset 14, -4
+ 123:Sensors/motor.c ****     armed = 0;
+ 654              		.loc 1 123 5 view .LVU159
+ 655              		.loc 1 123 11 is_stmt 0 view .LVU160
+ 656 0002 0024     		movs	r4, #0
+ 657 0004 064B     		ldr	r3, .L55
+ 658 0006 1C70     		strb	r4, [r3]
+ 124:Sensors/motor.c ****     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+ 659              		.loc 1 124 5 is_stmt 1 view .LVU161
+ 660              	.LBB9:
+ 661              		.loc 1 124 10 view .LVU162
+ 662              	.LVL48:
+ 663              		.loc 1 124 5 is_stmt 0 view .LVU163
+ 664 0008 06E0     		b	.L52
+ 665              	.LVL49:
+ 666              	.L53:
+ 125:Sensors/motor.c ****         motor_write_raw(i, MOTOR_US_IDLE); /* sofort Stopp */
+ 667              		.loc 1 125 9 is_stmt 1 view .LVU164
+ 668 000a 4FF47A71 		mov	r1, #1000
+ 669 000e 2046     		mov	r0, r4
+ 670 0010 FFF7FEFF 		bl	motor_write_raw
+ 671              	.LVL50:
+ 124:Sensors/motor.c ****     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+ 672              		.loc 1 124 43 discriminator 3 view .LVU165
+ 673 0014 0134     		adds	r4, r4, #1
+ 674              	.LVL51:
+ 124:Sensors/motor.c ****     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+ 675              		.loc 1 124 43 is_stmt 0 discriminator 3 view .LVU166
+ 676 0016 E4B2     		uxtb	r4, r4
+ 677              	.LVL52:
+ 678              	.L52:
+ 124:Sensors/motor.c ****     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
+ 679              		.loc 1 124 27 is_stmt 1 discriminator 1 view .LVU167
+ 680 0018 032C     		cmp	r4, #3
+ 681 001a F6D9     		bls	.L53
+ 682              	.LBE9:
+ 126:Sensors/motor.c **** }
+ 683              		.loc 1 126 1 is_stmt 0 view .LVU168
+ 684 001c 10BD     		pop	{r4, pc}
+ 685              	.LVL53:
+ 686              	.L56:
+ 687              		.loc 1 126 1 view .LVU169
+ 688 001e 00BF     		.align	2
+ 689              	.L55:
+ 690 0020 00000000 		.word	armed
+ 691              		.cfi_endproc
+ 692              	.LFE141:
+ 694              		.section	.text.Motor_IsArmed,"ax",%progbits
+ 695              		.align	1
+ 696              		.global	Motor_IsArmed
+ 697              		.syntax unified
+ 698              		.thumb
+ 699              		.thumb_func
+ 701              	Motor_IsArmed:
+ 702              	.LFB142:
+ 127:Sensors/motor.c **** 
+ARM GAS  /tmp/cccFHr4P.s 			page 17
+
+
+ 128:Sensors/motor.c **** uint8_t Motor_IsArmed(void)
+ 129:Sensors/motor.c **** {
+ 703              		.loc 1 129 1 is_stmt 1 view -0
+ 704              		.cfi_startproc
+ 705              		@ args = 0, pretend = 0, frame = 0
+ 706              		@ frame_needed = 0, uses_anonymous_args = 0
+ 707              		@ link register save eliminated.
+ 130:Sensors/motor.c ****     return armed;
+ 708              		.loc 1 130 5 view .LVU171
+ 131:Sensors/motor.c **** }...
+ 709              		.loc 1 131 1 is_stmt 0 view .LVU172
+ 710 0000 014B     		ldr	r3, .L58
+ 711 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 712 0004 7047     		bx	lr
+ 713              	.L59:
+ 714 0006 00BF     		.align	2
+ 715              	.L58:
+ 716 0008 00000000 		.word	armed
+ 717              		.cfi_endproc
+ 718              	.LFE142:
+ 720              		.section	.rodata.motor_ch,"a"
+ 721              		.align	2
+ 724              	motor_ch:
+ 725 0000 08000000 		.word	8
+ 726 0004 0C000000 		.word	12
+ 727 0008 00000000 		.word	0
+ 728 000c 04000000 		.word	4
+ 729              		.section	.bss.armed,"aw",%nobits
+ 732              	armed:
+ 733 0000 00       		.space	1
+ 734              		.section	.bss.motor_tim,"aw",%nobits
+ 735              		.align	2
+ 738              	motor_tim:
+ 739 0000 00000000 		.space	4
+ 740              		.text
+ 741              	.Letext0:
+ 742              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 743              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
+ 744              		.file 4 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 745              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_gpio.h"
+ 746              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 747              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h"
+ 748              		.file 8 "Core/Inc/main.h"
+ARM GAS  /tmp/cccFHr4P.s 			page 18
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 motor.c
+     /tmp/cccFHr4P.s:21     .text.motor_write_raw:00000000 $t
+     /tmp/cccFHr4P.s:26     .text.motor_write_raw:00000000 motor_write_raw
+     /tmp/cccFHr4P.s:75     .text.motor_write_raw:00000038 $d
+     /tmp/cccFHr4P.s:724    .rodata.motor_ch:00000000 motor_ch
+     /tmp/cccFHr4P.s:738    .bss.motor_tim:00000000 motor_tim
+     /tmp/cccFHr4P.s:81     .text.Motor_SetUs:00000000 $t
+     /tmp/cccFHr4P.s:87     .text.Motor_SetUs:00000000 Motor_SetUs
+     /tmp/cccFHr4P.s:164    .text.Motor_SetUs:00000038 $d
+     /tmp/cccFHr4P.s:732    .bss.armed:00000000 armed
+     /tmp/cccFHr4P.s:169    .text.Motor_SetPercent:00000000 $t
+     /tmp/cccFHr4P.s:175    .text.Motor_SetPercent:00000000 Motor_SetPercent
+     /tmp/cccFHr4P.s:232    .text.Motor_SetPercent:00000048 $d
+     /tmp/cccFHr4P.s:239    .text.Motor_SetAllUs:00000000 $t
+     /tmp/cccFHr4P.s:245    .text.Motor_SetAllUs:00000000 Motor_SetAllUs
+     /tmp/cccFHr4P.s:294    .text.Motor_Init:00000000 $t
+     /tmp/cccFHr4P.s:300    .text.Motor_Init:00000000 Motor_Init
+     /tmp/cccFHr4P.s:533    .text.Motor_Init:000000f4 $d
+     /tmp/cccFHr4P.s:544    .text.Motor_SetAllPercent:00000000 $t
+     /tmp/cccFHr4P.s:550    .text.Motor_SetAllPercent:00000000 Motor_SetAllPercent
+     /tmp/cccFHr4P.s:609    .text.Motor_Arm:00000000 $t
+     /tmp/cccFHr4P.s:615    .text.Motor_Arm:00000000 Motor_Arm
+     /tmp/cccFHr4P.s:632    .text.Motor_Arm:00000008 $d
+     /tmp/cccFHr4P.s:637    .text.Motor_Disarm:00000000 $t
+     /tmp/cccFHr4P.s:643    .text.Motor_Disarm:00000000 Motor_Disarm
+     /tmp/cccFHr4P.s:690    .text.Motor_Disarm:00000020 $d
+     /tmp/cccFHr4P.s:695    .text.Motor_IsArmed:00000000 $t
+     /tmp/cccFHr4P.s:701    .text.Motor_IsArmed:00000000 Motor_IsArmed
+     /tmp/cccFHr4P.s:716    .text.Motor_IsArmed:00000008 $d
+     /tmp/cccFHr4P.s:721    .rodata.motor_ch:00000000 $d
+     /tmp/cccFHr4P.s:733    .bss.armed:00000000 $d
+     /tmp/cccFHr4P.s:735    .bss.motor_tim:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_GPIO_Init
+HAL_TIM_PWM_Init
+Error_Handler
+HAL_TIM_PWM_Start
+HAL_TIM_PWM_ConfigChannel

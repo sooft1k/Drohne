@@ -1,0 +1,1214 @@
+ARM GAS  /tmp/ccL44l6j.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"control.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/control.c"
+  20              		.section	.text.Control_Init,"ax",%progbits
+  21              		.align	1
+  22              		.global	Control_Init
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	Control_Init:
+  28              	.LFB137:
+   1:Sensors/control.c **** #include "control.h"
+   2:Sensors/control.c **** #include <stdio.h>
+   3:Sensors/control.c **** 
+   4:Sensors/control.c **** PID_t pid_rate_roll;
+   5:Sensors/control.c **** PID_t pid_rate_pitch;
+   6:Sensors/control.c **** PID_t pid_rate_yaw;
+   7:Sensors/control.c **** 
+   8:Sensors/control.c **** PID_t pid_angle_roll;
+   9:Sensors/control.c **** PID_t pid_angle_pitch;
+  10:Sensors/control.c **** 
+  11:Sensors/control.c **** Setpoint_t setpoint = {0};
+  12:Sensors/control.c **** FlightMode_t flight_mode = MODE_ANGLE; /* Start im gutmuetigen Modus */
+  13:Sensors/control.c **** 
+  14:Sensors/control.c **** /* ---- Startwerte innerer Kreis (Drehrate) ----
+  15:Sensors/control.c ****  * Bewusst niedrig. Beim Abstimmen wird hochgetastet, nicht heruntergedreht. */
+  16:Sensors/control.c **** #define RATE_KP 0.8f
+  17:Sensors/control.c **** #define RATE_KI 0.0f /* zuletzt dazunehmen */
+  18:Sensors/control.c **** #define RATE_KD 0.0f /* nach Kp */
+  19:Sensors/control.c **** #define RATE_ILIM 50.0f
+  20:Sensors/control.c **** #define RATE_OUTLIM 400.0f
+  21:Sensors/control.c **** #define RATE_DLPF 0.85f
+  22:Sensors/control.c **** 
+  23:Sensors/control.c **** /* ---- Startwerte aeusserer Kreis (Winkel) ----
+  24:Sensors/control.c ****  * Braucht praktisch nur P. I fuehrt zu traegem Nachlaufen,
+  25:Sensors/control.c ****  * D ist ueberfluessig weil der innere Kreis schon daempft. */
+  26:Sensors/control.c **** #define ANGLE_KP 4.0f
+  27:Sensors/control.c **** #define ANGLE_KI 0.0f
+  28:Sensors/control.c **** #define ANGLE_KD 0.0f
+  29:Sensors/control.c **** #define ANGLE_ILIM 20.0f
+  30:Sensors/control.c **** #define ANGLE_OUTLIM 250.0f /* max. Soll-Drehrate in Grad/s */
+ARM GAS  /tmp/ccL44l6j.s 			page 2
+
+
+  31:Sensors/control.c **** #define ANGLE_DLPF 0.0f
+  32:Sensors/control.c **** 
+  33:Sensors/control.c **** /* Begrenzung der Neigung im Angle-Modus */
+  34:Sensors/control.c **** #define MAX_ANGLE 35.0f /* Grad */
+  35:Sensors/control.c **** 
+  36:Sensors/control.c **** void Control_Init(void)
+  37:Sensors/control.c **** {
+  29              		.loc 1 37 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33 0000 08B5     		push	{r3, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  36              		.cfi_offset 3, -8
+  37              		.cfi_offset 14, -4
+  38 0002 2DED068B 		vpush.64	{d8, d9, d10}
+  39              	.LCFI1:
+  40              		.cfi_def_cfa_offset 32
+  41              		.cfi_offset 80, -32
+  42              		.cfi_offset 81, -28
+  43              		.cfi_offset 82, -24
+  44              		.cfi_offset 83, -20
+  45              		.cfi_offset 84, -16
+  46              		.cfi_offset 85, -12
+  38:Sensors/control.c ****     PID_Init(&pid_rate_roll, RATE_KP, RATE_KI, RATE_KD,
+  47              		.loc 1 38 5 view .LVU1
+  48 0006 DFED339A 		vldr.32	s19, .L3
+  49 000a 9FED339A 		vldr.32	s18, .L3+4
+  50 000e DFED338A 		vldr.32	s17, .L3+8
+  51 0012 9FED338A 		vldr.32	s16, .L3+12
+  52 0016 9FED33AA 		vldr.32	s20, .L3+16
+  53 001a F0EE692A 		vmov.f32	s5, s19
+  54 001e B0EE492A 		vmov.f32	s4, s18
+  55 0022 F0EE681A 		vmov.f32	s3, s17
+  56 0026 B0EE481A 		vmov.f32	s2, s16
+  57 002a F0EE480A 		vmov.f32	s1, s16
+  58 002e B0EE4A0A 		vmov.f32	s0, s20
+  59 0032 2D48     		ldr	r0, .L3+20
+  60 0034 FFF7FEFF 		bl	PID_Init
+  61              	.LVL0:
+  39:Sensors/control.c ****              RATE_ILIM, RATE_OUTLIM, RATE_DLPF);
+  40:Sensors/control.c ****     PID_Init(&pid_rate_pitch, RATE_KP, RATE_KI, RATE_KD,
+  62              		.loc 1 40 5 view .LVU2
+  63 0038 F0EE692A 		vmov.f32	s5, s19
+  64 003c B0EE492A 		vmov.f32	s4, s18
+  65 0040 F0EE681A 		vmov.f32	s3, s17
+  66 0044 B0EE481A 		vmov.f32	s2, s16
+  67 0048 F0EE480A 		vmov.f32	s1, s16
+  68 004c B0EE4A0A 		vmov.f32	s0, s20
+  69 0050 2648     		ldr	r0, .L3+24
+  70 0052 FFF7FEFF 		bl	PID_Init
+  71              	.LVL1:
+  41:Sensors/control.c ****              RATE_ILIM, RATE_OUTLIM, RATE_DLPF);
+  42:Sensors/control.c ****     /* Yaw braucht mehr P und kein D */
+  43:Sensors/control.c ****     PID_Init(&pid_rate_yaw, 1.2f, RATE_KI, 0.0f,
+  72              		.loc 1 43 5 view .LVU3
+ARM GAS  /tmp/ccL44l6j.s 			page 3
+
+
+  73 0056 F0EE692A 		vmov.f32	s5, s19
+  74 005a B0EE492A 		vmov.f32	s4, s18
+  75 005e F0EE681A 		vmov.f32	s3, s17
+  76 0062 B0EE481A 		vmov.f32	s2, s16
+  77 0066 F0EE480A 		vmov.f32	s1, s16
+  78 006a 9FED210A 		vldr.32	s0, .L3+28
+  79 006e 2148     		ldr	r0, .L3+32
+  80 0070 FFF7FEFF 		bl	PID_Init
+  81              	.LVL2:
+  44:Sensors/control.c ****              RATE_ILIM, RATE_OUTLIM, RATE_DLPF);
+  45:Sensors/control.c **** 
+  46:Sensors/control.c ****     PID_Init(&pid_angle_roll, ANGLE_KP, ANGLE_KI, ANGLE_KD,
+  82              		.loc 1 46 5 view .LVU4
+  83 0074 DFED208A 		vldr.32	s17, .L3+36
+  84 0078 F0EE482A 		vmov.f32	s5, s16
+  85 007c B0EE682A 		vmov.f32	s4, s17
+  86 0080 F3EE041A 		vmov.f32	s3, #2.0e+1
+  87 0084 B0EE481A 		vmov.f32	s2, s16
+  88 0088 F0EE480A 		vmov.f32	s1, s16
+  89 008c B1EE000A 		vmov.f32	s0, #4.0e+0
+  90 0090 1A48     		ldr	r0, .L3+40
+  91 0092 FFF7FEFF 		bl	PID_Init
+  92              	.LVL3:
+  47:Sensors/control.c ****              ANGLE_ILIM, ANGLE_OUTLIM, ANGLE_DLPF);
+  48:Sensors/control.c ****     PID_Init(&pid_angle_pitch, ANGLE_KP, ANGLE_KI, ANGLE_KD,
+  93              		.loc 1 48 5 view .LVU5
+  94 0096 F0EE482A 		vmov.f32	s5, s16
+  95 009a B0EE682A 		vmov.f32	s4, s17
+  96 009e F3EE041A 		vmov.f32	s3, #2.0e+1
+  97 00a2 B0EE481A 		vmov.f32	s2, s16
+  98 00a6 F0EE480A 		vmov.f32	s1, s16
+  99 00aa B1EE000A 		vmov.f32	s0, #4.0e+0
+ 100 00ae 1448     		ldr	r0, .L3+44
+ 101 00b0 FFF7FEFF 		bl	PID_Init
+ 102              	.LVL4:
+  49:Sensors/control.c ****              ANGLE_ILIM, ANGLE_OUTLIM, ANGLE_DLPF);
+  50:Sensors/control.c **** 
+  51:Sensors/control.c ****     setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
+ 103              		.loc 1 51 5 view .LVU6
+ 104              		.loc 1 51 51 is_stmt 0 view .LVU7
+ 105 00b4 134B     		ldr	r3, .L3+48
+ 106 00b6 83ED028A 		vstr.32	s16, [r3, #8]
+ 107              		.loc 1 51 36 view .LVU8
+ 108 00ba 83ED018A 		vstr.32	s16, [r3, #4]
+ 109              		.loc 1 51 19 view .LVU9
+ 110 00be 83ED008A 		vstr.32	s16, [r3]
+  52:Sensors/control.c ****     setpoint.throttle = 0.0f;
+ 111              		.loc 1 52 5 is_stmt 1 view .LVU10
+ 112              		.loc 1 52 23 is_stmt 0 view .LVU11
+ 113 00c2 83ED038A 		vstr.32	s16, [r3, #12]
+  53:Sensors/control.c **** 
+  54:Sensors/control.c ****     flight_mode = MODE_ANGLE;
+ 114              		.loc 1 54 5 is_stmt 1 view .LVU12
+ 115              		.loc 1 54 17 is_stmt 0 view .LVU13
+ 116 00c6 104B     		ldr	r3, .L3+52
+ 117 00c8 0122     		movs	r2, #1
+ 118 00ca 1A70     		strb	r2, [r3]
+ARM GAS  /tmp/ccL44l6j.s 			page 4
+
+
+  55:Sensors/control.c **** }
+ 119              		.loc 1 55 1 view .LVU14
+ 120 00cc BDEC068B 		vldm	sp!, {d8-d10}
+ 121              	.LCFI2:
+ 122              		.cfi_restore 84
+ 123              		.cfi_restore 85
+ 124              		.cfi_restore 82
+ 125              		.cfi_restore 83
+ 126              		.cfi_restore 80
+ 127              		.cfi_restore 81
+ 128              		.cfi_def_cfa_offset 8
+ 129 00d0 08BD     		pop	{r3, pc}
+ 130              	.L4:
+ 131 00d2 00BF     		.align	2
+ 132              	.L3:
+ 133 00d4 9A99593F 		.word	1062836634
+ 134 00d8 0000C843 		.word	1137180672
+ 135 00dc 00004842 		.word	1112014848
+ 136 00e0 00000000 		.word	0
+ 137 00e4 CDCC4C3F 		.word	1061997773
+ 138 00e8 00000000 		.word	pid_rate_roll
+ 139 00ec 00000000 		.word	pid_rate_pitch
+ 140 00f0 9A99993F 		.word	1067030938
+ 141 00f4 00000000 		.word	pid_rate_yaw
+ 142 00f8 00007A43 		.word	1132068864
+ 143 00fc 00000000 		.word	pid_angle_roll
+ 144 0100 00000000 		.word	pid_angle_pitch
+ 145 0104 00000000 		.word	setpoint
+ 146 0108 00000000 		.word	flight_mode
+ 147              		.cfi_endproc
+ 148              	.LFE137:
+ 150              		.section	.text.Control_Reset,"ax",%progbits
+ 151              		.align	1
+ 152              		.global	Control_Reset
+ 153              		.syntax unified
+ 154              		.thumb
+ 155              		.thumb_func
+ 157              	Control_Reset:
+ 158              	.LFB138:
+  56:Sensors/control.c **** 
+  57:Sensors/control.c **** void Control_Reset(void)
+  58:Sensors/control.c **** {
+ 159              		.loc 1 58 1 is_stmt 1 view -0
+ 160              		.cfi_startproc
+ 161              		@ args = 0, pretend = 0, frame = 0
+ 162              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163 0000 08B5     		push	{r3, lr}
+ 164              	.LCFI3:
+ 165              		.cfi_def_cfa_offset 8
+ 166              		.cfi_offset 3, -8
+ 167              		.cfi_offset 14, -4
+  59:Sensors/control.c ****     PID_Reset(&pid_rate_roll);
+ 168              		.loc 1 59 5 view .LVU16
+ 169 0002 0848     		ldr	r0, .L7
+ 170 0004 FFF7FEFF 		bl	PID_Reset
+ 171              	.LVL5:
+  60:Sensors/control.c ****     PID_Reset(&pid_rate_pitch);
+ARM GAS  /tmp/ccL44l6j.s 			page 5
+
+
+ 172              		.loc 1 60 5 view .LVU17
+ 173 0008 0748     		ldr	r0, .L7+4
+ 174 000a FFF7FEFF 		bl	PID_Reset
+ 175              	.LVL6:
+  61:Sensors/control.c ****     PID_Reset(&pid_rate_yaw);
+ 176              		.loc 1 61 5 view .LVU18
+ 177 000e 0748     		ldr	r0, .L7+8
+ 178 0010 FFF7FEFF 		bl	PID_Reset
+ 179              	.LVL7:
+  62:Sensors/control.c ****     PID_Reset(&pid_angle_roll);
+ 180              		.loc 1 62 5 view .LVU19
+ 181 0014 0648     		ldr	r0, .L7+12
+ 182 0016 FFF7FEFF 		bl	PID_Reset
+ 183              	.LVL8:
+  63:Sensors/control.c ****     PID_Reset(&pid_angle_pitch);
+ 184              		.loc 1 63 5 view .LVU20
+ 185 001a 0648     		ldr	r0, .L7+16
+ 186 001c FFF7FEFF 		bl	PID_Reset
+ 187              	.LVL9:
+  64:Sensors/control.c **** }
+ 188              		.loc 1 64 1 is_stmt 0 view .LVU21
+ 189 0020 08BD     		pop	{r3, pc}
+ 190              	.L8:
+ 191 0022 00BF     		.align	2
+ 192              	.L7:
+ 193 0024 00000000 		.word	pid_rate_roll
+ 194 0028 00000000 		.word	pid_rate_pitch
+ 195 002c 00000000 		.word	pid_rate_yaw
+ 196 0030 00000000 		.word	pid_angle_roll
+ 197 0034 00000000 		.word	pid_angle_pitch
+ 198              		.cfi_endproc
+ 199              	.LFE138:
+ 201              		.section	.text.Control_SetMode,"ax",%progbits
+ 202              		.align	1
+ 203              		.global	Control_SetMode
+ 204              		.syntax unified
+ 205              		.thumb
+ 206              		.thumb_func
+ 208              	Control_SetMode:
+ 209              	.LVL10:
+ 210              	.LFB139:
+  65:Sensors/control.c **** 
+  66:Sensors/control.c **** void Control_SetMode(FlightMode_t mode)
+  67:Sensors/control.c **** {
+ 211              		.loc 1 67 1 is_stmt 1 view -0
+ 212              		.cfi_startproc
+ 213              		@ args = 0, pretend = 0, frame = 0
+ 214              		@ frame_needed = 0, uses_anonymous_args = 0
+ 215              		.loc 1 67 1 is_stmt 0 view .LVU23
+ 216 0000 08B5     		push	{r3, lr}
+ 217              	.LCFI4:
+ 218              		.cfi_def_cfa_offset 8
+ 219              		.cfi_offset 3, -8
+ 220              		.cfi_offset 14, -4
+  68:Sensors/control.c ****     if (mode != flight_mode)
+ 221              		.loc 1 68 5 is_stmt 1 view .LVU24
+ 222              		.loc 1 68 14 is_stmt 0 view .LVU25
+ARM GAS  /tmp/ccL44l6j.s 			page 6
+
+
+ 223 0002 054B     		ldr	r3, .L13
+ 224 0004 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 225              		.loc 1 68 8 view .LVU26
+ 226 0006 8342     		cmp	r3, r0
+ 227 0008 00D1     		bne	.L12
+ 228              	.LVL11:
+ 229              	.L9:
+  69:Sensors/control.c ****     {
+  70:Sensors/control.c ****         flight_mode = mode;
+  71:Sensors/control.c ****         Control_Reset(); /* Integratoren loeschen beim Umschalten */
+  72:Sensors/control.c ****     }
+  73:Sensors/control.c **** }
+ 230              		.loc 1 73 1 view .LVU27
+ 231 000a 08BD     		pop	{r3, pc}
+ 232              	.LVL12:
+ 233              	.L12:
+  70:Sensors/control.c ****         Control_Reset(); /* Integratoren loeschen beim Umschalten */
+ 234              		.loc 1 70 9 is_stmt 1 view .LVU28
+  70:Sensors/control.c ****         Control_Reset(); /* Integratoren loeschen beim Umschalten */
+ 235              		.loc 1 70 21 is_stmt 0 view .LVU29
+ 236 000c 024B     		ldr	r3, .L13
+ 237 000e 1870     		strb	r0, [r3]
+  71:Sensors/control.c ****     }
+ 238              		.loc 1 71 9 is_stmt 1 view .LVU30
+ 239 0010 FFF7FEFF 		bl	Control_Reset
+ 240              	.LVL13:
+ 241              		.loc 1 73 1 is_stmt 0 view .LVU31
+ 242 0014 F9E7     		b	.L9
+ 243              	.L14:
+ 244 0016 00BF     		.align	2
+ 245              	.L13:
+ 246 0018 00000000 		.word	flight_mode
+ 247              		.cfi_endproc
+ 248              	.LFE139:
+ 250              		.section	.text.Control_Update,"ax",%progbits
+ 251              		.align	1
+ 252              		.global	Control_Update
+ 253              		.syntax unified
+ 254              		.thumb
+ 255              		.thumb_func
+ 257              	Control_Update:
+ 258              	.LVL14:
+ 259              	.LFB140:
+  74:Sensors/control.c **** 
+  75:Sensors/control.c **** void Control_Update(MPU6050_Data_t *s, float dt,
+  76:Sensors/control.c ****                     float *out_roll, float *out_pitch, float *out_yaw)
+  77:Sensors/control.c **** {
+ 260              		.loc 1 77 1 is_stmt 1 view -0
+ 261              		.cfi_startproc
+ 262              		@ args = 0, pretend = 0, frame = 0
+ 263              		@ frame_needed = 0, uses_anonymous_args = 0
+ 264              		.loc 1 77 1 is_stmt 0 view .LVU33
+ 265 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 266              	.LCFI5:
+ 267              		.cfi_def_cfa_offset 24
+ 268              		.cfi_offset 4, -24
+ 269              		.cfi_offset 5, -20
+ARM GAS  /tmp/ccL44l6j.s 			page 7
+
+
+ 270              		.cfi_offset 6, -16
+ 271              		.cfi_offset 7, -12
+ 272              		.cfi_offset 8, -8
+ 273              		.cfi_offset 14, -4
+ 274 0004 2DED048B 		vpush.64	{d8, d9}
+ 275              	.LCFI6:
+ 276              		.cfi_def_cfa_offset 40
+ 277              		.cfi_offset 80, -40
+ 278              		.cfi_offset 81, -36
+ 279              		.cfi_offset 82, -32
+ 280              		.cfi_offset 83, -28
+ 281 0008 0446     		mov	r4, r0
+ 282 000a B0EE408A 		vmov.f32	s16, s0
+ 283 000e 8846     		mov	r8, r1
+ 284 0010 1746     		mov	r7, r2
+ 285 0012 1E46     		mov	r6, r3
+  78:Sensors/control.c ****     /* I-Anteil nur bei anliegendem Gas - sonst laeuft der Integrator
+  79:Sensors/control.c ****      * am Boden voll und die Drohne springt beim Armen weg. */
+  80:Sensors/control.c ****     uint8_t integrate = (setpoint.throttle > 10.0f) ? 1 : 0;
+ 286              		.loc 1 80 5 is_stmt 1 view .LVU34
+ 287              		.loc 1 80 34 is_stmt 0 view .LVU35
+ 288 0014 3F4B     		ldr	r3, .L26
+ 289              	.LVL15:
+ 290              		.loc 1 80 34 view .LVU36
+ 291 0016 93ED037A 		vldr.32	s14, [r3, #12]
+ 292              		.loc 1 80 57 view .LVU37
+ 293 001a F2EE047A 		vmov.f32	s15, #1.0e+1
+ 294 001e B4EEE77A 		vcmpe.f32	s14, s15
+ 295 0022 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 296 0026 CCBF     		ite	gt
+ 297 0028 0125     		movgt	r5, #1
+ 298 002a 0025     		movle	r5, #0
+ 299              	.LVL16:
+  81:Sensors/control.c **** 
+  82:Sensors/control.c ****     float rate_sp_roll;
+ 300              		.loc 1 82 5 is_stmt 1 view .LVU38
+  83:Sensors/control.c ****     float rate_sp_pitch;
+ 301              		.loc 1 83 5 view .LVU39
+  84:Sensors/control.c **** 
+  85:Sensors/control.c ****     if (flight_mode == MODE_ANGLE)
+ 302              		.loc 1 85 5 view .LVU40
+ 303              		.loc 1 85 21 is_stmt 0 view .LVU41
+ 304 002c 3A4B     		ldr	r3, .L26+4
+ 305 002e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 306              		.loc 1 85 8 view .LVU42
+ 307 0030 012B     		cmp	r3, #1
+ 308 0032 2DD0     		beq	.L25
+  86:Sensors/control.c ****     {
+  87:Sensors/control.c ****         /* --- Aeusserer Kreis: Winkelfehler -> Soll-Drehrate --- */
+  88:Sensors/control.c ****         float sp_roll = setpoint.roll;
+  89:Sensors/control.c ****         float sp_pitch = setpoint.pitch;
+  90:Sensors/control.c **** 
+  91:Sensors/control.c ****         if (sp_roll > MAX_ANGLE)
+  92:Sensors/control.c ****             sp_roll = MAX_ANGLE;
+  93:Sensors/control.c ****         if (sp_roll < -MAX_ANGLE)
+  94:Sensors/control.c ****             sp_roll = -MAX_ANGLE;
+  95:Sensors/control.c ****         if (sp_pitch > MAX_ANGLE)
+ARM GAS  /tmp/ccL44l6j.s 			page 8
+
+
+  96:Sensors/control.c ****             sp_pitch = MAX_ANGLE;
+  97:Sensors/control.c ****         if (sp_pitch < -MAX_ANGLE)
+  98:Sensors/control.c ****             sp_pitch = -MAX_ANGLE;
+  99:Sensors/control.c **** 
+ 100:Sensors/control.c ****         /* Istwert ist der gefilterte Winkel aus dem Komplementaerfilter */
+ 101:Sensors/control.c ****         rate_sp_roll = PID_Update(&pid_angle_roll, sp_roll, s->roll, dt, integrate);
+ 102:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+ 103:Sensors/control.c ****     }
+ 104:Sensors/control.c ****     else
+ 105:Sensors/control.c ****     {
+ 106:Sensors/control.c ****         /* Rate-Modus: Knueppel ist direkt die Soll-Drehrate */
+ 107:Sensors/control.c ****         rate_sp_roll = setpoint.roll;
+ 309              		.loc 1 107 9 is_stmt 1 view .LVU43
+ 310              		.loc 1 107 22 is_stmt 0 view .LVU44
+ 311 0034 374B     		ldr	r3, .L26
+ 312 0036 93ED009A 		vldr.32	s18, [r3]
+ 313              	.LVL17:
+ 108:Sensors/control.c ****         rate_sp_pitch = setpoint.pitch;
+ 314              		.loc 1 108 9 is_stmt 1 view .LVU45
+ 315              		.loc 1 108 23 is_stmt 0 view .LVU46
+ 316 003a D3ED018A 		vldr.32	s17, [r3, #4]
+ 317              	.LVL18:
+ 318              	.L19:
+ 109:Sensors/control.c ****     }
+ 110:Sensors/control.c **** 
+ 111:Sensors/control.c ****     /* --- Innerer Kreis: Drehratenfehler -> Stellgroesse ---
+ 112:Sensors/control.c ****      * Istwert ist immer der rohe Gyro. */
+ 113:Sensors/control.c ****     *out_roll = PID_Update(&pid_rate_roll, rate_sp_roll, s->gyro_x_dps, dt, integrate);
+ 319              		.loc 1 113 5 is_stmt 1 view .LVU47
+ 320              		.loc 1 113 17 is_stmt 0 view .LVU48
+ 321 003e 2946     		mov	r1, r5
+ 322 0040 B0EE481A 		vmov.f32	s2, s16
+ 323 0044 D4ED070A 		vldr.32	s1, [r4, #28]
+ 324 0048 B0EE490A 		vmov.f32	s0, s18
+ 325 004c 3348     		ldr	r0, .L26+8
+ 326 004e FFF7FEFF 		bl	PID_Update
+ 327              	.LVL19:
+ 328              		.loc 1 113 15 discriminator 1 view .LVU49
+ 329 0052 88ED000A 		vstr.32	s0, [r8]
+ 114:Sensors/control.c ****     *out_pitch = PID_Update(&pid_rate_pitch, rate_sp_pitch, s->gyro_y_dps, dt, integrate);
+ 330              		.loc 1 114 5 is_stmt 1 view .LVU50
+ 331              		.loc 1 114 18 is_stmt 0 view .LVU51
+ 332 0056 2946     		mov	r1, r5
+ 333 0058 B0EE481A 		vmov.f32	s2, s16
+ 334 005c D4ED080A 		vldr.32	s1, [r4, #32]
+ 335 0060 B0EE680A 		vmov.f32	s0, s17
+ 336 0064 2E48     		ldr	r0, .L26+12
+ 337 0066 FFF7FEFF 		bl	PID_Update
+ 338              	.LVL20:
+ 339              		.loc 1 114 16 discriminator 1 view .LVU52
+ 340 006a 87ED000A 		vstr.32	s0, [r7]
+ 115:Sensors/control.c **** 
+ 116:Sensors/control.c ****     /* Yaw laeuft immer im Rate-Modus */
+ 117:Sensors/control.c ****     *out_yaw = PID_Update(&pid_rate_yaw, setpoint.yaw, s->gyro_z_dps, dt, integrate);
+ 341              		.loc 1 117 5 is_stmt 1 view .LVU53
+ 342              		.loc 1 117 16 is_stmt 0 view .LVU54
+ 343 006e 2946     		mov	r1, r5
+ARM GAS  /tmp/ccL44l6j.s 			page 9
+
+
+ 344 0070 B0EE481A 		vmov.f32	s2, s16
+ 345 0074 D4ED090A 		vldr.32	s1, [r4, #36]
+ 346 0078 264B     		ldr	r3, .L26
+ 347 007a 93ED020A 		vldr.32	s0, [r3, #8]
+ 348 007e 2948     		ldr	r0, .L26+16
+ 349 0080 FFF7FEFF 		bl	PID_Update
+ 350              	.LVL21:
+ 351              		.loc 1 117 14 discriminator 1 view .LVU55
+ 352 0084 86ED000A 		vstr.32	s0, [r6]
+ 118:Sensors/control.c **** }
+ 353              		.loc 1 118 1 view .LVU56
+ 354 0088 BDEC048B 		vldm	sp!, {d8-d9}
+ 355              	.LCFI7:
+ 356              		.cfi_remember_state
+ 357              		.cfi_restore 82
+ 358              		.cfi_restore 83
+ 359              		.cfi_restore 80
+ 360              		.cfi_restore 81
+ 361              		.cfi_def_cfa_offset 24
+ 362              	.LVL22:
+ 363              		.loc 1 118 1 view .LVU57
+ 364 008c BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 365              	.LVL23:
+ 366              	.L25:
+ 367              	.LCFI8:
+ 368              		.cfi_restore_state
+ 369              	.LBB2:
+  88:Sensors/control.c ****         float sp_pitch = setpoint.pitch;
+ 370              		.loc 1 88 9 is_stmt 1 view .LVU58
+  88:Sensors/control.c ****         float sp_pitch = setpoint.pitch;
+ 371              		.loc 1 88 15 is_stmt 0 view .LVU59
+ 372 0090 204B     		ldr	r3, .L26
+ 373 0092 93ED000A 		vldr.32	s0, [r3]
+ 374              	.LVL24:
+  89:Sensors/control.c **** 
+ 375              		.loc 1 89 9 is_stmt 1 view .LVU60
+  89:Sensors/control.c **** 
+ 376              		.loc 1 89 15 is_stmt 0 view .LVU61
+ 377 0096 D3ED018A 		vldr.32	s17, [r3, #4]
+ 378              	.LVL25:
+  91:Sensors/control.c ****             sp_roll = MAX_ANGLE;
+ 379              		.loc 1 91 9 is_stmt 1 view .LVU62
+  91:Sensors/control.c ****             sp_roll = MAX_ANGLE;
+ 380              		.loc 1 91 12 is_stmt 0 view .LVU63
+ 381 009a DFED237A 		vldr.32	s15, .L26+20
+ 382 009e B4EEE70A 		vcmpe.f32	s0, s15
+ 383 00a2 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 384 00a6 09DC     		bgt	.L20
+  93:Sensors/control.c ****             sp_roll = -MAX_ANGLE;
+ 385              		.loc 1 93 9 is_stmt 1 view .LVU64
+  93:Sensors/control.c ****             sp_roll = -MAX_ANGLE;
+ 386              		.loc 1 93 12 is_stmt 0 view .LVU65
+ 387 00a8 DFED207A 		vldr.32	s15, .L26+24
+ 388 00ac B4EEE70A 		vcmpe.f32	s0, s15
+ 389 00b0 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 390 00b4 04D5     		bpl	.L17
+  94:Sensors/control.c ****         if (sp_pitch > MAX_ANGLE)
+ARM GAS  /tmp/ccL44l6j.s 			page 10
+
+
+ 391              		.loc 1 94 21 view .LVU66
+ 392 00b6 9FED1D0A 		vldr.32	s0, .L26+24
+ 393              	.LVL26:
+  94:Sensors/control.c ****         if (sp_pitch > MAX_ANGLE)
+ 394              		.loc 1 94 21 view .LVU67
+ 395 00ba 01E0     		b	.L17
+ 396              	.LVL27:
+ 397              	.L20:
+  92:Sensors/control.c ****         if (sp_roll < -MAX_ANGLE)
+ 398              		.loc 1 92 21 view .LVU68
+ 399 00bc 9FED1A0A 		vldr.32	s0, .L26+20
+ 400              	.LVL28:
+ 401              	.L17:
+  95:Sensors/control.c ****             sp_pitch = MAX_ANGLE;
+ 402              		.loc 1 95 9 is_stmt 1 view .LVU69
+  95:Sensors/control.c ****             sp_pitch = MAX_ANGLE;
+ 403              		.loc 1 95 12 is_stmt 0 view .LVU70
+ 404 00c0 DFED197A 		vldr.32	s15, .L26+20
+ 405 00c4 F4EEE78A 		vcmpe.f32	s17, s15
+ 406 00c8 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 407 00cc 09DC     		bgt	.L22
+  97:Sensors/control.c ****             sp_pitch = -MAX_ANGLE;
+ 408              		.loc 1 97 9 is_stmt 1 view .LVU71
+  97:Sensors/control.c ****             sp_pitch = -MAX_ANGLE;
+ 409              		.loc 1 97 12 is_stmt 0 view .LVU72
+ 410 00ce DFED177A 		vldr.32	s15, .L26+24
+ 411 00d2 F4EEE78A 		vcmpe.f32	s17, s15
+ 412 00d6 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 413 00da 04D5     		bpl	.L18
+  98:Sensors/control.c **** 
+ 414              		.loc 1 98 22 view .LVU73
+ 415 00dc DFED138A 		vldr.32	s17, .L26+24
+ 416              	.LVL29:
+  98:Sensors/control.c **** 
+ 417              		.loc 1 98 22 view .LVU74
+ 418 00e0 01E0     		b	.L18
+ 419              	.LVL30:
+ 420              	.L22:
+  96:Sensors/control.c ****         if (sp_pitch < -MAX_ANGLE)
+ 421              		.loc 1 96 22 view .LVU75
+ 422 00e2 DFED118A 		vldr.32	s17, .L26+20
+ 423              	.LVL31:
+ 424              	.L18:
+ 101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+ 425              		.loc 1 101 9 is_stmt 1 view .LVU76
+ 101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+ 426              		.loc 1 101 24 is_stmt 0 view .LVU77
+ 427 00e6 2946     		mov	r1, r5
+ 428              	.LVL32:
+ 101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+ 429              		.loc 1 101 24 view .LVU78
+ 430 00e8 B0EE481A 		vmov.f32	s2, s16
+ 431 00ec D4ED0D0A 		vldr.32	s1, [r4, #52]
+ 432 00f0 0F48     		ldr	r0, .L26+28
+ 433              	.LVL33:
+ 101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+ 434              		.loc 1 101 24 view .LVU79
+ARM GAS  /tmp/ccL44l6j.s 			page 11
+
+
+ 435 00f2 FFF7FEFF 		bl	PID_Update
+ 436              	.LVL34:
+ 101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+ 437              		.loc 1 101 24 view .LVU80
+ 438 00f6 B0EE409A 		vmov.f32	s18, s0
+ 439              	.LVL35:
+ 102:Sensors/control.c ****     }
+ 440              		.loc 1 102 9 is_stmt 1 view .LVU81
+ 102:Sensors/control.c ****     }
+ 441              		.loc 1 102 25 is_stmt 0 view .LVU82
+ 442 00fa 2946     		mov	r1, r5
+ 443 00fc B0EE481A 		vmov.f32	s2, s16
+ 444 0100 D4ED0E0A 		vldr.32	s1, [r4, #56]
+ 445 0104 B0EE680A 		vmov.f32	s0, s17
+ 446              	.LVL36:
+ 102:Sensors/control.c ****     }
+ 447              		.loc 1 102 25 view .LVU83
+ 448 0108 0A48     		ldr	r0, .L26+32
+ 449 010a FFF7FEFF 		bl	PID_Update
+ 450              	.LVL37:
+ 451 010e F0EE408A 		vmov.f32	s17, s0
+ 452              	.LVL38:
+ 102:Sensors/control.c ****     }
+ 453              		.loc 1 102 25 view .LVU84
+ 454              	.LBE2:
+ 455 0112 94E7     		b	.L19
+ 456              	.L27:
+ 457              		.align	2
+ 458              	.L26:
+ 459 0114 00000000 		.word	setpoint
+ 460 0118 00000000 		.word	flight_mode
+ 461 011c 00000000 		.word	pid_rate_roll
+ 462 0120 00000000 		.word	pid_rate_pitch
+ 463 0124 00000000 		.word	pid_rate_yaw
+ 464 0128 00000C42 		.word	1108082688
+ 465 012c 00000CC2 		.word	-1039400960
+ 466 0130 00000000 		.word	pid_angle_roll
+ 467 0134 00000000 		.word	pid_angle_pitch
+ 468              		.cfi_endproc
+ 469              	.LFE140:
+ 471              		.section	.text.Control_SetGain,"ax",%progbits
+ 472              		.align	1
+ 473              		.global	Control_SetGain
+ 474              		.syntax unified
+ 475              		.thumb
+ 476              		.thumb_func
+ 478              	Control_SetGain:
+ 479              	.LVL39:
+ 480              	.LFB141:
+ 119:Sensors/control.c **** 
+ 120:Sensors/control.c **** void Control_SetGain(char loop, char axis, char term, float value)
+ 121:Sensors/control.c **** {
+ 481              		.loc 1 121 1 is_stmt 1 view -0
+ 482              		.cfi_startproc
+ 483              		@ args = 0, pretend = 0, frame = 0
+ 484              		@ frame_needed = 0, uses_anonymous_args = 0
+ 485              		.loc 1 121 1 is_stmt 0 view .LVU86
+ARM GAS  /tmp/ccL44l6j.s 			page 12
+
+
+ 486 0000 08B5     		push	{r3, lr}
+ 487              	.LCFI9:
+ 488              		.cfi_def_cfa_offset 8
+ 489              		.cfi_offset 3, -8
+ 490              		.cfi_offset 14, -4
+ 122:Sensors/control.c ****     PID_t *pid = 0;
+ 491              		.loc 1 122 5 is_stmt 1 view .LVU87
+ 492              	.LVL40:
+ 123:Sensors/control.c **** 
+ 124:Sensors/control.c ****     if (loop == 'r') /* innerer Kreis */
+ 493              		.loc 1 124 5 view .LVU88
+ 494              		.loc 1 124 8 is_stmt 0 view .LVU89
+ 495 0002 7228     		cmp	r0, #114
+ 496 0004 07D0     		beq	.L40
+ 125:Sensors/control.c ****     {
+ 126:Sensors/control.c ****         if (axis == 'r')
+ 127:Sensors/control.c ****             pid = &pid_rate_roll;
+ 128:Sensors/control.c ****         else if (axis == 'p')
+ 129:Sensors/control.c ****             pid = &pid_rate_pitch;
+ 130:Sensors/control.c ****         else if (axis == 'y')
+ 131:Sensors/control.c ****             pid = &pid_rate_yaw;
+ 132:Sensors/control.c ****     }
+ 133:Sensors/control.c ****     else if (loop == 'a') /* aeusserer Kreis */
+ 497              		.loc 1 133 10 is_stmt 1 view .LVU90
+ 498              		.loc 1 133 13 is_stmt 0 view .LVU91
+ 499 0006 6128     		cmp	r0, #97
+ 500 0008 1FD1     		bne	.L28
+ 134:Sensors/control.c ****     {
+ 135:Sensors/control.c ****         if (axis == 'r')
+ 501              		.loc 1 135 9 is_stmt 1 view .LVU92
+ 502              		.loc 1 135 12 is_stmt 0 view .LVU93
+ 503 000a 7229     		cmp	r1, #114
+ 504 000c 0FD0     		beq	.L38
+ 136:Sensors/control.c ****             pid = &pid_angle_roll;
+ 137:Sensors/control.c ****         else if (axis == 'p')
+ 505              		.loc 1 137 14 is_stmt 1 view .LVU94
+ 506              		.loc 1 137 17 is_stmt 0 view .LVU95
+ 507 000e 7029     		cmp	r1, #112
+ 508 0010 1BD1     		bne	.L28
+ 138:Sensors/control.c ****             pid = &pid_angle_pitch;
+ 509              		.loc 1 138 17 view .LVU96
+ 510 0012 104B     		ldr	r3, .L43
+ 511 0014 0CE0     		b	.L30
+ 512              	.L40:
+ 126:Sensors/control.c ****             pid = &pid_rate_roll;
+ 513              		.loc 1 126 9 is_stmt 1 view .LVU97
+ 514 0016 7229     		cmp	r1, #114
+ 515 0018 05D0     		beq	.L35
+ 516 001a 7929     		cmp	r1, #121
+ 517 001c 05D0     		beq	.L36
+ 518 001e 7029     		cmp	r1, #112
+ 519 0020 13D1     		bne	.L28
+ 124:Sensors/control.c ****     {
+ 520              		.loc 1 124 8 is_stmt 0 view .LVU98
+ 521 0022 0D4B     		ldr	r3, .L43+4
+ 522 0024 04E0     		b	.L30
+ 523              	.L35:
+ARM GAS  /tmp/ccL44l6j.s 			page 13
+
+
+ 524 0026 0D4B     		ldr	r3, .L43+8
+ 525 0028 02E0     		b	.L30
+ 526              	.L36:
+ 527 002a 0D4B     		ldr	r3, .L43+12
+ 528 002c 00E0     		b	.L30
+ 529              	.L38:
+ 136:Sensors/control.c ****         else if (axis == 'p')
+ 530              		.loc 1 136 17 view .LVU99
+ 531 002e 0D4B     		ldr	r3, .L43+16
+ 532              	.L30:
+ 533              	.LVL41:
+ 139:Sensors/control.c ****         /* Yaw hat keinen Winkelregler */
+ 140:Sensors/control.c ****     }
+ 141:Sensors/control.c **** 
+ 142:Sensors/control.c ****     if (!pid)
+ 143:Sensors/control.c ****         return;
+ 144:Sensors/control.c **** 
+ 145:Sensors/control.c ****     if (term == 'p')
+ 534              		.loc 1 145 5 is_stmt 1 view .LVU100
+ 535              		.loc 1 145 8 is_stmt 0 view .LVU101
+ 536 0030 702A     		cmp	r2, #112
+ 537 0032 06D0     		beq	.L41
+ 146:Sensors/control.c ****         pid->kp = value;
+ 147:Sensors/control.c ****     else if (term == 'i')
+ 538              		.loc 1 147 10 is_stmt 1 view .LVU102
+ 539              		.loc 1 147 13 is_stmt 0 view .LVU103
+ 540 0034 692A     		cmp	r2, #105
+ 541 0036 09D0     		beq	.L42
+ 148:Sensors/control.c ****         pid->ki = value;
+ 149:Sensors/control.c ****     else if (term == 'd')
+ 542              		.loc 1 149 10 is_stmt 1 view .LVU104
+ 543              		.loc 1 149 13 is_stmt 0 view .LVU105
+ 544 0038 642A     		cmp	r2, #100
+ 545 003a 06D1     		bne	.L28
+ 150:Sensors/control.c ****         pid->kd = value;
+ 546              		.loc 1 150 9 is_stmt 1 view .LVU106
+ 547              		.loc 1 150 17 is_stmt 0 view .LVU107
+ 548 003c 83ED020A 		vstr.32	s0, [r3, #8]
+ 549 0040 01E0     		b	.L33
+ 550              	.L41:
+ 146:Sensors/control.c ****         pid->kp = value;
+ 551              		.loc 1 146 9 is_stmt 1 view .LVU108
+ 146:Sensors/control.c ****         pid->kp = value;
+ 552              		.loc 1 146 17 is_stmt 0 view .LVU109
+ 553 0042 83ED000A 		vstr.32	s0, [r3]
+ 554              	.L33:
+ 151:Sensors/control.c ****     else
+ 152:Sensors/control.c ****         return;
+ 153:Sensors/control.c **** 
+ 154:Sensors/control.c ****     Control_Reset();
+ 555              		.loc 1 154 5 is_stmt 1 view .LVU110
+ 556 0046 FFF7FEFF 		bl	Control_Reset
+ 557              	.LVL42:
+ 558              	.L28:
+ 155:Sensors/control.c **** }
+ 559              		.loc 1 155 1 is_stmt 0 view .LVU111
+ 560 004a 08BD     		pop	{r3, pc}
+ARM GAS  /tmp/ccL44l6j.s 			page 14
+
+
+ 561              	.LVL43:
+ 562              	.L42:
+ 148:Sensors/control.c ****     else if (term == 'd')
+ 563              		.loc 1 148 9 is_stmt 1 view .LVU112
+ 148:Sensors/control.c ****     else if (term == 'd')
+ 564              		.loc 1 148 17 is_stmt 0 view .LVU113
+ 565 004c 83ED010A 		vstr.32	s0, [r3, #4]
+ 566 0050 F9E7     		b	.L33
+ 567              	.L44:
+ 568 0052 00BF     		.align	2
+ 569              	.L43:
+ 570 0054 00000000 		.word	pid_angle_pitch
+ 571 0058 00000000 		.word	pid_rate_pitch
+ 572 005c 00000000 		.word	pid_rate_roll
+ 573 0060 00000000 		.word	pid_rate_yaw
+ 574 0064 00000000 		.word	pid_angle_roll
+ 575              		.cfi_endproc
+ 576              	.LFE141:
+ 578              		.section	.rodata.Control_PrintGains.str1.4,"aMS",%progbits,1
+ 579              		.align	2
+ 580              	.LC0:
+ 581 0000 414E474C 		.ascii	"ANGLE\000"
+ 581      4500
+ 582 0006 0000     		.align	2
+ 583              	.LC1:
+ 584 0008 52415445 		.ascii	"RATE\000"
+ 584      00
+ 585 000d 000000   		.align	2
+ 586              	.LC2:
+ 587 0010 3E3E204D 		.ascii	">> Modus: %s\015\012\000"
+ 587      6F647573 
+ 587      3A202573 
+ 587      0D0A00
+ 588 001f 00       		.align	2
+ 589              	.LC3:
+ 590 0020 3E3E2052 		.ascii	">> Rate (innen)\015\000"
+ 590      61746520 
+ 590      28696E6E 
+ 590      656E290D 
+ 590      00
+ 591              		.global	__aeabi_f2d
+ 592 0031 000000   		.align	2
+ 593              	.LC4:
+ 594 0034 20202072 		.ascii	"   roll : P=%.3f I=%.3f D=%.4f\015\012\000"
+ 594      6F6C6C20 
+ 594      3A20503D 
+ 594      252E3366 
+ 594      20493D25 
+ 595 0055 000000   		.align	2
+ 596              	.LC5:
+ 597 0058 20202070 		.ascii	"   pitch: P=%.3f I=%.3f D=%.4f\015\012\000"
+ 597      69746368 
+ 597      3A20503D 
+ 597      252E3366 
+ 597      20493D25 
+ 598 0079 000000   		.align	2
+ 599              	.LC6:
+ARM GAS  /tmp/ccL44l6j.s 			page 15
+
+
+ 600 007c 20202079 		.ascii	"   yaw  : P=%.3f I=%.3f D=%.4f\015\012\000"
+ 600      61772020 
+ 600      3A20503D 
+ 600      252E3366 
+ 600      20493D25 
+ 601 009d 000000   		.align	2
+ 602              	.LC7:
+ 603 00a0 3E3E2041 		.ascii	">> Angle (aussen)\015\000"
+ 603      6E676C65 
+ 603      20286175 
+ 603      7373656E 
+ 603      290D00
+ 604              		.section	.text.Control_PrintGains,"ax",%progbits
+ 605              		.align	1
+ 606              		.global	Control_PrintGains
+ 607              		.syntax unified
+ 608              		.thumb
+ 609              		.thumb_func
+ 611              	Control_PrintGains:
+ 612              	.LFB142:
+ 156:Sensors/control.c **** 
+ 157:Sensors/control.c **** void Control_PrintGains(void)
+ 158:Sensors/control.c **** {
+ 613              		.loc 1 158 1 is_stmt 1 view -0
+ 614              		.cfi_startproc
+ 615              		@ args = 0, pretend = 0, frame = 0
+ 616              		@ frame_needed = 0, uses_anonymous_args = 0
+ 617 0000 2DE9F043 		push	{r4, r5, r6, r7, r8, r9, lr}
+ 618              	.LCFI10:
+ 619              		.cfi_def_cfa_offset 28
+ 620              		.cfi_offset 4, -28
+ 621              		.cfi_offset 5, -24
+ 622              		.cfi_offset 6, -20
+ 623              		.cfi_offset 7, -16
+ 624              		.cfi_offset 8, -12
+ 625              		.cfi_offset 9, -8
+ 626              		.cfi_offset 14, -4
+ 627 0004 85B0     		sub	sp, sp, #20
+ 628              	.LCFI11:
+ 629              		.cfi_def_cfa_offset 48
+ 159:Sensors/control.c ****     printf(">> Modus: %s\r\n", (flight_mode == MODE_ANGLE) ? "ANGLE" : "RATE");
+ 630              		.loc 1 159 5 view .LVU115
+ 631              		.loc 1 159 45 is_stmt 0 view .LVU116
+ 632 0006 484B     		ldr	r3, .L50
+ 633 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 634              		.loc 1 159 5 view .LVU117
+ 635 000a 012B     		cmp	r3, #1
+ 636 000c 00F08A80 		beq	.L49
+ 637              		.loc 1 159 5 discriminator 2 view .LVU118
+ 638 0010 4649     		ldr	r1, .L50+4
+ 639              	.L46:
+ 640              		.loc 1 159 5 discriminator 4 view .LVU119
+ 641 0012 4748     		ldr	r0, .L50+8
+ 642 0014 FFF7FEFF 		bl	printf
+ 643              	.LVL44:
+ 160:Sensors/control.c ****     printf(">> Rate (innen)\r\n");
+ 644              		.loc 1 160 5 is_stmt 1 view .LVU120
+ARM GAS  /tmp/ccL44l6j.s 			page 16
+
+
+ 645 0018 4648     		ldr	r0, .L50+12
+ 646 001a FFF7FEFF 		bl	puts
+ 647              	.LVL45:
+ 161:Sensors/control.c ****     printf("   roll : P=%.3f I=%.3f D=%.4f\r\n",
+ 648              		.loc 1 161 5 view .LVU121
+ 162:Sensors/control.c ****            pid_rate_roll.kp, pid_rate_roll.ki, pid_rate_roll.kd);
+ 649              		.loc 1 162 25 is_stmt 0 view .LVU122
+ 650 001e 464B     		ldr	r3, .L50+16
+ 651              		.loc 1 162 43 view .LVU123
+ 652 0020 5E68     		ldr	r6, [r3, #4]	@ float
+ 653              		.loc 1 162 61 view .LVU124
+ 654 0022 D3F80880 		ldr	r8, [r3, #8]	@ float
+ 161:Sensors/control.c ****     printf("   roll : P=%.3f I=%.3f D=%.4f\r\n",
+ 655              		.loc 1 161 5 view .LVU125
+ 656 0026 1868     		ldr	r0, [r3]	@ float
+ 657 0028 FFF7FEFF 		bl	__aeabi_f2d
+ 658              	.LVL46:
+ 659 002c 0446     		mov	r4, r0
+ 660 002e 0D46     		mov	r5, r1
+ 661 0030 424F     		ldr	r7, .L50+20
+ 662 0032 4046     		mov	r0, r8	@ float
+ 663 0034 FFF7FEFF 		bl	__aeabi_f2d
+ 664              	.LVL47:
+ 665 0038 CDE90201 		strd	r0, [sp, #8]
+ 666 003c 3046     		mov	r0, r6	@ float
+ 667 003e FFF7FEFF 		bl	__aeabi_f2d
+ 668              	.LVL48:
+ 669 0042 CDE90001 		strd	r0, [sp]
+ 670 0046 2246     		mov	r2, r4
+ 671 0048 2B46     		mov	r3, r5
+ 672 004a 3846     		mov	r0, r7
+ 673 004c FFF7FEFF 		bl	printf
+ 674              	.LVL49:
+ 163:Sensors/control.c ****     printf("   pitch: P=%.3f I=%.3f D=%.4f\r\n",
+ 675              		.loc 1 163 5 is_stmt 1 view .LVU126
+ 164:Sensors/control.c ****            pid_rate_pitch.kp, pid_rate_pitch.ki, pid_rate_pitch.kd);
+ 676              		.loc 1 164 26 is_stmt 0 view .LVU127
+ 677 0050 3B4B     		ldr	r3, .L50+24
+ 678              		.loc 1 164 45 view .LVU128
+ 679 0052 D3F80480 		ldr	r8, [r3, #4]	@ float
+ 680              		.loc 1 164 64 view .LVU129
+ 681 0056 D3F80890 		ldr	r9, [r3, #8]	@ float
+ 163:Sensors/control.c ****     printf("   pitch: P=%.3f I=%.3f D=%.4f\r\n",
+ 682              		.loc 1 163 5 view .LVU130
+ 683 005a 1868     		ldr	r0, [r3]	@ float
+ 684 005c FFF7FEFF 		bl	__aeabi_f2d
+ 685              	.LVL50:
+ 686 0060 0446     		mov	r4, r0
+ 687 0062 0D46     		mov	r5, r1
+ 688 0064 374E     		ldr	r6, .L50+28
+ 689 0066 4846     		mov	r0, r9	@ float
+ 690 0068 FFF7FEFF 		bl	__aeabi_f2d
+ 691              	.LVL51:
+ 692 006c CDE90201 		strd	r0, [sp, #8]
+ 693 0070 4046     		mov	r0, r8	@ float
+ 694 0072 FFF7FEFF 		bl	__aeabi_f2d
+ 695              	.LVL52:
+ARM GAS  /tmp/ccL44l6j.s 			page 17
+
+
+ 696 0076 CDE90001 		strd	r0, [sp]
+ 697 007a 2246     		mov	r2, r4
+ 698 007c 2B46     		mov	r3, r5
+ 699 007e 3046     		mov	r0, r6
+ 700 0080 FFF7FEFF 		bl	printf
+ 701              	.LVL53:
+ 165:Sensors/control.c ****     printf("   yaw  : P=%.3f I=%.3f D=%.4f\r\n",
+ 702              		.loc 1 165 5 is_stmt 1 view .LVU131
+ 166:Sensors/control.c ****            pid_rate_yaw.kp, pid_rate_yaw.ki, pid_rate_yaw.kd);
+ 703              		.loc 1 166 24 is_stmt 0 view .LVU132
+ 704 0084 304B     		ldr	r3, .L50+32
+ 705              		.loc 1 166 41 view .LVU133
+ 706 0086 D3F80480 		ldr	r8, [r3, #4]	@ float
+ 707              		.loc 1 166 58 view .LVU134
+ 708 008a D3F80890 		ldr	r9, [r3, #8]	@ float
+ 165:Sensors/control.c ****     printf("   yaw  : P=%.3f I=%.3f D=%.4f\r\n",
+ 709              		.loc 1 165 5 view .LVU135
+ 710 008e 1868     		ldr	r0, [r3]	@ float
+ 711 0090 FFF7FEFF 		bl	__aeabi_f2d
+ 712              	.LVL54:
+ 713 0094 0446     		mov	r4, r0
+ 714 0096 0D46     		mov	r5, r1
+ 715 0098 4846     		mov	r0, r9	@ float
+ 716 009a FFF7FEFF 		bl	__aeabi_f2d
+ 717              	.LVL55:
+ 718 009e CDE90201 		strd	r0, [sp, #8]
+ 719 00a2 4046     		mov	r0, r8	@ float
+ 720 00a4 FFF7FEFF 		bl	__aeabi_f2d
+ 721              	.LVL56:
+ 722 00a8 CDE90001 		strd	r0, [sp]
+ 723 00ac 2246     		mov	r2, r4
+ 724 00ae 2B46     		mov	r3, r5
+ 725 00b0 2648     		ldr	r0, .L50+36
+ 726 00b2 FFF7FEFF 		bl	printf
+ 727              	.LVL57:
+ 167:Sensors/control.c ****     printf(">> Angle (aussen)\r\n");
+ 728              		.loc 1 167 5 is_stmt 1 view .LVU136
+ 729 00b6 2648     		ldr	r0, .L50+40
+ 730 00b8 FFF7FEFF 		bl	puts
+ 731              	.LVL58:
+ 168:Sensors/control.c ****     printf("   roll : P=%.3f I=%.3f D=%.4f\r\n",
+ 732              		.loc 1 168 5 view .LVU137
+ 169:Sensors/control.c ****            pid_angle_roll.kp, pid_angle_roll.ki, pid_angle_roll.kd);
+ 733              		.loc 1 169 26 is_stmt 0 view .LVU138
+ 734 00bc 254B     		ldr	r3, .L50+44
+ 735              		.loc 1 169 45 view .LVU139
+ 736 00be D3F80480 		ldr	r8, [r3, #4]	@ float
+ 737              		.loc 1 169 64 view .LVU140
+ 738 00c2 D3F80890 		ldr	r9, [r3, #8]	@ float
+ 168:Sensors/control.c ****     printf("   roll : P=%.3f I=%.3f D=%.4f\r\n",
+ 739              		.loc 1 168 5 view .LVU141
+ 740 00c6 1868     		ldr	r0, [r3]	@ float
+ 741 00c8 FFF7FEFF 		bl	__aeabi_f2d
+ 742              	.LVL59:
+ 743 00cc 0446     		mov	r4, r0
+ 744 00ce 0D46     		mov	r5, r1
+ 745 00d0 4846     		mov	r0, r9	@ float
+ARM GAS  /tmp/ccL44l6j.s 			page 18
+
+
+ 746 00d2 FFF7FEFF 		bl	__aeabi_f2d
+ 747              	.LVL60:
+ 748 00d6 CDE90201 		strd	r0, [sp, #8]
+ 749 00da 4046     		mov	r0, r8	@ float
+ 750 00dc FFF7FEFF 		bl	__aeabi_f2d
+ 751              	.LVL61:
+ 752 00e0 CDE90001 		strd	r0, [sp]
+ 753 00e4 2246     		mov	r2, r4
+ 754 00e6 2B46     		mov	r3, r5
+ 755 00e8 3846     		mov	r0, r7
+ 756 00ea FFF7FEFF 		bl	printf
+ 757              	.LVL62:
+ 170:Sensors/control.c ****     printf("   pitch: P=%.3f I=%.3f D=%.4f\r\n",
+ 758              		.loc 1 170 5 is_stmt 1 view .LVU142
+ 171:Sensors/control.c ****            pid_angle_pitch.kp, pid_angle_pitch.ki, pid_angle_pitch.kd);
+ 759              		.loc 1 171 27 is_stmt 0 view .LVU143
+ 760 00ee 1A4B     		ldr	r3, .L50+48
+ 761              		.loc 1 171 47 view .LVU144
+ 762 00f0 5F68     		ldr	r7, [r3, #4]	@ float
+ 763              		.loc 1 171 67 view .LVU145
+ 764 00f2 D3F80880 		ldr	r8, [r3, #8]	@ float
+ 170:Sensors/control.c ****     printf("   pitch: P=%.3f I=%.3f D=%.4f\r\n",
+ 765              		.loc 1 170 5 view .LVU146
+ 766 00f6 1868     		ldr	r0, [r3]	@ float
+ 767 00f8 FFF7FEFF 		bl	__aeabi_f2d
+ 768              	.LVL63:
+ 769 00fc 0446     		mov	r4, r0
+ 770 00fe 0D46     		mov	r5, r1
+ 771 0100 4046     		mov	r0, r8	@ float
+ 772 0102 FFF7FEFF 		bl	__aeabi_f2d
+ 773              	.LVL64:
+ 774 0106 CDE90201 		strd	r0, [sp, #8]
+ 775 010a 3846     		mov	r0, r7	@ float
+ 776 010c FFF7FEFF 		bl	__aeabi_f2d
+ 777              	.LVL65:
+ 778 0110 CDE90001 		strd	r0, [sp]
+ 779 0114 2246     		mov	r2, r4
+ 780 0116 2B46     		mov	r3, r5
+ 781 0118 3046     		mov	r0, r6
+ 782 011a FFF7FEFF 		bl	printf
+ 783              	.LVL66:
+ 172:Sensors/control.c **** }...
+ 784              		.loc 1 172 1 view .LVU147
+ 785 011e 05B0     		add	sp, sp, #20
+ 786              	.LCFI12:
+ 787              		.cfi_remember_state
+ 788              		.cfi_def_cfa_offset 28
+ 789              		@ sp needed
+ 790 0120 BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 791              	.L49:
+ 792              	.LCFI13:
+ 793              		.cfi_restore_state
+ 159:Sensors/control.c ****     printf(">> Modus: %s\r\n", (flight_mode == MODE_ANGLE) ? "ANGLE" : "RATE");
+ 794              		.loc 1 159 5 discriminator 1 view .LVU148
+ 795 0124 0D49     		ldr	r1, .L50+52
+ 796 0126 74E7     		b	.L46
+ 797              	.L51:
+ARM GAS  /tmp/ccL44l6j.s 			page 19
+
+
+ 798              		.align	2
+ 799              	.L50:
+ 800 0128 00000000 		.word	flight_mode
+ 801 012c 08000000 		.word	.LC1
+ 802 0130 10000000 		.word	.LC2
+ 803 0134 20000000 		.word	.LC3
+ 804 0138 00000000 		.word	pid_rate_roll
+ 805 013c 34000000 		.word	.LC4
+ 806 0140 00000000 		.word	pid_rate_pitch
+ 807 0144 58000000 		.word	.LC5
+ 808 0148 00000000 		.word	pid_rate_yaw
+ 809 014c 7C000000 		.word	.LC6
+ 810 0150 A0000000 		.word	.LC7
+ 811 0154 00000000 		.word	pid_angle_roll
+ 812 0158 00000000 		.word	pid_angle_pitch
+ 813 015c 00000000 		.word	.LC0
+ 814              		.cfi_endproc
+ 815              	.LFE142:
+ 817              		.global	flight_mode
+ 818              		.section	.data.flight_mode,"aw"
+ 821              	flight_mode:
+ 822 0000 01       		.byte	1
+ 823              		.global	setpoint
+ 824              		.section	.bss.setpoint,"aw",%nobits
+ 825              		.align	2
+ 828              	setpoint:
+ 829 0000 00000000 		.space	16
+ 829      00000000 
+ 829      00000000 
+ 829      00000000 
+ 830              		.global	pid_angle_pitch
+ 831              		.section	.bss.pid_angle_pitch,"aw",%nobits
+ 832              		.align	2
+ 835              	pid_angle_pitch:
+ 836 0000 00000000 		.space	36
+ 836      00000000 
+ 836      00000000 
+ 836      00000000 
+ 836      00000000 
+ 837              		.global	pid_angle_roll
+ 838              		.section	.bss.pid_angle_roll,"aw",%nobits
+ 839              		.align	2
+ 842              	pid_angle_roll:
+ 843 0000 00000000 		.space	36
+ 843      00000000 
+ 843      00000000 
+ 843      00000000 
+ 843      00000000 
+ 844              		.global	pid_rate_yaw
+ 845              		.section	.bss.pid_rate_yaw,"aw",%nobits
+ 846              		.align	2
+ 849              	pid_rate_yaw:
+ 850 0000 00000000 		.space	36
+ 850      00000000 
+ 850      00000000 
+ 850      00000000 
+ 850      00000000 
+ARM GAS  /tmp/ccL44l6j.s 			page 20
+
+
+ 851              		.global	pid_rate_pitch
+ 852              		.section	.bss.pid_rate_pitch,"aw",%nobits
+ 853              		.align	2
+ 856              	pid_rate_pitch:
+ 857 0000 00000000 		.space	36
+ 857      00000000 
+ 857      00000000 
+ 857      00000000 
+ 857      00000000 
+ 858              		.global	pid_rate_roll
+ 859              		.section	.bss.pid_rate_roll,"aw",%nobits
+ 860              		.align	2
+ 863              	pid_rate_roll:
+ 864 0000 00000000 		.space	36
+ 864      00000000 
+ 864      00000000 
+ 864      00000000 
+ 864      00000000 
+ 865              		.text
+ 866              	.Letext0:
+ 867              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 868              		.file 3 "Sensors/pid.h"
+ 869              		.file 4 "Sensors/mpu6050.h"
+ 870              		.file 5 "Sensors/control.h"
+ 871              		.file 6 "/usr/include/newlib/stdio.h"
+ 872              		.file 7 "<built-in>"
+ARM GAS  /tmp/ccL44l6j.s 			page 21
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 control.c
+     /tmp/ccL44l6j.s:21     .text.Control_Init:00000000 $t
+     /tmp/ccL44l6j.s:27     .text.Control_Init:00000000 Control_Init
+     /tmp/ccL44l6j.s:133    .text.Control_Init:000000d4 $d
+     /tmp/ccL44l6j.s:863    .bss.pid_rate_roll:00000000 pid_rate_roll
+     /tmp/ccL44l6j.s:856    .bss.pid_rate_pitch:00000000 pid_rate_pitch
+     /tmp/ccL44l6j.s:849    .bss.pid_rate_yaw:00000000 pid_rate_yaw
+     /tmp/ccL44l6j.s:842    .bss.pid_angle_roll:00000000 pid_angle_roll
+     /tmp/ccL44l6j.s:835    .bss.pid_angle_pitch:00000000 pid_angle_pitch
+     /tmp/ccL44l6j.s:828    .bss.setpoint:00000000 setpoint
+     /tmp/ccL44l6j.s:821    .data.flight_mode:00000000 flight_mode
+     /tmp/ccL44l6j.s:151    .text.Control_Reset:00000000 $t
+     /tmp/ccL44l6j.s:157    .text.Control_Reset:00000000 Control_Reset
+     /tmp/ccL44l6j.s:193    .text.Control_Reset:00000024 $d
+     /tmp/ccL44l6j.s:202    .text.Control_SetMode:00000000 $t
+     /tmp/ccL44l6j.s:208    .text.Control_SetMode:00000000 Control_SetMode
+     /tmp/ccL44l6j.s:246    .text.Control_SetMode:00000018 $d
+     /tmp/ccL44l6j.s:251    .text.Control_Update:00000000 $t
+     /tmp/ccL44l6j.s:257    .text.Control_Update:00000000 Control_Update
+     /tmp/ccL44l6j.s:459    .text.Control_Update:00000114 $d
+     /tmp/ccL44l6j.s:472    .text.Control_SetGain:00000000 $t
+     /tmp/ccL44l6j.s:478    .text.Control_SetGain:00000000 Control_SetGain
+     /tmp/ccL44l6j.s:570    .text.Control_SetGain:00000054 $d
+     /tmp/ccL44l6j.s:579    .rodata.Control_PrintGains.str1.4:00000000 $d
+     /tmp/ccL44l6j.s:605    .text.Control_PrintGains:00000000 $t
+     /tmp/ccL44l6j.s:611    .text.Control_PrintGains:00000000 Control_PrintGains
+     /tmp/ccL44l6j.s:800    .text.Control_PrintGains:00000128 $d
+     /tmp/ccL44l6j.s:825    .bss.setpoint:00000000 $d
+     /tmp/ccL44l6j.s:832    .bss.pid_angle_pitch:00000000 $d
+     /tmp/ccL44l6j.s:839    .bss.pid_angle_roll:00000000 $d
+     /tmp/ccL44l6j.s:846    .bss.pid_rate_yaw:00000000 $d
+     /tmp/ccL44l6j.s:853    .bss.pid_rate_pitch:00000000 $d
+     /tmp/ccL44l6j.s:860    .bss.pid_rate_roll:00000000 $d
+
+UNDEFINED SYMBOLS
+PID_Init
+PID_Reset
+PID_Update
+__aeabi_f2d
+printf
+puts

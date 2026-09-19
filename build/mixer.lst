@@ -1,0 +1,565 @@
+ARM GAS  /tmp/ccqrQdY8.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"mixer.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/mixer.c"
+  20              		.section	.text.Mixer_Update,"ax",%progbits
+  21              		.align	1
+  22              		.global	Mixer_Update
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	Mixer_Update:
+  28              	.LVL0:
+  29              	.LFB134:
+   1:Sensors/mixer.c **** #include "mixer.h"
+   2:Sensors/mixer.c **** #include "motor.h"
+   3:Sensors/mixer.c **** 
+   4:Sensors/mixer.c **** static float out[4] = {0}; /* zuletzt berechnete Werte in Prozent */
+   5:Sensors/mixer.c **** 
+   6:Sensors/mixer.c **** void Mixer_Update(float throttle, float roll, float pitch, float yaw)
+   7:Sensors/mixer.c **** {
+  30              		.loc 1 7 1 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		.loc 1 7 1 is_stmt 0 view .LVU1
+  35 0000 10B5     		push	{r4, lr}
+  36              	.LCFI0:
+  37              		.cfi_def_cfa_offset 8
+  38              		.cfi_offset 4, -8
+  39              		.cfi_offset 14, -4
+   8:Sensors/mixer.c ****     /* Reglerausgaben kommen in einer eigenen Skala (out_limit 400).
+   9:Sensors/mixer.c ****      * Umrechnen auf Prozent: 400 entspricht 100 % Stellbereich. */
+  10:Sensors/mixer.c ****     const float SCALE = 100.0f / 400.0f;
+  40              		.loc 1 10 5 is_stmt 1 view .LVU2
+  41              	.LVL1:
+  11:Sensors/mixer.c **** 
+  12:Sensors/mixer.c ****     float r = roll * SCALE;
+  42              		.loc 1 12 5 view .LVU3
+  43              		.loc 1 12 11 is_stmt 0 view .LVU4
+  44 0002 F5EE007A 		vmov.f32	s15, #2.5e-1
+  45 0006 60EEA70A 		vmul.f32	s1, s1, s15
+  46              	.LVL2:
+ARM GAS  /tmp/ccqrQdY8.s 			page 2
+
+
+  13:Sensors/mixer.c ****     float p = pitch * SCALE;
+  47              		.loc 1 13 5 is_stmt 1 view .LVU5
+  48              		.loc 1 13 11 is_stmt 0 view .LVU6
+  49 000a 21EE271A 		vmul.f32	s2, s2, s15
+  50              	.LVL3:
+  14:Sensors/mixer.c ****     float y = yaw * SCALE;
+  51              		.loc 1 14 5 is_stmt 1 view .LVU7
+  52              		.loc 1 14 11 is_stmt 0 view .LVU8
+  53 000e 61EEA71A 		vmul.f32	s3, s3, s15
+  54              	.LVL4:
+  15:Sensors/mixer.c **** 
+  16:Sensors/mixer.c ****     /* --- Mischung ---
+  17:Sensors/mixer.c ****      * Vorzeichen ergeben sich aus Position und Drehrichtung.
+  18:Sensors/mixer.c ****      * Roll positiv  = nach rechts kippen -> rechte Motoren runter, linke hoch
+  19:Sensors/mixer.c ****      * Pitch positiv = Nase hoch          -> vordere runter, hintere hoch
+  20:Sensors/mixer.c ****      * Yaw positiv   = nach rechts drehen -> CW-Paar runter, CCW-Paar hoch */
+  21:Sensors/mixer.c ****     out[0] = throttle - r - p + y; /* M1 hinten rechts, CW  */
+  55              		.loc 1 21 5 is_stmt 1 view .LVU9
+  56              		.loc 1 21 23 is_stmt 0 view .LVU10
+  57 0012 30EE607A 		vsub.f32	s14, s0, s1
+  58              		.loc 1 21 27 view .LVU11
+  59 0016 77EE417A 		vsub.f32	s15, s14, s2
+  60              		.loc 1 21 31 view .LVU12
+  61 001a 77EEA17A 		vadd.f32	s15, s15, s3
+  62              		.loc 1 21 12 view .LVU13
+  63 001e 5D4B     		ldr	r3, .L37
+  64 0020 C3ED007A 		vstr.32	s15, [r3]
+  22:Sensors/mixer.c ****     out[1] = throttle - r + p - y; /* M2 vorne  rechts, CCW */
+  65              		.loc 1 22 5 is_stmt 1 view .LVU14
+  66              		.loc 1 22 27 is_stmt 0 view .LVU15
+  67 0024 37EE017A 		vadd.f32	s14, s14, s2
+  68              		.loc 1 22 31 view .LVU16
+  69 0028 37EE617A 		vsub.f32	s14, s14, s3
+  70              		.loc 1 22 12 view .LVU17
+  71 002c 83ED017A 		vstr.32	s14, [r3, #4]
+  23:Sensors/mixer.c ****     out[2] = throttle + r - p - y; /* M3 hinten links,  CCW */
+  72              		.loc 1 23 5 is_stmt 1 view .LVU18
+  73              		.loc 1 23 23 is_stmt 0 view .LVU19
+  74 0030 70EE800A 		vadd.f32	s1, s1, s0
+  75              	.LVL5:
+  76              		.loc 1 23 27 view .LVU20
+  77 0034 30EEC17A 		vsub.f32	s14, s1, s2
+  78              		.loc 1 23 31 view .LVU21
+  79 0038 37EE617A 		vsub.f32	s14, s14, s3
+  80              		.loc 1 23 12 view .LVU22
+  81 003c 83ED027A 		vstr.32	s14, [r3, #8]
+  24:Sensors/mixer.c ****     out[3] = throttle + r + p + y; /* M4 vorne  links,  CW  */
+  82              		.loc 1 24 5 is_stmt 1 view .LVU23
+  83              		.loc 1 24 27 is_stmt 0 view .LVU24
+  84 0040 70EE810A 		vadd.f32	s1, s1, s2
+  85              		.loc 1 24 31 view .LVU25
+  86 0044 70EEA10A 		vadd.f32	s1, s1, s3
+  87              		.loc 1 24 12 view .LVU26
+  88 0048 C3ED030A 		vstr.32	s1, [r3, #12]
+  25:Sensors/mixer.c **** 
+  26:Sensors/mixer.c ****     /* --- Sättigung behandeln ---
+  27:Sensors/mixer.c ****      * Wenn ein Motor ueber 100 % laeuft, gehen die Korrekturen verloren
+ARM GAS  /tmp/ccqrQdY8.s 			page 3
+
+
+  28:Sensors/mixer.c ****      * und die Drohne kippt. Deshalb alle vier gemeinsam absenken,
+  29:Sensors/mixer.c ****      * statt einzeln abzuschneiden. Das erhaelt die Differenzen. */
+  30:Sensors/mixer.c ****     float max = out[0];
+  89              		.loc 1 30 5 is_stmt 1 view .LVU27
+  90              	.LVL6:
+  31:Sensors/mixer.c ****     float min = out[0];
+  91              		.loc 1 31 5 view .LVU28
+  32:Sensors/mixer.c ****     for (int i = 1; i < 4; i++)
+  92              		.loc 1 32 5 view .LVU29
+  93              	.LBB2:
+  94              		.loc 1 32 10 view .LVU30
+  95              		.loc 1 32 10 is_stmt 0 view .LVU31
+  96              	.LBE2:
+  31:Sensors/mixer.c ****     float min = out[0];
+  97              		.loc 1 31 11 view .LVU32
+  98 004c F0EE676A 		vmov.f32	s13, s15
+  99              	.LBB3:
+ 100              		.loc 1 32 14 view .LVU33
+ 101 0050 0123     		movs	r3, #1
+ 102              		.loc 1 32 5 view .LVU34
+ 103 0052 00E0     		b	.L2
+ 104              	.LVL7:
+ 105              	.L4:
+ 106              		.loc 1 32 29 is_stmt 1 discriminator 2 view .LVU35
+ 107 0054 0133     		adds	r3, r3, #1
+ 108              	.LVL8:
+ 109              	.L2:
+ 110              		.loc 1 32 23 discriminator 1 view .LVU36
+ 111 0056 032B     		cmp	r3, #3
+ 112 0058 13DC     		bgt	.L32
+  33:Sensors/mixer.c ****     {
+  34:Sensors/mixer.c ****         if (out[i] > max)
+ 113              		.loc 1 34 9 view .LVU37
+ 114              		.loc 1 34 16 is_stmt 0 view .LVU38
+ 115 005a 4E4A     		ldr	r2, .L37
+ 116 005c 02EB8302 		add	r2, r2, r3, lsl #2
+ 117 0060 92ED007A 		vldr.32	s14, [r2]
+ 118              		.loc 1 34 12 view .LVU39
+ 119 0064 B4EEE77A 		vcmpe.f32	s14, s15
+ 120 0068 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 121 006c 01DD     		ble	.L3
+  35:Sensors/mixer.c ****             max = out[i];
+ 122              		.loc 1 35 17 view .LVU40
+ 123 006e F0EE477A 		vmov.f32	s15, s14
+ 124              	.LVL9:
+ 125              	.L3:
+  36:Sensors/mixer.c ****         if (out[i] < min)
+ 126              		.loc 1 36 9 is_stmt 1 view .LVU41
+ 127              		.loc 1 36 12 is_stmt 0 view .LVU42
+ 128 0072 B4EEE67A 		vcmpe.f32	s14, s13
+ 129 0076 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 130 007a EBD5     		bpl	.L4
+  37:Sensors/mixer.c ****             min = out[i];
+ 131              		.loc 1 37 17 view .LVU43
+ 132 007c F0EE476A 		vmov.f32	s13, s14
+ 133              	.LVL10:
+ 134              		.loc 1 37 17 view .LVU44
+ARM GAS  /tmp/ccqrQdY8.s 			page 4
+
+
+ 135 0080 E8E7     		b	.L4
+ 136              	.LVL11:
+ 137              	.L32:
+ 138              		.loc 1 37 17 view .LVU45
+ 139              	.LBE3:
+  38:Sensors/mixer.c ****     }
+  39:Sensors/mixer.c **** 
+  40:Sensors/mixer.c ****     if (max > 100.0f)
+ 140              		.loc 1 40 5 is_stmt 1 view .LVU46
+ 141              		.loc 1 40 8 is_stmt 0 view .LVU47
+ 142 0082 9FED457A 		vldr.32	s14, .L37+4
+ 143 0086 F4EEC77A 		vcmpe.f32	s15, s14
+ 144 008a F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 145 008e 11DD     		ble	.L6
+ 146              	.LBB4:
+  41:Sensors/mixer.c ****     {
+  42:Sensors/mixer.c ****         float ueber = max - 100.0f;
+ 147              		.loc 1 42 9 is_stmt 1 view .LVU48
+ 148              		.loc 1 42 15 is_stmt 0 view .LVU49
+ 149 0090 77EEC77A 		vsub.f32	s15, s15, s14
+ 150              	.LVL12:
+  43:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 151              		.loc 1 43 9 is_stmt 1 view .LVU50
+ 152              	.LBB5:
+ 153              		.loc 1 43 14 view .LVU51
+ 154              		.loc 1 43 18 is_stmt 0 view .LVU52
+ 155 0094 0022     		movs	r2, #0
+ 156              	.LVL13:
+ 157              	.L8:
+ 158              		.loc 1 43 27 is_stmt 1 discriminator 1 view .LVU53
+ 159 0096 032A     		cmp	r2, #3
+ 160 0098 0ADC     		bgt	.L33
+  44:Sensors/mixer.c ****             out[i] -= ueber;
+ 161              		.loc 1 44 13 view .LVU54
+ 162              		.loc 1 44 16 is_stmt 0 view .LVU55
+ 163 009a 3E4B     		ldr	r3, .L37
+ 164 009c 03EB8203 		add	r3, r3, r2, lsl #2
+ 165 00a0 93ED007A 		vldr.32	s14, [r3]
+ 166              		.loc 1 44 20 view .LVU56
+ 167 00a4 37EE677A 		vsub.f32	s14, s14, s15
+ 168 00a8 83ED007A 		vstr.32	s14, [r3]
+  43:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 169              		.loc 1 43 33 is_stmt 1 discriminator 3 view .LVU57
+ 170 00ac 0132     		adds	r2, r2, #1
+ 171              	.LVL14:
+  43:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 172              		.loc 1 43 33 is_stmt 0 discriminator 3 view .LVU58
+ 173 00ae F2E7     		b	.L8
+ 174              	.L33:
+  43:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 175              		.loc 1 43 33 discriminator 3 view .LVU59
+ 176              	.LBE5:
+  45:Sensors/mixer.c ****         min -= ueber;
+ 177              		.loc 1 45 9 is_stmt 1 view .LVU60
+ 178              		.loc 1 45 13 is_stmt 0 view .LVU61
+ 179 00b0 76EEE76A 		vsub.f32	s13, s13, s15
+ 180              	.LVL15:
+ARM GAS  /tmp/ccqrQdY8.s 			page 5
+
+
+ 181              	.L6:
+ 182              		.loc 1 45 13 view .LVU62
+ 183              	.LBE4:
+  46:Sensors/mixer.c ****     }
+  47:Sensors/mixer.c **** 
+  48:Sensors/mixer.c ****     /* Nach unten: Leerlauf halten, damit kein Motor stehenbleibt.
+  49:Sensors/mixer.c ****      * Nur anheben wenn ueberhaupt Gas anliegt. */
+  50:Sensors/mixer.c ****     if (throttle > 1.0f && min < MIXER_IDLE_PERCENT)
+ 184              		.loc 1 50 5 is_stmt 1 view .LVU63
+ 185              		.loc 1 50 8 is_stmt 0 view .LVU64
+ 186 00b4 F7EE007A 		vmov.f32	s15, #1.0e+0
+ 187 00b8 B4EEE70A 		vcmpe.f32	s0, s15
+ 188 00bc F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 189 00c0 06DD     		ble	.L10
+ 190              		.loc 1 50 25 discriminator 1 view .LVU65
+ 191 00c2 F2EE0E7A 		vmov.f32	s15, #1.5e+1
+ 192 00c6 F4EEE76A 		vcmpe.f32	s13, s15
+ 193 00ca F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 194 00ce 01D4     		bmi	.L12
+ 195              	.L10:
+ 196              	.LBB6:
+ 197              	.LBB7:
+  51:Sensors/mixer.c ****     {
+  52:Sensors/mixer.c ****         float unter = MIXER_IDLE_PERCENT - min;
+  53:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 198              		.loc 1 53 18 view .LVU66
+ 199 00d0 0023     		movs	r3, #0
+ 200 00d2 1DE0     		b	.L13
+ 201              	.L12:
+ 202              	.LBE7:
+  52:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 203              		.loc 1 52 9 is_stmt 1 view .LVU67
+  52:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+ 204              		.loc 1 52 15 is_stmt 0 view .LVU68
+ 205 00d4 B2EE0E7A 		vmov.f32	s14, #1.5e+1
+ 206 00d8 37EE667A 		vsub.f32	s14, s14, s13
+ 207              	.LVL16:
+ 208              		.loc 1 53 9 is_stmt 1 view .LVU69
+ 209              	.LBB8:
+ 210              		.loc 1 53 14 view .LVU70
+ 211              		.loc 1 53 18 is_stmt 0 view .LVU71
+ 212 00dc 0022     		movs	r2, #0
+ 213              		.loc 1 53 9 view .LVU72
+ 214 00de 09E0     		b	.L14
+ 215              	.LVL17:
+ 216              	.L15:
+  54:Sensors/mixer.c ****             out[i] += unter;
+ 217              		.loc 1 54 13 is_stmt 1 view .LVU73
+ 218              		.loc 1 54 16 is_stmt 0 view .LVU74
+ 219 00e0 2C4B     		ldr	r3, .L37
+ 220 00e2 03EB8203 		add	r3, r3, r2, lsl #2
+ 221 00e6 D3ED007A 		vldr.32	s15, [r3]
+ 222              		.loc 1 54 20 view .LVU75
+ 223 00ea 77EE877A 		vadd.f32	s15, s15, s14
+ 224 00ee C3ED007A 		vstr.32	s15, [r3]
+  53:Sensors/mixer.c ****             out[i] += unter;
+ 225              		.loc 1 53 33 is_stmt 1 discriminator 3 view .LVU76
+ARM GAS  /tmp/ccqrQdY8.s 			page 6
+
+
+ 226 00f2 0132     		adds	r2, r2, #1
+ 227              	.LVL18:
+ 228              	.L14:
+  53:Sensors/mixer.c ****             out[i] += unter;
+ 229              		.loc 1 53 27 discriminator 1 view .LVU77
+ 230 00f4 032A     		cmp	r2, #3
+ 231 00f6 F3DD     		ble	.L15
+ 232 00f8 EAE7     		b	.L10
+ 233              	.LVL19:
+ 234              	.L16:
+  53:Sensors/mixer.c ****             out[i] += unter;
+ 235              		.loc 1 53 27 is_stmt 0 discriminator 1 view .LVU78
+ 236              	.LBE8:
+ 237              	.LBE6:
+ 238              	.LBB9:
+  55:Sensors/mixer.c ****     }
+  56:Sensors/mixer.c **** 
+  57:Sensors/mixer.c ****     /* Harte Begrenzung als letzte Absicherung */
+  58:Sensors/mixer.c ****     for (int i = 0; i < 4; i++)
+  59:Sensors/mixer.c ****     {
+  60:Sensors/mixer.c ****         if (out[i] > 100.0f)
+  61:Sensors/mixer.c ****             out[i] = 100.0f;
+  62:Sensors/mixer.c ****         if (out[i] < 0.0f)
+ 239              		.loc 1 62 9 is_stmt 1 view .LVU79
+ 240              		.loc 1 62 16 is_stmt 0 view .LVU80
+ 241 00fa 264A     		ldr	r2, .L37
+ 242 00fc 02EB8302 		add	r2, r2, r3, lsl #2
+ 243 0100 D2ED007A 		vldr.32	s15, [r2]
+ 244              		.loc 1 62 12 view .LVU81
+ 245 0104 F5EEC07A 		vcmpe.f32	s15, #0
+ 246 0108 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 247 010c 14D4     		bmi	.L34
+ 248              	.L18:
+  58:Sensors/mixer.c ****     {
+ 249              		.loc 1 58 29 is_stmt 1 discriminator 2 view .LVU82
+ 250 010e 0133     		adds	r3, r3, #1
+ 251              	.LVL20:
+ 252              	.L13:
+  58:Sensors/mixer.c ****     {
+ 253              		.loc 1 58 23 discriminator 1 view .LVU83
+ 254 0110 032B     		cmp	r3, #3
+ 255 0112 17DC     		bgt	.L35
+  60:Sensors/mixer.c ****             out[i] = 100.0f;
+ 256              		.loc 1 60 9 view .LVU84
+  60:Sensors/mixer.c ****             out[i] = 100.0f;
+ 257              		.loc 1 60 16 is_stmt 0 view .LVU85
+ 258 0114 1F4A     		ldr	r2, .L37
+ 259 0116 02EB8302 		add	r2, r2, r3, lsl #2
+ 260 011a 92ED007A 		vldr.32	s14, [r2]
+  60:Sensors/mixer.c ****             out[i] = 100.0f;
+ 261              		.loc 1 60 12 view .LVU86
+ 262 011e DFED1E7A 		vldr.32	s15, .L37+4
+ 263 0122 B4EEE77A 		vcmpe.f32	s14, s15
+ 264 0126 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 265 012a E6DD     		ble	.L16
+  61:Sensors/mixer.c ****         if (out[i] < 0.0f)
+ 266              		.loc 1 61 13 is_stmt 1 view .LVU87
+ARM GAS  /tmp/ccqrQdY8.s 			page 7
+
+
+  61:Sensors/mixer.c ****         if (out[i] < 0.0f)
+ 267              		.loc 1 61 20 is_stmt 0 view .LVU88
+ 268 012c 194A     		ldr	r2, .L37
+ 269 012e 02EB8302 		add	r2, r2, r3, lsl #2
+ 270 0132 C2ED007A 		vstr.32	s15, [r2]
+ 271 0136 E0E7     		b	.L16
+ 272              	.L34:
+  63:Sensors/mixer.c ****             out[i] = 0.0f;
+ 273              		.loc 1 63 13 is_stmt 1 view .LVU89
+ 274              		.loc 1 63 20 is_stmt 0 view .LVU90
+ 275 0138 164A     		ldr	r2, .L37
+ 276 013a 02EB8302 		add	r2, r2, r3, lsl #2
+ 277 013e 0021     		movs	r1, #0
+ 278 0140 1160     		str	r1, [r2]	@ float
+ 279 0142 E4E7     		b	.L18
+ 280              	.L35:
+ 281              		.loc 1 63 20 view .LVU91
+ 282              	.LBE9:
+  64:Sensors/mixer.c ****     }
+  65:Sensors/mixer.c **** 
+  66:Sensors/mixer.c ****     /* Bei Gas auf Null alles aus - sonst drehen die Motoren am Boden mit */
+  67:Sensors/mixer.c ****     if (throttle < 1.0f)
+ 283              		.loc 1 67 5 is_stmt 1 view .LVU92
+ 284              		.loc 1 67 8 is_stmt 0 view .LVU93
+ 285 0144 F7EE007A 		vmov.f32	s15, #1.0e+0
+ 286 0148 B4EEE70A 		vcmpe.f32	s0, s15
+ 287 014c F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 288 0150 1ED4     		bmi	.L36
+ 289              	.LVL21:
+ 290              	.L22:
+  68:Sensors/mixer.c ****     {
+  69:Sensors/mixer.c ****         for (int i = 0; i < 4; i++)
+  70:Sensors/mixer.c ****             out[i] = 0.0f;
+  71:Sensors/mixer.c ****     }
+  72:Sensors/mixer.c **** 
+  73:Sensors/mixer.c ****     Motor_SetPercent(1, out[0]);
+ 291              		.loc 1 73 5 is_stmt 1 view .LVU94
+ 292 0152 104C     		ldr	r4, .L37
+ 293 0154 94ED000A 		vldr.32	s0, [r4]
+ 294              	.LVL22:
+ 295              		.loc 1 73 5 is_stmt 0 view .LVU95
+ 296 0158 0120     		movs	r0, #1
+ 297 015a FFF7FEFF 		bl	Motor_SetPercent
+ 298              	.LVL23:
+  74:Sensors/mixer.c ****     Motor_SetPercent(2, out[1]);
+ 299              		.loc 1 74 5 is_stmt 1 view .LVU96
+ 300 015e 94ED010A 		vldr.32	s0, [r4, #4]
+ 301 0162 0220     		movs	r0, #2
+ 302 0164 FFF7FEFF 		bl	Motor_SetPercent
+ 303              	.LVL24:
+  75:Sensors/mixer.c ****     Motor_SetPercent(3, out[2]);
+ 304              		.loc 1 75 5 view .LVU97
+ 305 0168 94ED020A 		vldr.32	s0, [r4, #8]
+ 306 016c 0320     		movs	r0, #3
+ 307 016e FFF7FEFF 		bl	Motor_SetPercent
+ 308              	.LVL25:
+  76:Sensors/mixer.c ****     Motor_SetPercent(4, out[3]);
+ARM GAS  /tmp/ccqrQdY8.s 			page 8
+
+
+ 309              		.loc 1 76 5 view .LVU98
+ 310 0172 94ED030A 		vldr.32	s0, [r4, #12]
+ 311 0176 0420     		movs	r0, #4
+ 312 0178 FFF7FEFF 		bl	Motor_SetPercent
+ 313              	.LVL26:
+  77:Sensors/mixer.c **** }
+ 314              		.loc 1 77 1 is_stmt 0 view .LVU99
+ 315 017c 10BD     		pop	{r4, pc}
+ 316              	.LVL27:
+ 317              	.L23:
+ 318              	.LBB10:
+  70:Sensors/mixer.c ****     }
+ 319              		.loc 1 70 13 is_stmt 1 view .LVU100
+  70:Sensors/mixer.c ****     }
+ 320              		.loc 1 70 20 is_stmt 0 view .LVU101
+ 321 017e 054A     		ldr	r2, .L37
+ 322 0180 02EB8302 		add	r2, r2, r3, lsl #2
+ 323 0184 0021     		movs	r1, #0
+ 324 0186 1160     		str	r1, [r2]	@ float
+  69:Sensors/mixer.c ****             out[i] = 0.0f;
+ 325              		.loc 1 69 33 is_stmt 1 discriminator 3 view .LVU102
+ 326 0188 0133     		adds	r3, r3, #1
+ 327              	.LVL28:
+ 328              	.L21:
+  69:Sensors/mixer.c ****             out[i] = 0.0f;
+ 329              		.loc 1 69 27 discriminator 1 view .LVU103
+ 330 018a 032B     		cmp	r3, #3
+ 331 018c F7DD     		ble	.L23
+ 332 018e E0E7     		b	.L22
+ 333              	.LVL29:
+ 334              	.L36:
+  69:Sensors/mixer.c ****             out[i] = 0.0f;
+ 335              		.loc 1 69 18 is_stmt 0 view .LVU104
+ 336 0190 0023     		movs	r3, #0
+ 337              	.LVL30:
+  69:Sensors/mixer.c ****             out[i] = 0.0f;
+ 338              		.loc 1 69 18 view .LVU105
+ 339 0192 FAE7     		b	.L21
+ 340              	.L38:
+ 341              		.align	2
+ 342              	.L37:
+ 343 0194 00000000 		.word	out
+ 344 0198 0000C842 		.word	1120403456
+ 345              	.LBE10:
+ 346              		.cfi_endproc
+ 347              	.LFE134:
+ 349              		.section	.text.Mixer_GetOutputs,"ax",%progbits
+ 350              		.align	1
+ 351              		.global	Mixer_GetOutputs
+ 352              		.syntax unified
+ 353              		.thumb
+ 354              		.thumb_func
+ 356              	Mixer_GetOutputs:
+ 357              	.LVL31:
+ 358              	.LFB135:
+  78:Sensors/mixer.c **** 
+  79:Sensors/mixer.c **** void Mixer_GetOutputs(float *m1, float *m2, float *m3, float *m4)
+ARM GAS  /tmp/ccqrQdY8.s 			page 9
+
+
+  80:Sensors/mixer.c **** {
+ 359              		.loc 1 80 1 is_stmt 1 view -0
+ 360              		.cfi_startproc
+ 361              		@ args = 0, pretend = 0, frame = 0
+ 362              		@ frame_needed = 0, uses_anonymous_args = 0
+ 363              		@ link register save eliminated.
+ 364              		.loc 1 80 1 is_stmt 0 view .LVU107
+ 365 0000 10B4     		push	{r4}
+ 366              	.LCFI1:
+ 367              		.cfi_def_cfa_offset 4
+ 368              		.cfi_offset 4, -4
+  81:Sensors/mixer.c ****     *m1 = out[0];
+ 369              		.loc 1 81 5 is_stmt 1 view .LVU108
+ 370              		.loc 1 81 14 is_stmt 0 view .LVU109
+ 371 0002 074C     		ldr	r4, .L41
+ 372 0004 D4F800C0 		ldr	ip, [r4]	@ float
+ 373              		.loc 1 81 9 view .LVU110
+ 374 0008 C0F800C0 		str	ip, [r0]	@ float
+  82:Sensors/mixer.c ****     *m2 = out[1];
+ 375              		.loc 1 82 5 is_stmt 1 view .LVU111
+ 376              		.loc 1 82 14 is_stmt 0 view .LVU112
+ 377 000c 6068     		ldr	r0, [r4, #4]	@ float
+ 378              	.LVL32:
+ 379              		.loc 1 82 9 view .LVU113
+ 380 000e 0860     		str	r0, [r1]	@ float
+  83:Sensors/mixer.c ****     *m3 = out[2];
+ 381              		.loc 1 83 5 is_stmt 1 view .LVU114
+ 382              		.loc 1 83 14 is_stmt 0 view .LVU115
+ 383 0010 A168     		ldr	r1, [r4, #8]	@ float
+ 384              	.LVL33:
+ 385              		.loc 1 83 9 view .LVU116
+ 386 0012 1160     		str	r1, [r2]	@ float
+  84:Sensors/mixer.c ****     *m4 = out[3];
+ 387              		.loc 1 84 5 is_stmt 1 view .LVU117
+ 388              		.loc 1 84 14 is_stmt 0 view .LVU118
+ 389 0014 E268     		ldr	r2, [r4, #12]	@ float
+ 390              	.LVL34:
+ 391              		.loc 1 84 9 view .LVU119
+ 392 0016 1A60     		str	r2, [r3]	@ float
+  85:Sensors/mixer.c **** }...
+ 393              		.loc 1 85 1 view .LVU120
+ 394 0018 5DF8044B 		ldr	r4, [sp], #4
+ 395              	.LCFI2:
+ 396              		.cfi_restore 4
+ 397              		.cfi_def_cfa_offset 0
+ 398 001c 7047     		bx	lr
+ 399              	.L42:
+ 400 001e 00BF     		.align	2
+ 401              	.L41:
+ 402 0020 00000000 		.word	out
+ 403              		.cfi_endproc
+ 404              	.LFE135:
+ 406              		.section	.bss.out,"aw",%nobits
+ 407              		.align	2
+ 410              	out:
+ 411 0000 00000000 		.space	16
+ 411      00000000 
+ARM GAS  /tmp/ccqrQdY8.s 			page 10
+
+
+ 411      00000000 
+ 411      00000000 
+ 412              		.text
+ 413              	.Letext0:
+ 414              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 415              		.file 3 "Sensors/motor.h"
+ARM GAS  /tmp/ccqrQdY8.s 			page 11
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 mixer.c
+     /tmp/ccqrQdY8.s:21     .text.Mixer_Update:00000000 $t
+     /tmp/ccqrQdY8.s:27     .text.Mixer_Update:00000000 Mixer_Update
+     /tmp/ccqrQdY8.s:343    .text.Mixer_Update:00000194 $d
+     /tmp/ccqrQdY8.s:410    .bss.out:00000000 out
+     /tmp/ccqrQdY8.s:350    .text.Mixer_GetOutputs:00000000 $t
+     /tmp/ccqrQdY8.s:356    .text.Mixer_GetOutputs:00000000 Mixer_GetOutputs
+     /tmp/ccqrQdY8.s:402    .text.Mixer_GetOutputs:00000020 $d
+     /tmp/ccqrQdY8.s:407    .bss.out:00000000 $d
+
+UNDEFINED SYMBOLS
+Motor_SetPercent

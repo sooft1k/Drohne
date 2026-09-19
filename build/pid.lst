@@ -1,0 +1,345 @@
+ARM GAS  /tmp/ccBP8DaU.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"pid.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/pid.c"
+  20              		.section	.text.PID_Reset,"ax",%progbits
+  21              		.align	1
+  22              		.global	PID_Reset
+  23              		.syntax unified
+  24              		.thumb
+  25              		.thumb_func
+  27              	PID_Reset:
+  28              	.LVL0:
+  29              	.LFB1:
+   1:Sensors/pid.c **** #include "pid.h"
+   2:Sensors/pid.c **** 
+   3:Sensors/pid.c **** void PID_Init(PID_t *pid, float kp, float ki, float kd,
+   4:Sensors/pid.c ****               float i_limit, float out_limit, float d_lpf_alpha)
+   5:Sensors/pid.c **** {
+   6:Sensors/pid.c ****     pid->kp = kp;
+   7:Sensors/pid.c ****     pid->ki = ki;
+   8:Sensors/pid.c ****     pid->kd = kd;
+   9:Sensors/pid.c **** 
+  10:Sensors/pid.c ****     pid->i_limit = i_limit;
+  11:Sensors/pid.c ****     pid->out_limit = out_limit;
+  12:Sensors/pid.c ****     pid->d_lpf_alpha = d_lpf_alpha;
+  13:Sensors/pid.c **** 
+  14:Sensors/pid.c ****     PID_Reset(pid);
+  15:Sensors/pid.c **** }
+  16:Sensors/pid.c **** 
+  17:Sensors/pid.c **** void PID_Reset(PID_t *pid)
+  18:Sensors/pid.c **** {
+  30              		.loc 1 18 1 view -0
+  31              		.cfi_startproc
+  32              		@ args = 0, pretend = 0, frame = 0
+  33              		@ frame_needed = 0, uses_anonymous_args = 0
+  34              		@ link register save eliminated.
+  19:Sensors/pid.c ****     pid->integral = 0.0f;
+  35              		.loc 1 19 5 view .LVU1
+  36              		.loc 1 19 19 is_stmt 0 view .LVU2
+  37 0000 0023     		movs	r3, #0
+  38 0002 C360     		str	r3, [r0, #12]	@ float
+  20:Sensors/pid.c ****     pid->prev_measured = 0.0f;
+ARM GAS  /tmp/ccBP8DaU.s 			page 2
+
+
+  39              		.loc 1 20 5 is_stmt 1 view .LVU3
+  40              		.loc 1 20 24 is_stmt 0 view .LVU4
+  41 0004 0361     		str	r3, [r0, #16]	@ float
+  21:Sensors/pid.c ****     pid->d_filtered = 0.0f;
+  42              		.loc 1 21 5 is_stmt 1 view .LVU5
+  43              		.loc 1 21 21 is_stmt 0 view .LVU6
+  44 0006 4361     		str	r3, [r0, #20]	@ float
+  22:Sensors/pid.c **** }
+  45              		.loc 1 22 1 view .LVU7
+  46 0008 7047     		bx	lr
+  47              		.cfi_endproc
+  48              	.LFE1:
+  50              		.section	.text.PID_Init,"ax",%progbits
+  51              		.align	1
+  52              		.global	PID_Init
+  53              		.syntax unified
+  54              		.thumb
+  55              		.thumb_func
+  57              	PID_Init:
+  58              	.LVL1:
+  59              	.LFB0:
+   5:Sensors/pid.c ****     pid->kp = kp;
+  60              		.loc 1 5 1 is_stmt 1 view -0
+  61              		.cfi_startproc
+  62              		@ args = 0, pretend = 0, frame = 0
+  63              		@ frame_needed = 0, uses_anonymous_args = 0
+   5:Sensors/pid.c ****     pid->kp = kp;
+  64              		.loc 1 5 1 is_stmt 0 view .LVU9
+  65 0000 08B5     		push	{r3, lr}
+  66              	.LCFI0:
+  67              		.cfi_def_cfa_offset 8
+  68              		.cfi_offset 3, -8
+  69              		.cfi_offset 14, -4
+   6:Sensors/pid.c ****     pid->ki = ki;
+  70              		.loc 1 6 5 is_stmt 1 view .LVU10
+   6:Sensors/pid.c ****     pid->ki = ki;
+  71              		.loc 1 6 13 is_stmt 0 view .LVU11
+  72 0002 80ED000A 		vstr.32	s0, [r0]
+   7:Sensors/pid.c ****     pid->kd = kd;
+  73              		.loc 1 7 5 is_stmt 1 view .LVU12
+   7:Sensors/pid.c ****     pid->kd = kd;
+  74              		.loc 1 7 13 is_stmt 0 view .LVU13
+  75 0006 C0ED010A 		vstr.32	s1, [r0, #4]
+   8:Sensors/pid.c **** 
+  76              		.loc 1 8 5 is_stmt 1 view .LVU14
+   8:Sensors/pid.c **** 
+  77              		.loc 1 8 13 is_stmt 0 view .LVU15
+  78 000a 80ED021A 		vstr.32	s2, [r0, #8]
+  10:Sensors/pid.c ****     pid->out_limit = out_limit;
+  79              		.loc 1 10 5 is_stmt 1 view .LVU16
+  10:Sensors/pid.c ****     pid->out_limit = out_limit;
+  80              		.loc 1 10 18 is_stmt 0 view .LVU17
+  81 000e C0ED061A 		vstr.32	s3, [r0, #24]
+  11:Sensors/pid.c ****     pid->d_lpf_alpha = d_lpf_alpha;
+  82              		.loc 1 11 5 is_stmt 1 view .LVU18
+  11:Sensors/pid.c ****     pid->d_lpf_alpha = d_lpf_alpha;
+  83              		.loc 1 11 20 is_stmt 0 view .LVU19
+ARM GAS  /tmp/ccBP8DaU.s 			page 3
+
+
+  84 0012 80ED072A 		vstr.32	s4, [r0, #28]
+  12:Sensors/pid.c **** 
+  85              		.loc 1 12 5 is_stmt 1 view .LVU20
+  12:Sensors/pid.c **** 
+  86              		.loc 1 12 22 is_stmt 0 view .LVU21
+  87 0016 C0ED082A 		vstr.32	s5, [r0, #32]
+  14:Sensors/pid.c **** }
+  88              		.loc 1 14 5 is_stmt 1 view .LVU22
+  89 001a FFF7FEFF 		bl	PID_Reset
+  90              	.LVL2:
+  15:Sensors/pid.c **** 
+  91              		.loc 1 15 1 is_stmt 0 view .LVU23
+  92 001e 08BD     		pop	{r3, pc}
+  93              		.cfi_endproc
+  94              	.LFE0:
+  96              		.section	.text.PID_Update,"ax",%progbits
+  97              		.align	1
+  98              		.global	PID_Update
+  99              		.syntax unified
+ 100              		.thumb
+ 101              		.thumb_func
+ 103              	PID_Update:
+ 104              	.LVL3:
+ 105              	.LFB2:
+  23:Sensors/pid.c **** 
+  24:Sensors/pid.c **** float PID_Update(PID_t *pid, float setpoint, float measured, float dt, uint8_t integrate)
+  25:Sensors/pid.c **** {
+ 106              		.loc 1 25 1 is_stmt 1 view -0
+ 107              		.cfi_startproc
+ 108              		@ args = 0, pretend = 0, frame = 0
+ 109              		@ frame_needed = 0, uses_anonymous_args = 0
+ 110              		@ link register save eliminated.
+  26:Sensors/pid.c ****     float error = setpoint - measured;
+ 111              		.loc 1 26 5 view .LVU25
+ 112              		.loc 1 26 11 is_stmt 0 view .LVU26
+ 113 0000 30EE600A 		vsub.f32	s0, s0, s1
+ 114              	.LVL4:
+  27:Sensors/pid.c **** 
+  28:Sensors/pid.c ****     /* --- P --- */
+  29:Sensors/pid.c ****     float p_term = pid->kp * error;
+ 115              		.loc 1 29 5 is_stmt 1 view .LVU27
+ 116              		.loc 1 29 23 is_stmt 0 view .LVU28
+ 117 0004 D0ED007A 		vldr.32	s15, [r0]
+ 118              		.loc 1 29 11 view .LVU29
+ 119 0008 67EE807A 		vmul.f32	s15, s15, s0
+ 120              	.LVL5:
+  30:Sensors/pid.c **** 
+  31:Sensors/pid.c ****     /* --- I ---
+  32:Sensors/pid.c ****      * Nur integrieren wenn erlaubt. Sonst laeuft der Integrator am Boden voll
+  33:Sensors/pid.c ****      * und die Drohne springt beim Armen weg (Integral-Windup). */
+  34:Sensors/pid.c ****     if (integrate)
+ 121              		.loc 1 34 5 is_stmt 1 view .LVU30
+ 122              		.loc 1 34 8 is_stmt 0 view .LVU31
+ 123 000c D9B1     		cbz	r1, .L5
+  35:Sensors/pid.c ****     {
+  36:Sensors/pid.c ****         pid->integral += error * dt;
+ 124              		.loc 1 36 9 is_stmt 1 view .LVU32
+ARM GAS  /tmp/ccBP8DaU.s 			page 4
+
+
+ 125              		.loc 1 36 12 is_stmt 0 view .LVU33
+ 126 000e D0ED036A 		vldr.32	s13, [r0, #12]
+ 127              		.loc 1 36 32 view .LVU34
+ 128 0012 20EE010A 		vmul.f32	s0, s0, s2
+ 129              	.LVL6:
+ 130              		.loc 1 36 23 view .LVU35
+ 131 0016 76EE806A 		vadd.f32	s13, s13, s0
+ 132 001a C0ED036A 		vstr.32	s13, [r0, #12]
+  37:Sensors/pid.c **** 
+  38:Sensors/pid.c ****         if (pid->integral > pid->i_limit)
+ 133              		.loc 1 38 9 is_stmt 1 view .LVU36
+ 134              		.loc 1 38 32 is_stmt 0 view .LVU37
+ 135 001e 90ED067A 		vldr.32	s14, [r0, #24]
+ 136              		.loc 1 38 12 view .LVU38
+ 137 0022 F4EEC76A 		vcmpe.f32	s13, s14
+ 138 0026 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 139 002a 01DD     		ble	.L6
+  39:Sensors/pid.c ****             pid->integral = pid->i_limit;
+ 140              		.loc 1 39 13 is_stmt 1 view .LVU39
+ 141              		.loc 1 39 27 is_stmt 0 view .LVU40
+ 142 002c 80ED037A 		vstr.32	s14, [r0, #12]
+ 143              	.L6:
+  40:Sensors/pid.c ****         if (pid->integral < -pid->i_limit)
+ 144              		.loc 1 40 9 is_stmt 1 view .LVU41
+ 145              		.loc 1 40 16 is_stmt 0 view .LVU42
+ 146 0030 D0ED036A 		vldr.32	s13, [r0, #12]
+ 147              		.loc 1 40 29 view .LVU43
+ 148 0034 B1EE477A 		vneg.f32	s14, s14
+ 149              		.loc 1 40 12 view .LVU44
+ 150 0038 F4EEC76A 		vcmpe.f32	s13, s14
+ 151 003c F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 152 0040 01D5     		bpl	.L5
+  41:Sensors/pid.c ****             pid->integral = -pid->i_limit;
+ 153              		.loc 1 41 13 is_stmt 1 view .LVU45
+ 154              		.loc 1 41 27 is_stmt 0 view .LVU46
+ 155 0042 80ED037A 		vstr.32	s14, [r0, #12]
+ 156              	.L5:
+  42:Sensors/pid.c ****     }
+  43:Sensors/pid.c ****     float i_term = pid->ki * pid->integral;
+ 157              		.loc 1 43 5 is_stmt 1 view .LVU47
+ 158              		.loc 1 43 23 is_stmt 0 view .LVU48
+ 159 0046 90ED016A 		vldr.32	s12, [r0, #4]
+ 160              		.loc 1 43 33 view .LVU49
+ 161 004a 90ED037A 		vldr.32	s14, [r0, #12]
+ 162              		.loc 1 43 11 view .LVU50
+ 163 004e 26EE076A 		vmul.f32	s12, s12, s14
+ 164              	.LVL7:
+  44:Sensors/pid.c **** 
+  45:Sensors/pid.c ****     /* --- D ---
+  46:Sensors/pid.c ****      * Ableitung des ISTWERTS, nicht des Fehlers. Sonst gibt es bei jeder
+  47:Sensors/pid.c ****      * Knueppelbewegung einen Ausschlag (derivative kick).
+  48:Sensors/pid.c ****      * Vorzeichen deshalb negativ. */
+  49:Sensors/pid.c ****     float d_raw = -(measured - pid->prev_measured) / dt;
+ 165              		.loc 1 49 5 is_stmt 1 view .LVU51
+ 166              		.loc 1 49 35 is_stmt 0 view .LVU52
+ 167 0052 90ED047A 		vldr.32	s14, [r0, #16]
+ 168              		.loc 1 49 30 view .LVU53
+ARM GAS  /tmp/ccBP8DaU.s 			page 5
+
+
+ 169 0056 30EEC77A 		vsub.f32	s14, s1, s14
+ 170              		.loc 1 49 19 view .LVU54
+ 171 005a B1EE477A 		vneg.f32	s14, s14
+ 172              		.loc 1 49 11 view .LVU55
+ 173 005e 87EE015A 		vdiv.f32	s10, s14, s2
+ 174              	.LVL8:
+  50:Sensors/pid.c ****     pid->prev_measured = measured;
+ 175              		.loc 1 50 5 is_stmt 1 view .LVU56
+ 176              		.loc 1 50 24 is_stmt 0 view .LVU57
+ 177 0062 C0ED040A 		vstr.32	s1, [r0, #16]
+  51:Sensors/pid.c **** 
+  52:Sensors/pid.c ****     /* Tiefpass auf den D-Anteil - Gyro-Rauschen wird durch das Ableiten
+  53:Sensors/pid.c ****      * stark verstaerkt, ohne Filter ist D unbrauchbar. */
+  54:Sensors/pid.c ****     pid->d_filtered = pid->d_lpf_alpha * pid->d_filtered + (1.0f - pid->d_lpf_alpha) * d_raw;
+ 178              		.loc 1 54 5 is_stmt 1 view .LVU58
+ 179              		.loc 1 54 26 is_stmt 0 view .LVU59
+ 180 0066 D0ED085A 		vldr.32	s11, [r0, #32]
+ 181              		.loc 1 54 45 view .LVU60
+ 182 006a 90ED057A 		vldr.32	s14, [r0, #20]
+ 183              		.loc 1 54 40 view .LVU61
+ 184 006e 25EE877A 		vmul.f32	s14, s11, s14
+ 185              		.loc 1 54 66 view .LVU62
+ 186 0072 F7EE006A 		vmov.f32	s13, #1.0e+0
+ 187 0076 76EEE56A 		vsub.f32	s13, s13, s11
+ 188              		.loc 1 54 86 view .LVU63
+ 189 007a 66EE856A 		vmul.f32	s13, s13, s10
+ 190              		.loc 1 54 58 view .LVU64
+ 191 007e 37EE267A 		vadd.f32	s14, s14, s13
+ 192              		.loc 1 54 21 view .LVU65
+ 193 0082 80ED057A 		vstr.32	s14, [r0, #20]
+  55:Sensors/pid.c **** 
+  56:Sensors/pid.c ****     float d_term = pid->kd * pid->d_filtered;
+ 194              		.loc 1 56 5 is_stmt 1 view .LVU66
+ 195              		.loc 1 56 23 is_stmt 0 view .LVU67
+ 196 0086 D0ED026A 		vldr.32	s13, [r0, #8]
+ 197              		.loc 1 56 11 view .LVU68
+ 198 008a 27EE267A 		vmul.f32	s14, s14, s13
+ 199              	.LVL9:
+  57:Sensors/pid.c **** 
+  58:Sensors/pid.c ****     /* --- Summe und Begrenzung --- */
+  59:Sensors/pid.c ****     float out = p_term + i_term + d_term;
+ 200              		.loc 1 59 5 is_stmt 1 view .LVU69
+ 201              		.loc 1 59 24 is_stmt 0 view .LVU70
+ 202 008e 77EE867A 		vadd.f32	s15, s15, s12
+ 203              	.LVL10:
+ 204              		.loc 1 59 11 view .LVU71
+ 205 0092 77EE877A 		vadd.f32	s15, s15, s14
+ 206              	.LVL11:
+  60:Sensors/pid.c **** 
+  61:Sensors/pid.c ****     if (out > pid->out_limit)
+ 207              		.loc 1 61 5 is_stmt 1 view .LVU72
+ 208              		.loc 1 61 18 is_stmt 0 view .LVU73
+ 209 0096 90ED070A 		vldr.32	s0, [r0, #28]
+ 210              		.loc 1 61 8 view .LVU74
+ 211 009a B4EEE70A 		vcmpe.f32	s0, s15
+ 212 009e F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 213 00a2 01D5     		bpl	.L9
+ARM GAS  /tmp/ccBP8DaU.s 			page 6
+
+
+  62:Sensors/pid.c ****         out = pid->out_limit;
+ 214              		.loc 1 62 13 view .LVU75
+ 215 00a4 F0EE407A 		vmov.f32	s15, s0
+ 216              	.LVL12:
+ 217              	.L9:
+  63:Sensors/pid.c ****     if (out < -pid->out_limit)
+ 218              		.loc 1 63 5 is_stmt 1 view .LVU76
+ 219              		.loc 1 63 15 is_stmt 0 view .LVU77
+ 220 00a8 B1EE400A 		vneg.f32	s0, s0
+ 221              		.loc 1 63 8 view .LVU78
+ 222 00ac B4EEE70A 		vcmpe.f32	s0, s15
+ 223 00b0 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 224 00b4 01DC     		bgt	.L4
+ 225 00b6 B0EE670A 		vmov.f32	s0, s15
+  64:Sensors/pid.c ****         out = -pid->out_limit;
+  65:Sensors/pid.c **** 
+  66:Sensors/pid.c ****     return out;
+ 226              		.loc 1 66 5 is_stmt 1 view .LVU79
+ 227              	.LVL13:
+ 228              	.L4:
+  67:Sensors/pid.c **** }...
+ 229              		.loc 1 67 1 is_stmt 0 view .LVU80
+ 230 00ba 7047     		bx	lr
+ 231              		.cfi_endproc
+ 232              	.LFE2:
+ 234              		.text
+ 235              	.Letext0:
+ 236              		.file 2 "Sensors/pid.h"
+ 237              		.file 3 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ARM GAS  /tmp/ccBP8DaU.s 			page 7
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 pid.c
+     /tmp/ccBP8DaU.s:21     .text.PID_Reset:00000000 $t
+     /tmp/ccBP8DaU.s:27     .text.PID_Reset:00000000 PID_Reset
+     /tmp/ccBP8DaU.s:51     .text.PID_Init:00000000 $t
+     /tmp/ccBP8DaU.s:57     .text.PID_Init:00000000 PID_Init
+     /tmp/ccBP8DaU.s:97     .text.PID_Update:00000000 $t
+     /tmp/ccBP8DaU.s:103    .text.PID_Update:00000000 PID_Update
+
+NO UNDEFINED SYMBOLS
