@@ -1,4 +1,4 @@
-ARM GAS  /tmp/cccFHr4P.s 			page 1
+ARM GAS  /tmp/cclVHBqL.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
   39 0008 0C4B     		ldr	r3, .L8+4
   40 000a 1B68     		ldr	r3, [r3]
   41 000c 1B68     		ldr	r3, [r3]
-ARM GAS  /tmp/cccFHr4P.s 			page 2
+ARM GAS  /tmp/cclVHBqL.s 			page 2
 
 
   42 000e 5963     		str	r1, [r3, #52]
@@ -118,7 +118,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
   24:Sensors/motor.c ****     __HAL_RCC_TIM3_CLK_ENABLE();
   25:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
   26:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
-ARM GAS  /tmp/cccFHr4P.s 			page 3
+ARM GAS  /tmp/cclVHBqL.s 			page 3
 
 
   27:Sensors/motor.c **** 
@@ -178,7 +178,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
   98              		.loc 1 72 19 view .LVU12
   99 0002 C0B2     		uxtb	r0, r0
  100              	.LVL3:
-ARM GAS  /tmp/cccFHr4P.s 			page 4
+ARM GAS  /tmp/cclVHBqL.s 			page 4
 
 
  101              		.loc 1 72 8 view .LVU13
@@ -238,7 +238,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  137 0026 FFF7FEFF 		bl	motor_write_raw
  138              	.LVL8:
   81:Sensors/motor.c ****     }
-ARM GAS  /tmp/cccFHr4P.s 			page 5
+ARM GAS  /tmp/cclVHBqL.s 			page 5
 
 
  139              		.loc 1 81 9 is_stmt 1 view .LVU27
@@ -298,7 +298,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
   94:Sensors/motor.c ****     if (percent < 0.0f)
  188              		.loc 1 94 5 is_stmt 1 view .LVU34
  189              		.loc 1 94 8 is_stmt 0 view .LVU35
-ARM GAS  /tmp/cccFHr4P.s 			page 6
+ARM GAS  /tmp/cclVHBqL.s 			page 6
 
 
  190 0002 B5EEC00A 		vcmpe.f32	s0, #0
@@ -358,7 +358,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  233 004c 00000000 		.word	0
  234 0050 00007A44 		.word	1148846080
  235              		.cfi_endproc
-ARM GAS  /tmp/cccFHr4P.s 			page 7
+ARM GAS  /tmp/cclVHBqL.s 			page 7
 
 
  236              	.LFE137:
@@ -418,7 +418,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  284 0014 042C     		cmp	r4, #4
  285 0016 F7D9     		bls	.L32
  286              	.LBE2:
-ARM GAS  /tmp/cccFHr4P.s 			page 8
+ARM GAS  /tmp/cclVHBqL.s 			page 8
 
 
  108:Sensors/motor.c **** }
@@ -478,7 +478,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  334 001c 0192     		str	r2, [sp, #4]
   24:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
  335              		.loc 1 24 5 view .LVU68
-ARM GAS  /tmp/cccFHr4P.s 			page 9
+ARM GAS  /tmp/cclVHBqL.s 			page 9
 
 
  336 001e 019A     		ldr	r2, [sp, #4]
@@ -538,7 +538,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  375 004c 0D94     		str	r4, [sp, #52]
  376 004e 0E94     		str	r4, [sp, #56]
  377 0050 0F94     		str	r4, [sp, #60]
-ARM GAS  /tmp/cccFHr4P.s 			page 10
+ARM GAS  /tmp/cclVHBqL.s 			page 10
 
 
   29:Sensors/motor.c ****     g.Pull = GPIO_NOPULL;
@@ -598,7 +598,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
   44:Sensors/motor.c ****     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
  415              		.loc 1 44 5 is_stmt 1 view .LVU101
   44:Sensors/motor.c ****     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-ARM GAS  /tmp/cccFHr4P.s 			page 11
+ARM GAS  /tmp/cclVHBqL.s 			page 11
 
 
  416              		.loc 1 44 31 is_stmt 0 view .LVU102
@@ -658,7 +658,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  454              		.loc 1 55 5 is_stmt 1 view .LVU118
   55:Sensors/motor.c ****     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
  455              		.loc 1 55 14 is_stmt 0 view .LVU119
-ARM GAS  /tmp/cccFHr4P.s 			page 12
+ARM GAS  /tmp/cclVHBqL.s 			page 12
 
 
  456 00a4 4FF47A73 		mov	r3, #1000
@@ -718,7 +718,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
   61:Sensors/motor.c ****             Error_Handler();
  497              		.loc 1 61 13 view .LVU133
  498 00ca 2A46     		mov	r2, r5
-ARM GAS  /tmp/cccFHr4P.s 			page 13
+ARM GAS  /tmp/cclVHBqL.s 			page 13
 
 
  499 00cc 04A9     		add	r1, sp, #16
@@ -778,7 +778,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  547              		.thumb
  548              		.thumb_func
  550              	Motor_SetAllPercent:
-ARM GAS  /tmp/cccFHr4P.s 			page 14
+ARM GAS  /tmp/cclVHBqL.s 			page 14
 
 
  551              	.LVL41:
@@ -838,7 +838,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  596 0020 BDEC028B 		vldm	sp!, {d8}
  597              	.LCFI9:
  598              		.cfi_restore 80
-ARM GAS  /tmp/cccFHr4P.s 			page 15
+ARM GAS  /tmp/cclVHBqL.s 			page 15
 
 
  599              		.cfi_restore 81
@@ -898,7 +898,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  649 0000 10B5     		push	{r4, lr}
  650              	.LCFI10:
  651              		.cfi_def_cfa_offset 8
-ARM GAS  /tmp/cccFHr4P.s 			page 16
+ARM GAS  /tmp/cclVHBqL.s 			page 16
 
 
  652              		.cfi_offset 4, -8
@@ -958,7 +958,7 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  701              	Motor_IsArmed:
  702              	.LFB142:
  127:Sensors/motor.c **** 
-ARM GAS  /tmp/cccFHr4P.s 			page 17
+ARM GAS  /tmp/cclVHBqL.s 			page 17
 
 
  128:Sensors/motor.c **** uint8_t Motor_IsArmed(void)
@@ -1004,42 +1004,42 @@ ARM GAS  /tmp/cccFHr4P.s 			page 1
  746              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
  747              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h"
  748              		.file 8 "Core/Inc/main.h"
-ARM GAS  /tmp/cccFHr4P.s 			page 18
+ARM GAS  /tmp/cclVHBqL.s 			page 18
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 motor.c
-     /tmp/cccFHr4P.s:21     .text.motor_write_raw:00000000 $t
-     /tmp/cccFHr4P.s:26     .text.motor_write_raw:00000000 motor_write_raw
-     /tmp/cccFHr4P.s:75     .text.motor_write_raw:00000038 $d
-     /tmp/cccFHr4P.s:724    .rodata.motor_ch:00000000 motor_ch
-     /tmp/cccFHr4P.s:738    .bss.motor_tim:00000000 motor_tim
-     /tmp/cccFHr4P.s:81     .text.Motor_SetUs:00000000 $t
-     /tmp/cccFHr4P.s:87     .text.Motor_SetUs:00000000 Motor_SetUs
-     /tmp/cccFHr4P.s:164    .text.Motor_SetUs:00000038 $d
-     /tmp/cccFHr4P.s:732    .bss.armed:00000000 armed
-     /tmp/cccFHr4P.s:169    .text.Motor_SetPercent:00000000 $t
-     /tmp/cccFHr4P.s:175    .text.Motor_SetPercent:00000000 Motor_SetPercent
-     /tmp/cccFHr4P.s:232    .text.Motor_SetPercent:00000048 $d
-     /tmp/cccFHr4P.s:239    .text.Motor_SetAllUs:00000000 $t
-     /tmp/cccFHr4P.s:245    .text.Motor_SetAllUs:00000000 Motor_SetAllUs
-     /tmp/cccFHr4P.s:294    .text.Motor_Init:00000000 $t
-     /tmp/cccFHr4P.s:300    .text.Motor_Init:00000000 Motor_Init
-     /tmp/cccFHr4P.s:533    .text.Motor_Init:000000f4 $d
-     /tmp/cccFHr4P.s:544    .text.Motor_SetAllPercent:00000000 $t
-     /tmp/cccFHr4P.s:550    .text.Motor_SetAllPercent:00000000 Motor_SetAllPercent
-     /tmp/cccFHr4P.s:609    .text.Motor_Arm:00000000 $t
-     /tmp/cccFHr4P.s:615    .text.Motor_Arm:00000000 Motor_Arm
-     /tmp/cccFHr4P.s:632    .text.Motor_Arm:00000008 $d
-     /tmp/cccFHr4P.s:637    .text.Motor_Disarm:00000000 $t
-     /tmp/cccFHr4P.s:643    .text.Motor_Disarm:00000000 Motor_Disarm
-     /tmp/cccFHr4P.s:690    .text.Motor_Disarm:00000020 $d
-     /tmp/cccFHr4P.s:695    .text.Motor_IsArmed:00000000 $t
-     /tmp/cccFHr4P.s:701    .text.Motor_IsArmed:00000000 Motor_IsArmed
-     /tmp/cccFHr4P.s:716    .text.Motor_IsArmed:00000008 $d
-     /tmp/cccFHr4P.s:721    .rodata.motor_ch:00000000 $d
-     /tmp/cccFHr4P.s:733    .bss.armed:00000000 $d
-     /tmp/cccFHr4P.s:735    .bss.motor_tim:00000000 $d
+     /tmp/cclVHBqL.s:21     .text.motor_write_raw:00000000 $t
+     /tmp/cclVHBqL.s:26     .text.motor_write_raw:00000000 motor_write_raw
+     /tmp/cclVHBqL.s:75     .text.motor_write_raw:00000038 $d
+     /tmp/cclVHBqL.s:724    .rodata.motor_ch:00000000 motor_ch
+     /tmp/cclVHBqL.s:738    .bss.motor_tim:00000000 motor_tim
+     /tmp/cclVHBqL.s:81     .text.Motor_SetUs:00000000 $t
+     /tmp/cclVHBqL.s:87     .text.Motor_SetUs:00000000 Motor_SetUs
+     /tmp/cclVHBqL.s:164    .text.Motor_SetUs:00000038 $d
+     /tmp/cclVHBqL.s:732    .bss.armed:00000000 armed
+     /tmp/cclVHBqL.s:169    .text.Motor_SetPercent:00000000 $t
+     /tmp/cclVHBqL.s:175    .text.Motor_SetPercent:00000000 Motor_SetPercent
+     /tmp/cclVHBqL.s:232    .text.Motor_SetPercent:00000048 $d
+     /tmp/cclVHBqL.s:239    .text.Motor_SetAllUs:00000000 $t
+     /tmp/cclVHBqL.s:245    .text.Motor_SetAllUs:00000000 Motor_SetAllUs
+     /tmp/cclVHBqL.s:294    .text.Motor_Init:00000000 $t
+     /tmp/cclVHBqL.s:300    .text.Motor_Init:00000000 Motor_Init
+     /tmp/cclVHBqL.s:533    .text.Motor_Init:000000f4 $d
+     /tmp/cclVHBqL.s:544    .text.Motor_SetAllPercent:00000000 $t
+     /tmp/cclVHBqL.s:550    .text.Motor_SetAllPercent:00000000 Motor_SetAllPercent
+     /tmp/cclVHBqL.s:609    .text.Motor_Arm:00000000 $t
+     /tmp/cclVHBqL.s:615    .text.Motor_Arm:00000000 Motor_Arm
+     /tmp/cclVHBqL.s:632    .text.Motor_Arm:00000008 $d
+     /tmp/cclVHBqL.s:637    .text.Motor_Disarm:00000000 $t
+     /tmp/cclVHBqL.s:643    .text.Motor_Disarm:00000000 Motor_Disarm
+     /tmp/cclVHBqL.s:690    .text.Motor_Disarm:00000020 $d
+     /tmp/cclVHBqL.s:695    .text.Motor_IsArmed:00000000 $t
+     /tmp/cclVHBqL.s:701    .text.Motor_IsArmed:00000000 Motor_IsArmed
+     /tmp/cclVHBqL.s:716    .text.Motor_IsArmed:00000008 $d
+     /tmp/cclVHBqL.s:721    .rodata.motor_ch:00000000 $d
+     /tmp/cclVHBqL.s:733    .bss.armed:00000000 $d
+     /tmp/cclVHBqL.s:735    .bss.motor_tim:00000000 $d
 
 UNDEFINED SYMBOLS
 HAL_GPIO_Init
