@@ -14,6 +14,11 @@
 #define MPU6050_ACCEL_XOUT_H 0x3B
 #define MPU6050_GYRO_XOUT_H 0x43
 
+/* Startwerte der Filter */
+#define GYRO_LPF_DEFAULT_HZ 90.0f  /* Software-Tiefpass auf die Drehraten */
+#define ACCEL_LPF_DEFAULT_HZ 20.0f /* Software-Tiefpass auf die Beschleunigung */
+#define COMP_TAU_DEFAULT_S 0.50f   /* Zeitkonstante des Komplementaerfilters */
+
 typedef struct
 {
     /* Rohwerte */
@@ -25,13 +30,18 @@ typedef struct
     int16_t gyro_z;
     int16_t temp_raw;
 
-    /* Umgerechnete Werte */
+    /* Umgerechnet und gefiltert - das benutzt die Regelung */
     float accel_x_g;
     float accel_y_g;
     float accel_z_g;
     float gyro_x_dps;
     float gyro_y_dps;
     float gyro_z_dps;
+
+    /* Ungefiltert - nur zum Vergleichen im Stream */
+    float gyro_x_raw_dps;
+    float gyro_y_raw_dps;
+    float gyro_z_raw_dps;
 
     /* Gyro-Offsets (aus Kalibrierung) */
     float gyro_x_offset;
@@ -49,7 +59,17 @@ HAL_StatusTypeDef MPU6050_WhoAmI(I2C_HandleTypeDef *hi2c, uint8_t *id);
 HAL_StatusTypeDef MPU6050_ReadAll(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data);
 
 void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples);
-void MPU6050_Convert(MPU6050_Data_t *data);
+
+/* Braucht jetzt dt, weil die Filter darauf rechnen */
+void MPU6050_Convert(MPU6050_Data_t *data, float dt);
 void MPU6050_UpdateAngles(MPU6050_Data_t *data, float dt);
+
+/* Filter zur Laufzeit einstellen - 0 schaltet den jeweiligen Filter ab */
+void MPU6050_SetGyroLPF(float hz);
+void MPU6050_SetAccelLPF(float hz);
+void MPU6050_SetCompTau(float seconds);
+float MPU6050_GetGyroLPF(void);
+float MPU6050_GetAccelLPF(void);
+float MPU6050_GetCompTau(void);
 
 #endif

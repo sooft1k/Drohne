@@ -25,11 +25,14 @@ Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
 Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
 Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
+Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
+Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
 Sensors/motor.c \
 Sensors/command.c \
 Sensors/pid.c \
 Sensors/control.c \
-Sensor/mixer.c \
+Sensors/mixer.c \
+Sensors/battery.c
 
 ASM_SOURCES = Core/Src/startup_stm32f405xx.s
 

@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccsQMEeX.s 			page 1
+ARM GAS  /tmp/ccKfQO65.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -27,7 +27,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
   24              		.thumb
   25              		.thumb_func
   27              	Control_Init:
-  28              	.LFB137:
+  28              	.LFB242:
    1:Sensors/control.c **** #include "control.h"
    2:Sensors/control.c **** #include <stdio.h>
    3:Sensors/control.c **** 
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
   28:Sensors/control.c **** #define ANGLE_KD 0.0f
   29:Sensors/control.c **** #define ANGLE_ILIM 20.0f
   30:Sensors/control.c **** #define ANGLE_OUTLIM 250.0f /* max. Soll-Drehrate in Grad/s */
-ARM GAS  /tmp/ccsQMEeX.s 			page 2
+ARM GAS  /tmp/ccKfQO65.s 			page 2
 
 
   31:Sensors/control.c **** #define ANGLE_DLPF 0.0f
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
   42:Sensors/control.c ****     /* Yaw braucht mehr P und kein D */
   43:Sensors/control.c ****     PID_Init(&pid_rate_yaw, 1.2f, RATE_KI, 0.0f,
   72              		.loc 1 43 5 view .LVU3
-ARM GAS  /tmp/ccsQMEeX.s 			page 3
+ARM GAS  /tmp/ccKfQO65.s 			page 3
 
 
   73 0056 F0EE692A 		vmov.f32	s5, s19
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  116 00c6 104B     		ldr	r3, .L3+52
  117 00c8 0122     		movs	r2, #1
  118 00ca 1A70     		strb	r2, [r3]
-ARM GAS  /tmp/ccsQMEeX.s 			page 4
+ARM GAS  /tmp/ccKfQO65.s 			page 4
 
 
   55:Sensors/control.c **** }
@@ -211,7 +211,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  145 0104 00000000 		.word	setpoint
  146 0108 00000000 		.word	flight_mode
  147              		.cfi_endproc
- 148              	.LFE137:
+ 148              	.LFE242:
  150              		.section	.text.Control_Reset,"ax",%progbits
  151              		.align	1
  152              		.global	Control_Reset
@@ -219,7 +219,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  154              		.thumb
  155              		.thumb_func
  157              	Control_Reset:
- 158              	.LFB138:
+ 158              	.LFB243:
   56:Sensors/control.c **** 
   57:Sensors/control.c **** void Control_Reset(void)
   58:Sensors/control.c **** {
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  170 0004 FFF7FEFF 		bl	PID_Reset
  171              	.LVL5:
   60:Sensors/control.c ****     PID_Reset(&pid_rate_pitch);
-ARM GAS  /tmp/ccsQMEeX.s 			page 5
+ARM GAS  /tmp/ccKfQO65.s 			page 5
 
 
  172              		.loc 1 60 5 view .LVU17
@@ -272,7 +272,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  196 0030 00000000 		.word	pid_angle_roll
  197 0034 00000000 		.word	pid_angle_pitch
  198              		.cfi_endproc
- 199              	.LFE138:
+ 199              	.LFE243:
  201              		.section	.text.Control_SetMode,"ax",%progbits
  202              		.align	1
  203              		.global	Control_SetMode
@@ -281,7 +281,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  206              		.thumb_func
  208              	Control_SetMode:
  209              	.LVL10:
- 210              	.LFB139:
+ 210              	.LFB244:
   65:Sensors/control.c **** 
   66:Sensors/control.c **** void Control_SetMode(FlightMode_t mode)
   67:Sensors/control.c **** {
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
   68:Sensors/control.c ****     if (mode != flight_mode)
  221              		.loc 1 68 5 is_stmt 1 view .LVU24
  222              		.loc 1 68 14 is_stmt 0 view .LVU25
-ARM GAS  /tmp/ccsQMEeX.s 			page 6
+ARM GAS  /tmp/ccKfQO65.s 			page 6
 
 
  223 0002 054B     		ldr	r3, .L13
@@ -334,7 +334,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  245              	.L13:
  246 0018 00000000 		.word	flight_mode
  247              		.cfi_endproc
- 248              	.LFE139:
+ 248              	.LFE244:
  250              		.section	.text.Control_Update,"ax",%progbits
  251              		.align	1
  252              		.global	Control_Update
@@ -343,7 +343,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  255              		.thumb_func
  257              	Control_Update:
  258              	.LVL14:
- 259              	.LFB140:
+ 259              	.LFB245:
   74:Sensors/control.c **** 
   75:Sensors/control.c **** void Control_Update(MPU6050_Data_t *s, float dt,
   76:Sensors/control.c ****                     float *out_roll, float *out_pitch, float *out_yaw)
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  267              		.cfi_def_cfa_offset 24
  268              		.cfi_offset 4, -24
  269              		.cfi_offset 5, -20
-ARM GAS  /tmp/ccsQMEeX.s 			page 7
+ARM GAS  /tmp/ccKfQO65.s 			page 7
 
 
  270              		.cfi_offset 6, -16
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
   93:Sensors/control.c ****         if (sp_roll < -MAX_ANGLE)
   94:Sensors/control.c ****             sp_roll = -MAX_ANGLE;
   95:Sensors/control.c ****         if (sp_pitch > MAX_ANGLE)
-ARM GAS  /tmp/ccsQMEeX.s 			page 8
+ARM GAS  /tmp/ccKfQO65.s 			page 8
 
 
   96:Sensors/control.c ****             sp_pitch = MAX_ANGLE;
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  341              		.loc 1 117 5 is_stmt 1 view .LVU53
  342              		.loc 1 117 16 is_stmt 0 view .LVU54
  343 006e 2946     		mov	r1, r5
-ARM GAS  /tmp/ccsQMEeX.s 			page 9
+ARM GAS  /tmp/ccKfQO65.s 			page 9
 
 
  344 0070 B0EE481A 		vmov.f32	s2, s16
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  389 00b0 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
  390 00b4 04D5     		bpl	.L17
   94:Sensors/control.c ****         if (sp_pitch > MAX_ANGLE)
-ARM GAS  /tmp/ccsQMEeX.s 			page 10
+ARM GAS  /tmp/ccKfQO65.s 			page 10
 
 
  391              		.loc 1 94 21 view .LVU66
@@ -593,12 +593,12 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
  429              		.loc 1 101 24 view .LVU78
  430 00e8 B0EE481A 		vmov.f32	s2, s16
- 431 00ec D4ED0D0A 		vldr.32	s1, [r4, #52]
+ 431 00ec D4ED100A 		vldr.32	s1, [r4, #64]
  432 00f0 0F48     		ldr	r0, .L26+28
  433              	.LVL33:
  101:Sensors/control.c ****         rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
  434              		.loc 1 101 24 view .LVU79
-ARM GAS  /tmp/ccsQMEeX.s 			page 11
+ARM GAS  /tmp/ccKfQO65.s 			page 11
 
 
  435 00f2 FFF7FEFF 		bl	PID_Update
@@ -613,7 +613,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  441              		.loc 1 102 25 is_stmt 0 view .LVU82
  442 00fa 2946     		mov	r1, r5
  443 00fc B0EE481A 		vmov.f32	s2, s16
- 444 0100 D4ED0E0A 		vldr.32	s1, [r4, #56]
+ 444 0100 D4ED110A 		vldr.32	s1, [r4, #68]
  445 0104 B0EE680A 		vmov.f32	s0, s17
  446              	.LVL36:
  102:Sensors/control.c ****     }
@@ -640,7 +640,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  466 0130 00000000 		.word	pid_angle_roll
  467 0134 00000000 		.word	pid_angle_pitch
  468              		.cfi_endproc
- 469              	.LFE140:
+ 469              	.LFE245:
  471              		.section	.text.Control_SetGain,"ax",%progbits
  472              		.align	1
  473              		.global	Control_SetGain
@@ -649,7 +649,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  476              		.thumb_func
  478              	Control_SetGain:
  479              	.LVL39:
- 480              	.LFB141:
+ 480              	.LFB246:
  119:Sensors/control.c **** 
  120:Sensors/control.c **** void Control_SetGain(char loop, char axis, char term, float value)
  121:Sensors/control.c **** {
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  483              		@ args = 0, pretend = 0, frame = 0
  484              		@ frame_needed = 0, uses_anonymous_args = 0
  485              		.loc 1 121 1 is_stmt 0 view .LVU86
-ARM GAS  /tmp/ccsQMEeX.s 			page 12
+ARM GAS  /tmp/ccKfQO65.s 			page 12
 
 
  486 0000 08B5     		push	{r3, lr}
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  521 0022 0D4B     		ldr	r3, .L43+4
  522 0024 04E0     		b	.L30
  523              	.L35:
-ARM GAS  /tmp/ccsQMEeX.s 			page 13
+ARM GAS  /tmp/ccKfQO65.s 			page 13
 
 
  524 0026 0D4B     		ldr	r3, .L43+8
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  155:Sensors/control.c **** }
  559              		.loc 1 155 1 is_stmt 0 view .LVU111
  560 004a 08BD     		pop	{r3, pc}
-ARM GAS  /tmp/ccsQMEeX.s 			page 14
+ARM GAS  /tmp/ccKfQO65.s 			page 14
 
 
  561              	.LVL43:
@@ -798,7 +798,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  573 0060 00000000 		.word	pid_rate_yaw
  574 0064 00000000 		.word	pid_angle_roll
  575              		.cfi_endproc
- 576              	.LFE141:
+ 576              	.LFE246:
  578              		.section	.rodata.Control_PrintGains.str1.4,"aMS",%progbits,1
  579              		.align	2
  580              	.LC0:
@@ -838,7 +838,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  597      20493D25 
  598 0079 000000   		.align	2
  599              	.LC6:
-ARM GAS  /tmp/ccsQMEeX.s 			page 15
+ARM GAS  /tmp/ccKfQO65.s 			page 15
 
 
  600 007c 20202079 		.ascii	"   yaw  : P=%.3f I=%.3f D=%.4f\015\012\000"
@@ -860,7 +860,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  608              		.thumb
  609              		.thumb_func
  611              	Control_PrintGains:
- 612              	.LFB142:
+ 612              	.LFB247:
  156:Sensors/control.c **** 
  157:Sensors/control.c **** void Control_PrintGains(void)
  158:Sensors/control.c **** {
@@ -898,7 +898,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  643              	.LVL44:
  160:Sensors/control.c ****     printf(">> Rate (innen)\r\n");
  644              		.loc 1 160 5 is_stmt 1 view .LVU120
-ARM GAS  /tmp/ccsQMEeX.s 			page 16
+ARM GAS  /tmp/ccKfQO65.s 			page 16
 
 
  645 0018 4648     		ldr	r0, .L50+12
@@ -958,7 +958,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  693 0070 4046     		mov	r0, r8	@ float
  694 0072 FFF7FEFF 		bl	__aeabi_f2d
  695              	.LVL52:
-ARM GAS  /tmp/ccsQMEeX.s 			page 17
+ARM GAS  /tmp/ccKfQO65.s 			page 17
 
 
  696 0076 CDE90001 		strd	r0, [sp]
@@ -1018,7 +1018,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  743 00cc 0446     		mov	r4, r0
  744 00ce 0D46     		mov	r5, r1
  745 00d0 4846     		mov	r0, r9	@ float
-ARM GAS  /tmp/ccsQMEeX.s 			page 18
+ARM GAS  /tmp/ccKfQO65.s 			page 18
 
 
  746 00d2 FFF7FEFF 		bl	__aeabi_f2d
@@ -1078,7 +1078,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  795 0124 0D49     		ldr	r1, .L50+52
  796 0126 74E7     		b	.L46
  797              	.L51:
-ARM GAS  /tmp/ccsQMEeX.s 			page 19
+ARM GAS  /tmp/ccKfQO65.s 			page 19
 
 
  798              		.align	2
@@ -1098,7 +1098,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  812 0158 00000000 		.word	pid_angle_pitch
  813 015c 00000000 		.word	.LC0
  814              		.cfi_endproc
- 815              	.LFE142:
+ 815              	.LFE247:
  817              		.global	flight_mode
  818              		.section	.data.flight_mode,"aw"
  821              	flight_mode:
@@ -1138,7 +1138,7 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  850      00000000 
  850      00000000 
  850      00000000 
-ARM GAS  /tmp/ccsQMEeX.s 			page 20
+ARM GAS  /tmp/ccKfQO65.s 			page 20
 
 
  851              		.global	pid_rate_pitch
@@ -1167,43 +1167,43 @@ ARM GAS  /tmp/ccsQMEeX.s 			page 1
  870              		.file 5 "Sensors/control.h"
  871              		.file 6 "/usr/include/newlib/stdio.h"
  872              		.file 7 "<built-in>"
-ARM GAS  /tmp/ccsQMEeX.s 			page 21
+ARM GAS  /tmp/ccKfQO65.s 			page 21
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 control.c
-     /tmp/ccsQMEeX.s:21     .text.Control_Init:00000000 $t
-     /tmp/ccsQMEeX.s:27     .text.Control_Init:00000000 Control_Init
-     /tmp/ccsQMEeX.s:133    .text.Control_Init:000000d4 $d
-     /tmp/ccsQMEeX.s:863    .bss.pid_rate_roll:00000000 pid_rate_roll
-     /tmp/ccsQMEeX.s:856    .bss.pid_rate_pitch:00000000 pid_rate_pitch
-     /tmp/ccsQMEeX.s:849    .bss.pid_rate_yaw:00000000 pid_rate_yaw
-     /tmp/ccsQMEeX.s:842    .bss.pid_angle_roll:00000000 pid_angle_roll
-     /tmp/ccsQMEeX.s:835    .bss.pid_angle_pitch:00000000 pid_angle_pitch
-     /tmp/ccsQMEeX.s:828    .bss.setpoint:00000000 setpoint
-     /tmp/ccsQMEeX.s:821    .data.flight_mode:00000000 flight_mode
-     /tmp/ccsQMEeX.s:151    .text.Control_Reset:00000000 $t
-     /tmp/ccsQMEeX.s:157    .text.Control_Reset:00000000 Control_Reset
-     /tmp/ccsQMEeX.s:193    .text.Control_Reset:00000024 $d
-     /tmp/ccsQMEeX.s:202    .text.Control_SetMode:00000000 $t
-     /tmp/ccsQMEeX.s:208    .text.Control_SetMode:00000000 Control_SetMode
-     /tmp/ccsQMEeX.s:246    .text.Control_SetMode:00000018 $d
-     /tmp/ccsQMEeX.s:251    .text.Control_Update:00000000 $t
-     /tmp/ccsQMEeX.s:257    .text.Control_Update:00000000 Control_Update
-     /tmp/ccsQMEeX.s:459    .text.Control_Update:00000114 $d
-     /tmp/ccsQMEeX.s:472    .text.Control_SetGain:00000000 $t
-     /tmp/ccsQMEeX.s:478    .text.Control_SetGain:00000000 Control_SetGain
-     /tmp/ccsQMEeX.s:570    .text.Control_SetGain:00000054 $d
-     /tmp/ccsQMEeX.s:579    .rodata.Control_PrintGains.str1.4:00000000 $d
-     /tmp/ccsQMEeX.s:605    .text.Control_PrintGains:00000000 $t
-     /tmp/ccsQMEeX.s:611    .text.Control_PrintGains:00000000 Control_PrintGains
-     /tmp/ccsQMEeX.s:800    .text.Control_PrintGains:00000128 $d
-     /tmp/ccsQMEeX.s:825    .bss.setpoint:00000000 $d
-     /tmp/ccsQMEeX.s:832    .bss.pid_angle_pitch:00000000 $d
-     /tmp/ccsQMEeX.s:839    .bss.pid_angle_roll:00000000 $d
-     /tmp/ccsQMEeX.s:846    .bss.pid_rate_yaw:00000000 $d
-     /tmp/ccsQMEeX.s:853    .bss.pid_rate_pitch:00000000 $d
-     /tmp/ccsQMEeX.s:860    .bss.pid_rate_roll:00000000 $d
+     /tmp/ccKfQO65.s:21     .text.Control_Init:00000000 $t
+     /tmp/ccKfQO65.s:27     .text.Control_Init:00000000 Control_Init
+     /tmp/ccKfQO65.s:133    .text.Control_Init:000000d4 $d
+     /tmp/ccKfQO65.s:863    .bss.pid_rate_roll:00000000 pid_rate_roll
+     /tmp/ccKfQO65.s:856    .bss.pid_rate_pitch:00000000 pid_rate_pitch
+     /tmp/ccKfQO65.s:849    .bss.pid_rate_yaw:00000000 pid_rate_yaw
+     /tmp/ccKfQO65.s:842    .bss.pid_angle_roll:00000000 pid_angle_roll
+     /tmp/ccKfQO65.s:835    .bss.pid_angle_pitch:00000000 pid_angle_pitch
+     /tmp/ccKfQO65.s:828    .bss.setpoint:00000000 setpoint
+     /tmp/ccKfQO65.s:821    .data.flight_mode:00000000 flight_mode
+     /tmp/ccKfQO65.s:151    .text.Control_Reset:00000000 $t
+     /tmp/ccKfQO65.s:157    .text.Control_Reset:00000000 Control_Reset
+     /tmp/ccKfQO65.s:193    .text.Control_Reset:00000024 $d
+     /tmp/ccKfQO65.s:202    .text.Control_SetMode:00000000 $t
+     /tmp/ccKfQO65.s:208    .text.Control_SetMode:00000000 Control_SetMode
+     /tmp/ccKfQO65.s:246    .text.Control_SetMode:00000018 $d
+     /tmp/ccKfQO65.s:251    .text.Control_Update:00000000 $t
+     /tmp/ccKfQO65.s:257    .text.Control_Update:00000000 Control_Update
+     /tmp/ccKfQO65.s:459    .text.Control_Update:00000114 $d
+     /tmp/ccKfQO65.s:472    .text.Control_SetGain:00000000 $t
+     /tmp/ccKfQO65.s:478    .text.Control_SetGain:00000000 Control_SetGain
+     /tmp/ccKfQO65.s:570    .text.Control_SetGain:00000054 $d
+     /tmp/ccKfQO65.s:579    .rodata.Control_PrintGains.str1.4:00000000 $d
+     /tmp/ccKfQO65.s:605    .text.Control_PrintGains:00000000 $t
+     /tmp/ccKfQO65.s:611    .text.Control_PrintGains:00000000 Control_PrintGains
+     /tmp/ccKfQO65.s:800    .text.Control_PrintGains:00000128 $d
+     /tmp/ccKfQO65.s:825    .bss.setpoint:00000000 $d
+     /tmp/ccKfQO65.s:832    .bss.pid_angle_pitch:00000000 $d
+     /tmp/ccKfQO65.s:839    .bss.pid_angle_roll:00000000 $d
+     /tmp/ccKfQO65.s:846    .bss.pid_rate_yaw:00000000 $d
+     /tmp/ccKfQO65.s:853    .bss.pid_rate_pitch:00000000 $d
+     /tmp/ccKfQO65.s:860    .bss.pid_rate_roll:00000000 $d
 
 UNDEFINED SYMBOLS
 PID_Init

@@ -1,0 +1,1286 @@
+ARM GAS  /tmp/ccIfRnaA.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"battery.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/battery.c"
+  20              		.section	.text.measure_once,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	measure_once:
+  27              	.LFB243:
+   1:Sensors/battery.c **** #include "battery.h"
+   2:Sensors/battery.c **** #include <stdio.h>
+   3:Sensors/battery.c **** 
+   4:Sensors/battery.c **** static ADC_HandleTypeDef hadc1;
+   5:Sensors/battery.c **** 
+   6:Sensors/battery.c **** static float volt = 0.0f;  /* gefilterte Akkuspannung */
+   7:Sensors/battery.c **** static float scale = 1.0f; /* Korrekturfaktor aus der Kalibrierung */
+   8:Sensors/battery.c **** static uint8_t cells = 0;  /* erkannte Zellenzahl */
+   9:Sensors/battery.c **** static BatteryState_t state = BAT_NONE;
+  10:Sensors/battery.c **** 
+  11:Sensors/battery.c **** static float timer = 0.0f;
+  12:Sensors/battery.c **** static uint8_t settle = 0; /* Zaehler, bis die Zellenerkennung greift */
+  13:Sensors/battery.c **** 
+  14:Sensors/battery.c **** /* Wie oft gemessen wird. 100 Hz reicht voellig und
+  15:Sensors/battery.c ****  * haelt die Regelschleife frei. */
+  16:Sensors/battery.c **** #define BAT_RATE_HZ 100.0f
+  17:Sensors/battery.c **** /* Tiefpass, damit Stromspitzen der Motoren die Anzeige nicht zappeln lassen */
+  18:Sensors/battery.c **** #define BAT_TAU 0.50f
+  19:Sensors/battery.c **** 
+  20:Sensors/battery.c **** void Battery_Init(void)
+  21:Sensors/battery.c **** {
+  22:Sensors/battery.c ****     __HAL_RCC_ADC1_CLK_ENABLE();
+  23:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+  24:Sensors/battery.c **** 
+  25:Sensors/battery.c ****     GPIO_InitTypeDef g = {0};
+  26:Sensors/battery.c ****     g.Pin = GPIO_PIN_0;
+  27:Sensors/battery.c ****     g.Mode = GPIO_MODE_ANALOG;
+  28:Sensors/battery.c ****     g.Pull = GPIO_NOPULL;
+  29:Sensors/battery.c ****     HAL_GPIO_Init(GPIOC, &g);
+  30:Sensors/battery.c **** 
+  31:Sensors/battery.c ****     hadc1.Instance = ADC1;
+ARM GAS  /tmp/ccIfRnaA.s 			page 2
+
+
+  32:Sensors/battery.c ****     hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  33:Sensors/battery.c ****     hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  34:Sensors/battery.c ****     hadc1.Init.ScanConvMode = DISABLE;
+  35:Sensors/battery.c ****     hadc1.Init.ContinuousConvMode = DISABLE;
+  36:Sensors/battery.c ****     hadc1.Init.DiscontinuousConvMode = DISABLE;
+  37:Sensors/battery.c ****     hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  38:Sensors/battery.c ****     hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  39:Sensors/battery.c ****     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  40:Sensors/battery.c ****     hadc1.Init.NbrOfConversion = 1;
+  41:Sensors/battery.c ****     hadc1.Init.DMAContinuousRequests = DISABLE;
+  42:Sensors/battery.c ****     hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  43:Sensors/battery.c ****     if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  44:Sensors/battery.c ****         Error_Handler();
+  45:Sensors/battery.c **** 
+  46:Sensors/battery.c ****     ADC_ChannelConfTypeDef ch = {0};
+  47:Sensors/battery.c ****     ch.Channel = ADC_CHANNEL_10; /* PC0 */
+  48:Sensors/battery.c ****     ch.Rank = 1;
+  49:Sensors/battery.c ****     ch.SamplingTime = ADC_SAMPLETIME_144CYCLES; /* lang, weil der Teiler hochohmig ist */
+  50:Sensors/battery.c ****     if (HAL_ADC_ConfigChannel(&hadc1, &ch) != HAL_OK)
+  51:Sensors/battery.c ****         Error_Handler();
+  52:Sensors/battery.c **** 
+  53:Sensors/battery.c ****     volt = 0.0f;
+  54:Sensors/battery.c ****     cells = 0;
+  55:Sensors/battery.c ****     state = BAT_NONE;
+  56:Sensors/battery.c ****     settle = 0;
+  57:Sensors/battery.c ****     timer = 0.0f;
+  58:Sensors/battery.c **** }
+  59:Sensors/battery.c **** 
+  60:Sensors/battery.c **** /* Eine Wandlung. Dauert bei 144 Zyklen rund 10 us. */
+  61:Sensors/battery.c **** static float measure_once(void)
+  62:Sensors/battery.c **** {
+  28              		.loc 1 62 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32 0000 10B5     		push	{r4, lr}
+  33              	.LCFI0:
+  34              		.cfi_def_cfa_offset 8
+  35              		.cfi_offset 4, -8
+  36              		.cfi_offset 14, -4
+  37 0002 2DED028B 		vpush.64	{d8}
+  38              	.LCFI1:
+  39              		.cfi_def_cfa_offset 16
+  40              		.cfi_offset 80, -16
+  41              		.cfi_offset 81, -12
+  63:Sensors/battery.c ****     HAL_ADC_Start(&hadc1);
+  42              		.loc 1 63 5 view .LVU1
+  43 0006 174C     		ldr	r4, .L6
+  44 0008 2046     		mov	r0, r4
+  45 000a FFF7FEFF 		bl	HAL_ADC_Start
+  46              	.LVL0:
+  64:Sensors/battery.c ****     if (HAL_ADC_PollForConversion(&hadc1, 2) != HAL_OK)
+  47              		.loc 1 64 5 view .LVU2
+  48              		.loc 1 64 9 is_stmt 0 view .LVU3
+  49 000e 0221     		movs	r1, #2
+  50 0010 2046     		mov	r0, r4
+  51 0012 FFF7FEFF 		bl	HAL_ADC_PollForConversion
+ARM GAS  /tmp/ccIfRnaA.s 			page 3
+
+
+  52              	.LVL1:
+  53              		.loc 1 64 8 discriminator 1 view .LVU4
+  54 0016 F0B9     		cbnz	r0, .L5
+  65:Sensors/battery.c ****     {
+  66:Sensors/battery.c ****         HAL_ADC_Stop(&hadc1);
+  67:Sensors/battery.c ****         return -1.0f;
+  68:Sensors/battery.c ****     }
+  69:Sensors/battery.c ****     uint32_t raw = HAL_ADC_GetValue(&hadc1);
+  55              		.loc 1 69 5 is_stmt 1 view .LVU5
+  56              		.loc 1 69 20 is_stmt 0 view .LVU6
+  57 0018 124C     		ldr	r4, .L6
+  58 001a 2046     		mov	r0, r4
+  59 001c FFF7FEFF 		bl	HAL_ADC_GetValue
+  60              	.LVL2:
+  61 0020 08EE100A 		vmov	s16, r0	@ int
+  62              	.LVL3:
+  70:Sensors/battery.c ****     HAL_ADC_Stop(&hadc1);
+  63              		.loc 1 70 5 is_stmt 1 view .LVU7
+  64 0024 2046     		mov	r0, r4
+  65              	.LVL4:
+  66              		.loc 1 70 5 is_stmt 0 view .LVU8
+  67 0026 FFF7FEFF 		bl	HAL_ADC_Stop
+  68              	.LVL5:
+  71:Sensors/battery.c **** 
+  72:Sensors/battery.c ****     const float pin_v = ((float)raw / 4095.0f) * BAT_VREF;
+  69              		.loc 1 72 5 is_stmt 1 view .LVU9
+  70              		.loc 1 72 26 is_stmt 0 view .LVU10
+  71 002a B8EE488A 		vcvt.f32.u32	s16, s16
+  72              	.LVL6:
+  73              		.loc 1 72 37 view .LVU11
+  74 002e DFED0E7A 		vldr.32	s15, .L6+4
+  75 0032 88EE270A 		vdiv.f32	s0, s16, s15
+  76              		.loc 1 72 17 view .LVU12
+  77 0036 DFED0D7A 		vldr.32	s15, .L6+8
+  78 003a 20EE270A 		vmul.f32	s0, s0, s15
+  79              	.LVL7:
+  73:Sensors/battery.c ****     const float teiler = (BAT_R_OBEN + BAT_R_UNTEN) / BAT_R_UNTEN; /* 11.0 bei 10k/1k */
+  80              		.loc 1 73 5 is_stmt 1 view .LVU13
+  74:Sensors/battery.c ****     return pin_v * teiler * scale;
+  81              		.loc 1 74 5 view .LVU14
+  82              		.loc 1 74 18 is_stmt 0 view .LVU15
+  83 003e F2EE067A 		vmov.f32	s15, #1.1e+1
+  84 0042 20EE270A 		vmul.f32	s0, s0, s15
+  85              	.LVL8:
+  86              		.loc 1 74 27 view .LVU16
+  87 0046 0A4B     		ldr	r3, .L6+12
+  88 0048 D3ED007A 		vldr.32	s15, [r3]
+  89 004c 20EE270A 		vmul.f32	s0, s0, s15
+  90              	.LVL9:
+  91              	.L1:
+  75:Sensors/battery.c **** }
+  92              		.loc 1 75 1 view .LVU17
+  93 0050 BDEC028B 		vldm	sp!, {d8}
+  94              	.LCFI2:
+  95              		.cfi_remember_state
+  96              		.cfi_restore 80
+  97              		.cfi_restore 81
+ARM GAS  /tmp/ccIfRnaA.s 			page 4
+
+
+  98              		.cfi_def_cfa_offset 8
+  99 0054 10BD     		pop	{r4, pc}
+ 100              	.L5:
+ 101              	.LCFI3:
+ 102              		.cfi_restore_state
+  66:Sensors/battery.c ****         return -1.0f;
+ 103              		.loc 1 66 9 is_stmt 1 view .LVU18
+ 104 0056 2046     		mov	r0, r4
+ 105 0058 FFF7FEFF 		bl	HAL_ADC_Stop
+ 106              	.LVL10:
+  67:Sensors/battery.c ****     }
+ 107              		.loc 1 67 9 view .LVU19
+  67:Sensors/battery.c ****     }
+ 108              		.loc 1 67 16 is_stmt 0 view .LVU20
+ 109 005c BFEE000A 		vmov.f32	s0, #-1.0e+0
+ 110 0060 F6E7     		b	.L1
+ 111              	.L7:
+ 112 0062 00BF     		.align	2
+ 113              	.L6:
+ 114 0064 00000000 		.word	hadc1
+ 115 0068 00F07F45 		.word	1166012416
+ 116 006c 33335340 		.word	1079194419
+ 117 0070 00000000 		.word	scale
+ 118              		.cfi_endproc
+ 119              	.LFE243:
+ 121              		.section	.text.Battery_Init,"ax",%progbits
+ 122              		.align	1
+ 123              		.global	Battery_Init
+ 124              		.syntax unified
+ 125              		.thumb
+ 126              		.thumb_func
+ 128              	Battery_Init:
+ 129              	.LFB242:
+  21:Sensors/battery.c ****     __HAL_RCC_ADC1_CLK_ENABLE();
+ 130              		.loc 1 21 1 is_stmt 1 view -0
+ 131              		.cfi_startproc
+ 132              		@ args = 0, pretend = 0, frame = 48
+ 133              		@ frame_needed = 0, uses_anonymous_args = 0
+ 134 0000 30B5     		push	{r4, r5, lr}
+ 135              	.LCFI4:
+ 136              		.cfi_def_cfa_offset 12
+ 137              		.cfi_offset 4, -12
+ 138              		.cfi_offset 5, -8
+ 139              		.cfi_offset 14, -4
+ 140 0002 8DB0     		sub	sp, sp, #52
+ 141              	.LCFI5:
+ 142              		.cfi_def_cfa_offset 64
+  22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+ 143              		.loc 1 22 5 view .LVU22
+ 144              	.LBB2:
+  22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+ 145              		.loc 1 22 5 view .LVU23
+ 146 0004 0024     		movs	r4, #0
+ 147 0006 0194     		str	r4, [sp, #4]
+  22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+ 148              		.loc 1 22 5 view .LVU24
+ 149 0008 2D4B     		ldr	r3, .L14
+ARM GAS  /tmp/ccIfRnaA.s 			page 5
+
+
+ 150 000a 5A6C     		ldr	r2, [r3, #68]
+ 151 000c 42F48072 		orr	r2, r2, #256
+ 152 0010 5A64     		str	r2, [r3, #68]
+  22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+ 153              		.loc 1 22 5 view .LVU25
+ 154 0012 5A6C     		ldr	r2, [r3, #68]
+ 155 0014 02F48072 		and	r2, r2, #256
+ 156 0018 0192     		str	r2, [sp, #4]
+  22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+ 157              		.loc 1 22 5 view .LVU26
+ 158 001a 019A     		ldr	r2, [sp, #4]
+ 159              	.LBE2:
+  22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
+ 160              		.loc 1 22 5 view .LVU27
+  23:Sensors/battery.c **** 
+ 161              		.loc 1 23 5 view .LVU28
+ 162              	.LBB3:
+  23:Sensors/battery.c **** 
+ 163              		.loc 1 23 5 view .LVU29
+ 164 001c 0294     		str	r4, [sp, #8]
+  23:Sensors/battery.c **** 
+ 165              		.loc 1 23 5 view .LVU30
+ 166 001e 1A6B     		ldr	r2, [r3, #48]
+ 167 0020 42F00402 		orr	r2, r2, #4
+ 168 0024 1A63     		str	r2, [r3, #48]
+  23:Sensors/battery.c **** 
+ 169              		.loc 1 23 5 view .LVU31
+ 170 0026 1B6B     		ldr	r3, [r3, #48]
+ 171 0028 03F00403 		and	r3, r3, #4
+ 172 002c 0293     		str	r3, [sp, #8]
+  23:Sensors/battery.c **** 
+ 173              		.loc 1 23 5 view .LVU32
+ 174 002e 029B     		ldr	r3, [sp, #8]
+ 175              	.LBE3:
+  23:Sensors/battery.c **** 
+ 176              		.loc 1 23 5 view .LVU33
+  25:Sensors/battery.c ****     g.Pin = GPIO_PIN_0;
+ 177              		.loc 1 25 5 view .LVU34
+  25:Sensors/battery.c ****     g.Pin = GPIO_PIN_0;
+ 178              		.loc 1 25 22 is_stmt 0 view .LVU35
+ 179 0030 0794     		str	r4, [sp, #28]
+ 180 0032 0894     		str	r4, [sp, #32]
+ 181 0034 0994     		str	r4, [sp, #36]
+ 182 0036 0A94     		str	r4, [sp, #40]
+ 183 0038 0B94     		str	r4, [sp, #44]
+  26:Sensors/battery.c ****     g.Mode = GPIO_MODE_ANALOG;
+ 184              		.loc 1 26 5 is_stmt 1 view .LVU36
+  26:Sensors/battery.c ****     g.Mode = GPIO_MODE_ANALOG;
+ 185              		.loc 1 26 11 is_stmt 0 view .LVU37
+ 186 003a 0125     		movs	r5, #1
+ 187 003c 0795     		str	r5, [sp, #28]
+  27:Sensors/battery.c ****     g.Pull = GPIO_NOPULL;
+ 188              		.loc 1 27 5 is_stmt 1 view .LVU38
+  27:Sensors/battery.c ****     g.Pull = GPIO_NOPULL;
+ 189              		.loc 1 27 12 is_stmt 0 view .LVU39
+ 190 003e 0323     		movs	r3, #3
+ 191 0040 0893     		str	r3, [sp, #32]
+ARM GAS  /tmp/ccIfRnaA.s 			page 6
+
+
+  28:Sensors/battery.c ****     HAL_GPIO_Init(GPIOC, &g);
+ 192              		.loc 1 28 5 is_stmt 1 view .LVU40
+  29:Sensors/battery.c **** 
+ 193              		.loc 1 29 5 view .LVU41
+ 194 0042 07A9     		add	r1, sp, #28
+ 195 0044 1F48     		ldr	r0, .L14+4
+ 196 0046 FFF7FEFF 		bl	HAL_GPIO_Init
+ 197              	.LVL11:
+  31:Sensors/battery.c ****     hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+ 198              		.loc 1 31 5 view .LVU42
+  31:Sensors/battery.c ****     hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+ 199              		.loc 1 31 20 is_stmt 0 view .LVU43
+ 200 004a 1F48     		ldr	r0, .L14+8
+ 201 004c 1F4B     		ldr	r3, .L14+12
+ 202 004e 0360     		str	r3, [r0]
+  32:Sensors/battery.c ****     hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+ 203              		.loc 1 32 5 is_stmt 1 view .LVU44
+  32:Sensors/battery.c ****     hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+ 204              		.loc 1 32 31 is_stmt 0 view .LVU45
+ 205 0050 4FF48033 		mov	r3, #65536
+ 206 0054 4360     		str	r3, [r0, #4]
+  33:Sensors/battery.c ****     hadc1.Init.ScanConvMode = DISABLE;
+ 207              		.loc 1 33 5 is_stmt 1 view .LVU46
+  33:Sensors/battery.c ****     hadc1.Init.ScanConvMode = DISABLE;
+ 208              		.loc 1 33 27 is_stmt 0 view .LVU47
+ 209 0056 8460     		str	r4, [r0, #8]
+  34:Sensors/battery.c ****     hadc1.Init.ContinuousConvMode = DISABLE;
+ 210              		.loc 1 34 5 is_stmt 1 view .LVU48
+  34:Sensors/battery.c ****     hadc1.Init.ContinuousConvMode = DISABLE;
+ 211              		.loc 1 34 29 is_stmt 0 view .LVU49
+ 212 0058 0461     		str	r4, [r0, #16]
+  35:Sensors/battery.c ****     hadc1.Init.DiscontinuousConvMode = DISABLE;
+ 213              		.loc 1 35 5 is_stmt 1 view .LVU50
+  35:Sensors/battery.c ****     hadc1.Init.DiscontinuousConvMode = DISABLE;
+ 214              		.loc 1 35 35 is_stmt 0 view .LVU51
+ 215 005a 0476     		strb	r4, [r0, #24]
+  36:Sensors/battery.c ****     hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+ 216              		.loc 1 36 5 is_stmt 1 view .LVU52
+  36:Sensors/battery.c ****     hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+ 217              		.loc 1 36 38 is_stmt 0 view .LVU53
+ 218 005c 80F82040 		strb	r4, [r0, #32]
+  37:Sensors/battery.c ****     hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+ 219              		.loc 1 37 5 is_stmt 1 view .LVU54
+  37:Sensors/battery.c ****     hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+ 220              		.loc 1 37 37 is_stmt 0 view .LVU55
+ 221 0060 C462     		str	r4, [r0, #44]
+  38:Sensors/battery.c ****     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+ 222              		.loc 1 38 5 is_stmt 1 view .LVU56
+  38:Sensors/battery.c ****     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+ 223              		.loc 1 38 33 is_stmt 0 view .LVU57
+ 224 0062 1B4B     		ldr	r3, .L14+16
+ 225 0064 8362     		str	r3, [r0, #40]
+  39:Sensors/battery.c ****     hadc1.Init.NbrOfConversion = 1;
+ 226              		.loc 1 39 5 is_stmt 1 view .LVU58
+  39:Sensors/battery.c ****     hadc1.Init.NbrOfConversion = 1;
+ 227              		.loc 1 39 26 is_stmt 0 view .LVU59
+ 228 0066 C460     		str	r4, [r0, #12]
+ARM GAS  /tmp/ccIfRnaA.s 			page 7
+
+
+  40:Sensors/battery.c ****     hadc1.Init.DMAContinuousRequests = DISABLE;
+ 229              		.loc 1 40 5 is_stmt 1 view .LVU60
+  40:Sensors/battery.c ****     hadc1.Init.DMAContinuousRequests = DISABLE;
+ 230              		.loc 1 40 32 is_stmt 0 view .LVU61
+ 231 0068 C561     		str	r5, [r0, #28]
+  41:Sensors/battery.c ****     hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+ 232              		.loc 1 41 5 is_stmt 1 view .LVU62
+  41:Sensors/battery.c ****     hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+ 233              		.loc 1 41 38 is_stmt 0 view .LVU63
+ 234 006a 80F83040 		strb	r4, [r0, #48]
+  42:Sensors/battery.c ****     if (HAL_ADC_Init(&hadc1) != HAL_OK)
+ 235              		.loc 1 42 5 is_stmt 1 view .LVU64
+  42:Sensors/battery.c ****     if (HAL_ADC_Init(&hadc1) != HAL_OK)
+ 236              		.loc 1 42 29 is_stmt 0 view .LVU65
+ 237 006e 4561     		str	r5, [r0, #20]
+  43:Sensors/battery.c ****         Error_Handler();
+ 238              		.loc 1 43 5 is_stmt 1 view .LVU66
+  43:Sensors/battery.c ****         Error_Handler();
+ 239              		.loc 1 43 9 is_stmt 0 view .LVU67
+ 240 0070 FFF7FEFF 		bl	HAL_ADC_Init
+ 241              	.LVL12:
+  43:Sensors/battery.c ****         Error_Handler();
+ 242              		.loc 1 43 8 discriminator 1 view .LVU68
+ 243 0074 F0B9     		cbnz	r0, .L12
+ 244              	.L9:
+  46:Sensors/battery.c ****     ch.Channel = ADC_CHANNEL_10; /* PC0 */
+ 245              		.loc 1 46 5 is_stmt 1 view .LVU69
+  46:Sensors/battery.c ****     ch.Channel = ADC_CHANNEL_10; /* PC0 */
+ 246              		.loc 1 46 28 is_stmt 0 view .LVU70
+ 247 0076 0023     		movs	r3, #0
+ 248 0078 0393     		str	r3, [sp, #12]
+ 249 007a 0493     		str	r3, [sp, #16]
+ 250 007c 0593     		str	r3, [sp, #20]
+ 251 007e 0693     		str	r3, [sp, #24]
+  47:Sensors/battery.c ****     ch.Rank = 1;
+ 252              		.loc 1 47 5 is_stmt 1 view .LVU71
+  47:Sensors/battery.c ****     ch.Rank = 1;
+ 253              		.loc 1 47 16 is_stmt 0 view .LVU72
+ 254 0080 0A23     		movs	r3, #10
+ 255 0082 0393     		str	r3, [sp, #12]
+  48:Sensors/battery.c ****     ch.SamplingTime = ADC_SAMPLETIME_144CYCLES; /* lang, weil der Teiler hochohmig ist */
+ 256              		.loc 1 48 5 is_stmt 1 view .LVU73
+  48:Sensors/battery.c ****     ch.SamplingTime = ADC_SAMPLETIME_144CYCLES; /* lang, weil der Teiler hochohmig ist */
+ 257              		.loc 1 48 13 is_stmt 0 view .LVU74
+ 258 0084 0123     		movs	r3, #1
+ 259 0086 0493     		str	r3, [sp, #16]
+  49:Sensors/battery.c ****     if (HAL_ADC_ConfigChannel(&hadc1, &ch) != HAL_OK)
+ 260              		.loc 1 49 5 is_stmt 1 view .LVU75
+  49:Sensors/battery.c ****     if (HAL_ADC_ConfigChannel(&hadc1, &ch) != HAL_OK)
+ 261              		.loc 1 49 21 is_stmt 0 view .LVU76
+ 262 0088 0623     		movs	r3, #6
+ 263 008a 0593     		str	r3, [sp, #20]
+  50:Sensors/battery.c ****         Error_Handler();
+ 264              		.loc 1 50 5 is_stmt 1 view .LVU77
+  50:Sensors/battery.c ****         Error_Handler();
+ 265              		.loc 1 50 9 is_stmt 0 view .LVU78
+ 266 008c 03A9     		add	r1, sp, #12
+ARM GAS  /tmp/ccIfRnaA.s 			page 8
+
+
+ 267 008e 0E48     		ldr	r0, .L14+8
+ 268 0090 FFF7FEFF 		bl	HAL_ADC_ConfigChannel
+ 269              	.LVL13:
+  50:Sensors/battery.c ****         Error_Handler();
+ 270              		.loc 1 50 8 discriminator 1 view .LVU79
+ 271 0094 88B9     		cbnz	r0, .L13
+ 272              	.L10:
+  53:Sensors/battery.c ****     cells = 0;
+ 273              		.loc 1 53 5 is_stmt 1 view .LVU80
+  53:Sensors/battery.c ****     cells = 0;
+ 274              		.loc 1 53 10 is_stmt 0 view .LVU81
+ 275 0096 0023     		movs	r3, #0
+ 276 0098 0E4A     		ldr	r2, .L14+20
+ 277 009a 1360     		str	r3, [r2]	@ float
+  54:Sensors/battery.c ****     state = BAT_NONE;
+ 278              		.loc 1 54 5 is_stmt 1 view .LVU82
+  54:Sensors/battery.c ****     state = BAT_NONE;
+ 279              		.loc 1 54 11 is_stmt 0 view .LVU83
+ 280 009c 0022     		movs	r2, #0
+ 281 009e 0E49     		ldr	r1, .L14+24
+ 282 00a0 0A70     		strb	r2, [r1]
+  55:Sensors/battery.c ****     settle = 0;
+ 283              		.loc 1 55 5 is_stmt 1 view .LVU84
+  55:Sensors/battery.c ****     settle = 0;
+ 284              		.loc 1 55 11 is_stmt 0 view .LVU85
+ 285 00a2 0E49     		ldr	r1, .L14+28
+ 286 00a4 0320     		movs	r0, #3
+ 287 00a6 0870     		strb	r0, [r1]
+  56:Sensors/battery.c ****     timer = 0.0f;
+ 288              		.loc 1 56 5 is_stmt 1 view .LVU86
+  56:Sensors/battery.c ****     timer = 0.0f;
+ 289              		.loc 1 56 12 is_stmt 0 view .LVU87
+ 290 00a8 0D49     		ldr	r1, .L14+32
+ 291 00aa 0A70     		strb	r2, [r1]
+  57:Sensors/battery.c **** }
+ 292              		.loc 1 57 5 is_stmt 1 view .LVU88
+  57:Sensors/battery.c **** }
+ 293              		.loc 1 57 11 is_stmt 0 view .LVU89
+ 294 00ac 0D4A     		ldr	r2, .L14+36
+ 295 00ae 1360     		str	r3, [r2]	@ float
+  58:Sensors/battery.c **** 
+ 296              		.loc 1 58 1 view .LVU90
+ 297 00b0 0DB0     		add	sp, sp, #52
+ 298              	.LCFI6:
+ 299              		.cfi_remember_state
+ 300              		.cfi_def_cfa_offset 12
+ 301              		@ sp needed
+ 302 00b2 30BD     		pop	{r4, r5, pc}
+ 303              	.L12:
+ 304              	.LCFI7:
+ 305              		.cfi_restore_state
+  44:Sensors/battery.c **** 
+ 306              		.loc 1 44 9 is_stmt 1 view .LVU91
+ 307 00b4 FFF7FEFF 		bl	Error_Handler
+ 308              	.LVL14:
+ 309 00b8 DDE7     		b	.L9
+ 310              	.L13:
+ARM GAS  /tmp/ccIfRnaA.s 			page 9
+
+
+  51:Sensors/battery.c **** 
+ 311              		.loc 1 51 9 view .LVU92
+ 312 00ba FFF7FEFF 		bl	Error_Handler
+ 313              	.LVL15:
+ 314 00be EAE7     		b	.L10
+ 315              	.L15:
+ 316              		.align	2
+ 317              	.L14:
+ 318 00c0 00380240 		.word	1073887232
+ 319 00c4 00080240 		.word	1073874944
+ 320 00c8 00000000 		.word	hadc1
+ 321 00cc 00200140 		.word	1073815552
+ 322 00d0 0100000F 		.word	251658241
+ 323 00d4 00000000 		.word	volt
+ 324 00d8 00000000 		.word	cells
+ 325 00dc 00000000 		.word	state
+ 326 00e0 00000000 		.word	settle
+ 327 00e4 00000000 		.word	timer
+ 328              		.cfi_endproc
+ 329              	.LFE242:
+ 331              		.section	.text.Battery_Update,"ax",%progbits
+ 332              		.align	1
+ 333              		.global	Battery_Update
+ 334              		.syntax unified
+ 335              		.thumb
+ 336              		.thumb_func
+ 338              	Battery_Update:
+ 339              	.LVL16:
+ 340              	.LFB244:
+  76:Sensors/battery.c **** 
+  77:Sensors/battery.c **** void Battery_Update(float dt)
+  78:Sensors/battery.c **** {
+ 341              		.loc 1 78 1 view -0
+ 342              		.cfi_startproc
+ 343              		@ args = 0, pretend = 0, frame = 0
+ 344              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345              		.loc 1 78 1 is_stmt 0 view .LVU94
+ 346 0000 08B5     		push	{r3, lr}
+ 347              	.LCFI8:
+ 348              		.cfi_def_cfa_offset 8
+ 349              		.cfi_offset 3, -8
+ 350              		.cfi_offset 14, -4
+ 351 0002 2DED028B 		vpush.64	{d8}
+ 352              	.LCFI9:
+ 353              		.cfi_def_cfa_offset 16
+ 354              		.cfi_offset 80, -16
+ 355              		.cfi_offset 81, -12
+  79:Sensors/battery.c ****     timer += dt;
+ 356              		.loc 1 79 5 is_stmt 1 view .LVU95
+ 357              		.loc 1 79 11 is_stmt 0 view .LVU96
+ 358 0006 444B     		ldr	r3, .L44
+ 359 0008 D3ED007A 		vldr.32	s15, [r3]
+ 360 000c 30EE278A 		vadd.f32	s16, s0, s15
+ 361 0010 83ED008A 		vstr.32	s16, [r3]
+  80:Sensors/battery.c ****     if (timer < (1.0f / BAT_RATE_HZ))
+ 362              		.loc 1 80 5 is_stmt 1 view .LVU97
+ 363              		.loc 1 80 8 is_stmt 0 view .LVU98
+ARM GAS  /tmp/ccIfRnaA.s 			page 10
+
+
+ 364 0014 DFED417A 		vldr.32	s15, .L44+4
+ 365 0018 B4EEE78A 		vcmpe.f32	s16, s15
+ 366 001c F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 367 0020 02D5     		bpl	.L41
+ 368              	.LVL17:
+ 369              	.L16:
+  81:Sensors/battery.c ****         return;
+  82:Sensors/battery.c ****     const float step = timer;
+  83:Sensors/battery.c ****     timer = 0.0f;
+  84:Sensors/battery.c **** 
+  85:Sensors/battery.c ****     const float v = measure_once();
+  86:Sensors/battery.c ****     if (v < 0.0f)
+  87:Sensors/battery.c ****         return;
+  88:Sensors/battery.c **** 
+  89:Sensors/battery.c ****     /* Tiefpass */
+  90:Sensors/battery.c ****     const float a = step / (BAT_TAU + step);
+  91:Sensors/battery.c ****     volt += a * (v - volt);
+  92:Sensors/battery.c **** 
+  93:Sensors/battery.c ****     /* Unter 5 V ist offensichtlich kein Akku dran (Betrieb nur ueber USB) */
+  94:Sensors/battery.c ****     if (volt < 5.0f)
+  95:Sensors/battery.c ****     {
+  96:Sensors/battery.c ****         cells = 0;
+  97:Sensors/battery.c ****         state = BAT_NONE;
+  98:Sensors/battery.c ****         settle = 0;
+  99:Sensors/battery.c ****         return;
+ 100:Sensors/battery.c ****     }
+ 101:Sensors/battery.c **** 
+ 102:Sensors/battery.c ****     /* Zellenzahl einmalig bestimmen, sobald sich der Wert beruhigt hat.
+ 103:Sensors/battery.c ****      * Eine Zelle liegt zwischen 3,0 und 4,25 V - daraus laesst sich die
+ 104:Sensors/battery.c ****      * Zahl eindeutig ausrechnen. Danach bleibt sie fest, sonst wuerde die
+ 105:Sensors/battery.c ****      * Erkennung bei leerem Akku auf eine Zelle weniger springen. */
+ 106:Sensors/battery.c ****     if (cells == 0)
+ 107:Sensors/battery.c ****     {
+ 108:Sensors/battery.c ****         if (settle < 100) /* etwa eine Sekunde warten */
+ 109:Sensors/battery.c ****         {
+ 110:Sensors/battery.c ****             settle++;
+ 111:Sensors/battery.c ****             return;
+ 112:Sensors/battery.c ****         }
+ 113:Sensors/battery.c ****         for (uint8_t c = 2; c <= 6; c++)
+ 114:Sensors/battery.c ****         {
+ 115:Sensors/battery.c ****             const float cv = volt / c;
+ 116:Sensors/battery.c ****             if (cv >= 3.30f && cv <= 4.30f)
+ 117:Sensors/battery.c ****             {
+ 118:Sensors/battery.c ****                 cells = c;
+ 119:Sensors/battery.c ****                 break;
+ 120:Sensors/battery.c ****             }
+ 121:Sensors/battery.c ****         }
+ 122:Sensors/battery.c ****         if (cells == 0)
+ 123:Sensors/battery.c ****             return; /* nichts Sinnvolles erkannt */
+ 124:Sensors/battery.c ****     }
+ 125:Sensors/battery.c **** 
+ 126:Sensors/battery.c ****     const float cv = volt / cells;
+ 127:Sensors/battery.c ****     if (cv < BAT_CRIT_V)
+ 128:Sensors/battery.c ****         state = BAT_CRITICAL;
+ 129:Sensors/battery.c ****     else if (cv < BAT_WARN_V)
+ 130:Sensors/battery.c ****         state = BAT_WARN;
+ 131:Sensors/battery.c ****     else
+ARM GAS  /tmp/ccIfRnaA.s 			page 11
+
+
+ 132:Sensors/battery.c ****         state = BAT_OK;
+ 133:Sensors/battery.c **** }
+ 370              		.loc 1 133 1 view .LVU99
+ 371 0022 BDEC028B 		vldm	sp!, {d8}
+ 372              	.LCFI10:
+ 373              		.cfi_remember_state
+ 374              		.cfi_restore 80
+ 375              		.cfi_restore 81
+ 376              		.cfi_def_cfa_offset 8
+ 377 0026 08BD     		pop	{r3, pc}
+ 378              	.LVL18:
+ 379              	.L41:
+ 380              	.LCFI11:
+ 381              		.cfi_restore_state
+  82:Sensors/battery.c ****     timer = 0.0f;
+ 382              		.loc 1 82 5 is_stmt 1 view .LVU100
+  83:Sensors/battery.c **** 
+ 383              		.loc 1 83 5 view .LVU101
+  83:Sensors/battery.c **** 
+ 384              		.loc 1 83 11 is_stmt 0 view .LVU102
+ 385 0028 0022     		movs	r2, #0
+ 386 002a 1A60     		str	r2, [r3]	@ float
+  85:Sensors/battery.c ****     if (v < 0.0f)
+ 387              		.loc 1 85 5 is_stmt 1 view .LVU103
+  85:Sensors/battery.c ****     if (v < 0.0f)
+ 388              		.loc 1 85 21 is_stmt 0 view .LVU104
+ 389 002c FFF7FEFF 		bl	measure_once
+ 390              	.LVL19:
+  86:Sensors/battery.c ****         return;
+ 391              		.loc 1 86 5 is_stmt 1 view .LVU105
+  86:Sensors/battery.c ****         return;
+ 392              		.loc 1 86 8 is_stmt 0 view .LVU106
+ 393 0030 B5EEC00A 		vcmpe.f32	s0, #0
+ 394 0034 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 395 0038 F3D4     		bmi	.L16
+  90:Sensors/battery.c ****     volt += a * (v - volt);
+ 396              		.loc 1 90 5 is_stmt 1 view .LVU107
+  90:Sensors/battery.c ****     volt += a * (v - volt);
+ 397              		.loc 1 90 37 is_stmt 0 view .LVU108
+ 398 003a F6EE007A 		vmov.f32	s15, #5.0e-1
+ 399 003e 78EE277A 		vadd.f32	s15, s16, s15
+  90:Sensors/battery.c ****     volt += a * (v - volt);
+ 400              		.loc 1 90 17 view .LVU109
+ 401 0042 88EE277A 		vdiv.f32	s14, s16, s15
+ 402              	.LVL20:
+  91:Sensors/battery.c **** 
+ 403              		.loc 1 91 5 is_stmt 1 view .LVU110
+  91:Sensors/battery.c **** 
+ 404              		.loc 1 91 20 is_stmt 0 view .LVU111
+ 405 0046 364B     		ldr	r3, .L44+8
+ 406 0048 D3ED007A 		vldr.32	s15, [r3]
+ 407 004c 30EE670A 		vsub.f32	s0, s0, s15
+ 408              	.LVL21:
+  91:Sensors/battery.c **** 
+ 409              		.loc 1 91 15 view .LVU112
+ 410 0050 20EE070A 		vmul.f32	s0, s0, s14
+  91:Sensors/battery.c **** 
+ARM GAS  /tmp/ccIfRnaA.s 			page 12
+
+
+ 411              		.loc 1 91 10 view .LVU113
+ 412 0054 77EE807A 		vadd.f32	s15, s15, s0
+ 413 0058 C3ED007A 		vstr.32	s15, [r3]
+  94:Sensors/battery.c ****     {
+ 414              		.loc 1 94 5 is_stmt 1 view .LVU114
+  94:Sensors/battery.c ****     {
+ 415              		.loc 1 94 8 is_stmt 0 view .LVU115
+ 416 005c B1EE047A 		vmov.f32	s14, #5.0e+0
+ 417              	.LVL22:
+  94:Sensors/battery.c ****     {
+ 418              		.loc 1 94 8 view .LVU116
+ 419 0060 F4EEC77A 		vcmpe.f32	s15, s14
+ 420 0064 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 421 0068 08D4     		bmi	.L42
+ 106:Sensors/battery.c ****     {
+ 422              		.loc 1 106 5 is_stmt 1 view .LVU117
+ 106:Sensors/battery.c ****     {
+ 423              		.loc 1 106 15 is_stmt 0 view .LVU118
+ 424 006a 2E4B     		ldr	r3, .L44+12
+ 425 006c 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 106:Sensors/battery.c ****     {
+ 426              		.loc 1 106 8 view .LVU119
+ 427 006e 83BB     		cbnz	r3, .L20
+ 108:Sensors/battery.c ****         {
+ 428              		.loc 1 108 9 is_stmt 1 view .LVU120
+ 108:Sensors/battery.c ****         {
+ 429              		.loc 1 108 20 is_stmt 0 view .LVU121
+ 430 0070 2D4B     		ldr	r3, .L44+16
+ 431 0072 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 108:Sensors/battery.c ****         {
+ 432              		.loc 1 108 12 view .LVU122
+ 433 0074 632B     		cmp	r3, #99
+ 434 0076 0AD9     		bls	.L43
+ 435              	.LBB4:
+ 113:Sensors/battery.c ****         {
+ 436              		.loc 1 113 22 view .LVU123
+ 437 0078 0223     		movs	r3, #2
+ 438 007a 0EE0     		b	.L21
+ 439              	.L42:
+ 440              	.LBE4:
+  96:Sensors/battery.c ****         state = BAT_NONE;
+ 441              		.loc 1 96 9 is_stmt 1 view .LVU124
+  96:Sensors/battery.c ****         state = BAT_NONE;
+ 442              		.loc 1 96 15 is_stmt 0 view .LVU125
+ 443 007c 0023     		movs	r3, #0
+ 444 007e 294A     		ldr	r2, .L44+12
+ 445 0080 1370     		strb	r3, [r2]
+  97:Sensors/battery.c ****         settle = 0;
+ 446              		.loc 1 97 9 is_stmt 1 view .LVU126
+  97:Sensors/battery.c ****         settle = 0;
+ 447              		.loc 1 97 15 is_stmt 0 view .LVU127
+ 448 0082 2A4A     		ldr	r2, .L44+20
+ 449 0084 0321     		movs	r1, #3
+ 450 0086 1170     		strb	r1, [r2]
+  98:Sensors/battery.c ****         return;
+ 451              		.loc 1 98 9 is_stmt 1 view .LVU128
+  98:Sensors/battery.c ****         return;
+ARM GAS  /tmp/ccIfRnaA.s 			page 13
+
+
+ 452              		.loc 1 98 16 is_stmt 0 view .LVU129
+ 453 0088 274A     		ldr	r2, .L44+16
+ 454 008a 1370     		strb	r3, [r2]
+  99:Sensors/battery.c ****     }
+ 455              		.loc 1 99 9 is_stmt 1 view .LVU130
+ 456 008c C9E7     		b	.L16
+ 457              	.L43:
+ 110:Sensors/battery.c ****             return;
+ 458              		.loc 1 110 13 view .LVU131
+ 110:Sensors/battery.c ****             return;
+ 459              		.loc 1 110 19 is_stmt 0 view .LVU132
+ 460 008e 0133     		adds	r3, r3, #1
+ 461 0090 254A     		ldr	r2, .L44+16
+ 462 0092 1370     		strb	r3, [r2]
+ 111:Sensors/battery.c ****         }
+ 463              		.loc 1 111 13 is_stmt 1 view .LVU133
+ 464 0094 C5E7     		b	.L16
+ 465              	.LVL23:
+ 466              	.L22:
+ 467              	.LBB6:
+ 113:Sensors/battery.c ****         {
+ 468              		.loc 1 113 38 discriminator 2 view .LVU134
+ 469 0096 0133     		adds	r3, r3, #1
+ 470              	.LVL24:
+ 113:Sensors/battery.c ****         {
+ 471              		.loc 1 113 38 is_stmt 0 discriminator 2 view .LVU135
+ 472 0098 DBB2     		uxtb	r3, r3
+ 473              	.LVL25:
+ 474              	.L21:
+ 113:Sensors/battery.c ****         {
+ 475              		.loc 1 113 31 is_stmt 1 discriminator 1 view .LVU136
+ 476 009a 062B     		cmp	r3, #6
+ 477 009c 15D8     		bhi	.L25
+ 478              	.LBB5:
+ 115:Sensors/battery.c ****             if (cv >= 3.30f && cv <= 4.30f)
+ 479              		.loc 1 115 13 view .LVU137
+ 115:Sensors/battery.c ****             if (cv >= 3.30f && cv <= 4.30f)
+ 480              		.loc 1 115 35 is_stmt 0 view .LVU138
+ 481 009e 07EE103A 		vmov	s14, r3	@ int
+ 482 00a2 F8EEC76A 		vcvt.f32.s32	s13, s14
+ 115:Sensors/battery.c ****             if (cv >= 3.30f && cv <= 4.30f)
+ 483              		.loc 1 115 25 view .LVU139
+ 484 00a6 87EEA67A 		vdiv.f32	s14, s15, s13
+ 485              	.LVL26:
+ 116:Sensors/battery.c ****             {
+ 486              		.loc 1 116 13 is_stmt 1 view .LVU140
+ 116:Sensors/battery.c ****             {
+ 487              		.loc 1 116 16 is_stmt 0 view .LVU141
+ 488 00aa DFED216A 		vldr.32	s13, .L44+24
+ 489 00ae B4EEE67A 		vcmpe.f32	s14, s13
+ 490 00b2 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 491 00b6 EEDB     		blt	.L22
+ 116:Sensors/battery.c ****             {
+ 492              		.loc 1 116 29 discriminator 1 view .LVU142
+ 493 00b8 DFED1E6A 		vldr.32	s13, .L44+28
+ 494 00bc B4EEE67A 		vcmpe.f32	s14, s13
+ 495 00c0 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ARM GAS  /tmp/ccIfRnaA.s 			page 14
+
+
+ 496 00c4 E7D8     		bhi	.L22
+ 118:Sensors/battery.c ****                 break;
+ 497              		.loc 1 118 17 is_stmt 1 view .LVU143
+ 118:Sensors/battery.c ****                 break;
+ 498              		.loc 1 118 23 is_stmt 0 view .LVU144
+ 499 00c6 174A     		ldr	r2, .L44+12
+ 500 00c8 1370     		strb	r3, [r2]
+ 119:Sensors/battery.c ****             }
+ 501              		.loc 1 119 17 is_stmt 1 view .LVU145
+ 502              	.LVL27:
+ 503              	.L25:
+ 119:Sensors/battery.c ****             }
+ 504              		.loc 1 119 17 is_stmt 0 view .LVU146
+ 505              	.LBE5:
+ 506              	.LBE6:
+ 122:Sensors/battery.c ****             return; /* nichts Sinnvolles erkannt */
+ 507              		.loc 1 122 9 is_stmt 1 view .LVU147
+ 122:Sensors/battery.c ****             return; /* nichts Sinnvolles erkannt */
+ 508              		.loc 1 122 19 is_stmt 0 view .LVU148
+ 509 00ca 164B     		ldr	r3, .L44+12
+ 510              	.LVL28:
+ 122:Sensors/battery.c ****             return; /* nichts Sinnvolles erkannt */
+ 511              		.loc 1 122 19 view .LVU149
+ 512 00cc 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 122:Sensors/battery.c ****             return; /* nichts Sinnvolles erkannt */
+ 513              		.loc 1 122 12 view .LVU150
+ 514 00ce 002B     		cmp	r3, #0
+ 515 00d0 A7D0     		beq	.L16
+ 516              	.LVL29:
+ 517              	.L20:
+ 126:Sensors/battery.c ****     if (cv < BAT_CRIT_V)
+ 518              		.loc 1 126 5 is_stmt 1 view .LVU151
+ 126:Sensors/battery.c ****     if (cv < BAT_CRIT_V)
+ 519              		.loc 1 126 27 is_stmt 0 view .LVU152
+ 520 00d2 144B     		ldr	r3, .L44+12
+ 521 00d4 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 522 00d6 07EE103A 		vmov	s14, r3	@ int
+ 523 00da B8EEC77A 		vcvt.f32.s32	s14, s14
+ 126:Sensors/battery.c ****     if (cv < BAT_CRIT_V)
+ 524              		.loc 1 126 17 view .LVU153
+ 525 00de C7EE876A 		vdiv.f32	s13, s15, s14
+ 526              	.LVL30:
+ 127:Sensors/battery.c ****         state = BAT_CRITICAL;
+ 527              		.loc 1 127 5 is_stmt 1 view .LVU154
+ 127:Sensors/battery.c ****         state = BAT_CRITICAL;
+ 528              		.loc 1 127 8 is_stmt 0 view .LVU155
+ 529 00e2 DFED137A 		vldr.32	s15, .L44+24
+ 530 00e6 F4EEE76A 		vcmpe.f32	s13, s15
+ 531 00ea F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 532 00ee 03D5     		bpl	.L38
+ 128:Sensors/battery.c ****     else if (cv < BAT_WARN_V)
+ 533              		.loc 1 128 9 is_stmt 1 view .LVU156
+ 128:Sensors/battery.c ****     else if (cv < BAT_WARN_V)
+ 534              		.loc 1 128 15 is_stmt 0 view .LVU157
+ 535 00f0 0E4B     		ldr	r3, .L44+20
+ 536 00f2 0222     		movs	r2, #2
+ 537 00f4 1A70     		strb	r2, [r3]
+ARM GAS  /tmp/ccIfRnaA.s 			page 15
+
+
+ 538 00f6 94E7     		b	.L16
+ 539              	.L38:
+ 129:Sensors/battery.c ****         state = BAT_WARN;
+ 540              		.loc 1 129 10 is_stmt 1 view .LVU158
+ 129:Sensors/battery.c ****         state = BAT_WARN;
+ 541              		.loc 1 129 13 is_stmt 0 view .LVU159
+ 542 00f8 F0EE0C7A 		vmov.f32	s15, #3.5e+0
+ 543 00fc F4EEE76A 		vcmpe.f32	s13, s15
+ 544 0100 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 545 0104 03D5     		bpl	.L39
+ 130:Sensors/battery.c ****     else
+ 546              		.loc 1 130 9 is_stmt 1 view .LVU160
+ 130:Sensors/battery.c ****     else
+ 547              		.loc 1 130 15 is_stmt 0 view .LVU161
+ 548 0106 094B     		ldr	r3, .L44+20
+ 549 0108 0122     		movs	r2, #1
+ 550 010a 1A70     		strb	r2, [r3]
+ 551 010c 89E7     		b	.L16
+ 552              	.L39:
+ 132:Sensors/battery.c **** }
+ 553              		.loc 1 132 9 is_stmt 1 view .LVU162
+ 132:Sensors/battery.c **** }
+ 554              		.loc 1 132 15 is_stmt 0 view .LVU163
+ 555 010e 074B     		ldr	r3, .L44+20
+ 556 0110 0022     		movs	r2, #0
+ 557 0112 1A70     		strb	r2, [r3]
+ 558 0114 85E7     		b	.L16
+ 559              	.L45:
+ 560 0116 00BF     		.align	2
+ 561              	.L44:
+ 562 0118 00000000 		.word	timer
+ 563 011c 0AD7233C 		.word	1008981770
+ 564 0120 00000000 		.word	volt
+ 565 0124 00000000 		.word	cells
+ 566 0128 00000000 		.word	settle
+ 567 012c 00000000 		.word	state
+ 568 0130 33335340 		.word	1079194419
+ 569 0134 9A998940 		.word	1082759578
+ 570              		.cfi_endproc
+ 571              	.LFE244:
+ 573              		.section	.text.Battery_Volt,"ax",%progbits
+ 574              		.align	1
+ 575              		.global	Battery_Volt
+ 576              		.syntax unified
+ 577              		.thumb
+ 578              		.thumb_func
+ 580              	Battery_Volt:
+ 581              	.LFB245:
+ 134:Sensors/battery.c **** 
+ 135:Sensors/battery.c **** float Battery_Volt(void) { return volt; }
+ 582              		.loc 1 135 26 is_stmt 1 view -0
+ 583              		.cfi_startproc
+ 584              		@ args = 0, pretend = 0, frame = 0
+ 585              		@ frame_needed = 0, uses_anonymous_args = 0
+ 586              		@ link register save eliminated.
+ 587              		.loc 1 135 28 view .LVU165
+ 588              		.loc 1 135 41 is_stmt 0 view .LVU166
+ARM GAS  /tmp/ccIfRnaA.s 			page 16
+
+
+ 589 0000 014B     		ldr	r3, .L47
+ 590 0002 93ED000A 		vldr.32	s0, [r3]
+ 591 0006 7047     		bx	lr
+ 592              	.L48:
+ 593              		.align	2
+ 594              	.L47:
+ 595 0008 00000000 		.word	volt
+ 596              		.cfi_endproc
+ 597              	.LFE245:
+ 599              		.section	.text.Battery_Cells,"ax",%progbits
+ 600              		.align	1
+ 601              		.global	Battery_Cells
+ 602              		.syntax unified
+ 603              		.thumb
+ 604              		.thumb_func
+ 606              	Battery_Cells:
+ 607              	.LFB246:
+ 136:Sensors/battery.c **** uint8_t Battery_Cells(void) { return cells; }
+ 608              		.loc 1 136 29 is_stmt 1 view -0
+ 609              		.cfi_startproc
+ 610              		@ args = 0, pretend = 0, frame = 0
+ 611              		@ frame_needed = 0, uses_anonymous_args = 0
+ 612              		@ link register save eliminated.
+ 613              		.loc 1 136 31 view .LVU168
+ 614              		.loc 1 136 45 is_stmt 0 view .LVU169
+ 615 0000 014B     		ldr	r3, .L50
+ 616 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 617 0004 7047     		bx	lr
+ 618              	.L51:
+ 619 0006 00BF     		.align	2
+ 620              	.L50:
+ 621 0008 00000000 		.word	cells
+ 622              		.cfi_endproc
+ 623              	.LFE246:
+ 625              		.section	.text.Battery_CellVolt,"ax",%progbits
+ 626              		.align	1
+ 627              		.global	Battery_CellVolt
+ 628              		.syntax unified
+ 629              		.thumb
+ 630              		.thumb_func
+ 632              	Battery_CellVolt:
+ 633              	.LFB247:
+ 137:Sensors/battery.c **** float Battery_CellVolt(void) { return (cells > 0) ? (volt / cells) : 0.0f; }
+ 634              		.loc 1 137 30 is_stmt 1 view -0
+ 635              		.cfi_startproc
+ 636              		@ args = 0, pretend = 0, frame = 0
+ 637              		@ frame_needed = 0, uses_anonymous_args = 0
+ 638              		@ link register save eliminated.
+ 639              		.loc 1 137 32 view .LVU171
+ 640              		.loc 1 137 46 is_stmt 0 view .LVU172
+ 641 0000 074B     		ldr	r3, .L55
+ 642 0002 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 643              		.loc 1 137 68 view .LVU173
+ 644 0004 4BB1     		cbz	r3, .L54
+ 645              		.loc 1 137 59 discriminator 1 view .LVU174
+ 646 0006 074A     		ldr	r2, .L55+4
+ 647 0008 92ED007A 		vldr.32	s14, [r2]
+ARM GAS  /tmp/ccIfRnaA.s 			page 17
+
+
+ 648 000c 07EE903A 		vmov	s15, r3	@ int
+ 649 0010 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 650              		.loc 1 137 68 discriminator 1 view .LVU175
+ 651 0014 87EE270A 		vdiv.f32	s0, s14, s15
+ 652 0018 7047     		bx	lr
+ 653              	.L54:
+ 654              		.loc 1 137 68 discriminator 2 view .LVU176
+ 655 001a 9FED030A 		vldr.32	s0, .L55+8
+ 656              		.loc 1 137 76 view .LVU177
+ 657 001e 7047     		bx	lr
+ 658              	.L56:
+ 659              		.align	2
+ 660              	.L55:
+ 661 0020 00000000 		.word	cells
+ 662 0024 00000000 		.word	volt
+ 663 0028 00000000 		.word	0
+ 664              		.cfi_endproc
+ 665              	.LFE247:
+ 667              		.section	.text.Battery_State,"ax",%progbits
+ 668              		.align	1
+ 669              		.global	Battery_State
+ 670              		.syntax unified
+ 671              		.thumb
+ 672              		.thumb_func
+ 674              	Battery_State:
+ 675              	.LFB248:
+ 138:Sensors/battery.c **** BatteryState_t Battery_State(void) { return state; }
+ 676              		.loc 1 138 36 is_stmt 1 view -0
+ 677              		.cfi_startproc
+ 678              		@ args = 0, pretend = 0, frame = 0
+ 679              		@ frame_needed = 0, uses_anonymous_args = 0
+ 680              		@ link register save eliminated.
+ 681              		.loc 1 138 38 view .LVU179
+ 682              		.loc 1 138 52 is_stmt 0 view .LVU180
+ 683 0000 014B     		ldr	r3, .L58
+ 684 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 685 0004 7047     		bx	lr
+ 686              	.L59:
+ 687 0006 00BF     		.align	2
+ 688              	.L58:
+ 689 0008 00000000 		.word	state
+ 690              		.cfi_endproc
+ 691              	.LFE248:
+ 693              		.section	.rodata.Battery_StateText.str1.4,"aMS",%progbits,1
+ 694              		.align	2
+ 695              	.LC0:
+ 696 0000 4F4B00   		.ascii	"OK\000"
+ 697 0003 00       		.align	2
+ 698              	.LC1:
+ 699 0004 5741524E 		.ascii	"WARNUNG - landen\000"
+ 699      554E4720 
+ 699      2D206C61 
+ 699      6E64656E 
+ 699      00
+ 700 0015 000000   		.align	2
+ 701              	.LC2:
+ 702 0018 4B524954 		.ascii	"KRITISCH - sofort landen\000"
+ARM GAS  /tmp/ccIfRnaA.s 			page 18
+
+
+ 702      49534348 
+ 702      202D2073 
+ 702      6F666F72 
+ 702      74206C61 
+ 703 0031 000000   		.align	2
+ 704              	.LC3:
+ 705 0034 6B65696E 		.ascii	"kein Akku\000"
+ 705      20416B6B 
+ 705      7500
+ 706              		.section	.text.Battery_StateText,"ax",%progbits
+ 707              		.align	1
+ 708              		.global	Battery_StateText
+ 709              		.syntax unified
+ 710              		.thumb
+ 711              		.thumb_func
+ 713              	Battery_StateText:
+ 714              	.LFB249:
+ 139:Sensors/battery.c **** 
+ 140:Sensors/battery.c **** const char *Battery_StateText(void)
+ 141:Sensors/battery.c **** {
+ 715              		.loc 1 141 1 is_stmt 1 view -0
+ 716              		.cfi_startproc
+ 717              		@ args = 0, pretend = 0, frame = 0
+ 718              		@ frame_needed = 0, uses_anonymous_args = 0
+ 719              		@ link register save eliminated.
+ 142:Sensors/battery.c ****     switch (state)
+ 720              		.loc 1 142 5 view .LVU182
+ 721 0000 074B     		ldr	r3, .L65
+ 722 0002 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 723 0004 012B     		cmp	r3, #1
+ 724 0006 04D0     		beq	.L62
+ 725 0008 022B     		cmp	r3, #2
+ 726 000a 04D0     		beq	.L63
+ 727 000c 2BB9     		cbnz	r3, .L64
+ 728 000e 0548     		ldr	r0, .L65+4
+ 729 0010 7047     		bx	lr
+ 730              	.L62:
+ 143:Sensors/battery.c ****     {
+ 144:Sensors/battery.c ****     case BAT_OK:
+ 145:Sensors/battery.c ****         return "OK";
+ 146:Sensors/battery.c ****     case BAT_WARN:
+ 147:Sensors/battery.c ****         return "WARNUNG - landen";
+ 731              		.loc 1 147 16 is_stmt 0 view .LVU183
+ 732 0012 0548     		ldr	r0, .L65+8
+ 733 0014 7047     		bx	lr
+ 734              	.L63:
+ 148:Sensors/battery.c ****     case BAT_CRITICAL:
+ 149:Sensors/battery.c ****         return "KRITISCH - sofort landen";
+ 735              		.loc 1 149 16 view .LVU184
+ 736 0016 0548     		ldr	r0, .L65+12
+ 737 0018 7047     		bx	lr
+ 738              	.L64:
+ 150:Sensors/battery.c ****     default:
+ 151:Sensors/battery.c ****         return "kein Akku";
+ 739              		.loc 1 151 16 view .LVU185
+ 740 001a 0548     		ldr	r0, .L65+16
+ 152:Sensors/battery.c ****     }
+ARM GAS  /tmp/ccIfRnaA.s 			page 19
+
+
+ 153:Sensors/battery.c **** }
+ 741              		.loc 1 153 1 view .LVU186
+ 742 001c 7047     		bx	lr
+ 743              	.L66:
+ 744 001e 00BF     		.align	2
+ 745              	.L65:
+ 746 0020 00000000 		.word	state
+ 747 0024 00000000 		.word	.LC0
+ 748 0028 04000000 		.word	.LC1
+ 749 002c 18000000 		.word	.LC2
+ 750 0030 34000000 		.word	.LC3
+ 751              		.cfi_endproc
+ 752              	.LFE249:
+ 754              		.section	.text.Battery_Calibrate,"ax",%progbits
+ 755              		.align	1
+ 756              		.global	Battery_Calibrate
+ 757              		.syntax unified
+ 758              		.thumb
+ 759              		.thumb_func
+ 761              	Battery_Calibrate:
+ 762              	.LVL31:
+ 763              	.LFB250:
+ 154:Sensors/battery.c **** 
+ 155:Sensors/battery.c **** void Battery_Calibrate(float real_volt)
+ 156:Sensors/battery.c **** {
+ 764              		.loc 1 156 1 is_stmt 1 view -0
+ 765              		.cfi_startproc
+ 766              		@ args = 0, pretend = 0, frame = 0
+ 767              		@ frame_needed = 0, uses_anonymous_args = 0
+ 768              		@ link register save eliminated.
+ 157:Sensors/battery.c ****     if (real_volt < 5.0f || volt < 5.0f)
+ 769              		.loc 1 157 5 view .LVU188
+ 770              		.loc 1 157 8 is_stmt 0 view .LVU189
+ 771 0000 F1EE047A 		vmov.f32	s15, #5.0e+0
+ 772 0004 B4EEE70A 		vcmpe.f32	s0, s15
+ 773 0008 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 774 000c 15D4     		bmi	.L67
+ 775              		.loc 1 157 34 discriminator 1 view .LVU190
+ 776 000e 0B4B     		ldr	r3, .L69
+ 777 0010 D3ED007A 		vldr.32	s15, [r3]
+ 778              		.loc 1 157 26 discriminator 1 view .LVU191
+ 779 0014 B1EE047A 		vmov.f32	s14, #5.0e+0
+ 780 0018 F4EEC77A 		vcmpe.f32	s15, s14
+ 781 001c F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 782 0020 0BD4     		bmi	.L67
+ 158:Sensors/battery.c ****         return;
+ 159:Sensors/battery.c ****     /* aktuellen Messwert auf den echten Wert ziehen */
+ 160:Sensors/battery.c ****     scale *= (real_volt / volt);
+ 783              		.loc 1 160 5 is_stmt 1 view .LVU192
+ 784              		.loc 1 160 25 is_stmt 0 view .LVU193
+ 785 0022 80EE277A 		vdiv.f32	s14, s0, s15
+ 786              		.loc 1 160 11 view .LVU194
+ 787 0026 064B     		ldr	r3, .L69+4
+ 788 0028 D3ED007A 		vldr.32	s15, [r3]
+ 789 002c 67EE877A 		vmul.f32	s15, s15, s14
+ 790 0030 C3ED007A 		vstr.32	s15, [r3]
+ 161:Sensors/battery.c ****     volt = real_volt;
+ARM GAS  /tmp/ccIfRnaA.s 			page 20
+
+
+ 791              		.loc 1 161 5 is_stmt 1 view .LVU195
+ 792              		.loc 1 161 10 is_stmt 0 view .LVU196
+ 793 0034 014B     		ldr	r3, .L69
+ 794 0036 83ED000A 		vstr.32	s0, [r3]
+ 795              	.L67:
+ 162:Sensors/battery.c **** }
+ 796              		.loc 1 162 1 view .LVU197
+ 797 003a 7047     		bx	lr
+ 798              	.L70:
+ 799              		.align	2
+ 800              	.L69:
+ 801 003c 00000000 		.word	volt
+ 802 0040 00000000 		.word	scale
+ 803              		.cfi_endproc
+ 804              	.LFE250:
+ 806              		.section	.text.Battery_GetScale,"ax",%progbits
+ 807              		.align	1
+ 808              		.global	Battery_GetScale
+ 809              		.syntax unified
+ 810              		.thumb
+ 811              		.thumb_func
+ 813              	Battery_GetScale:
+ 814              	.LFB251:
+ 163:Sensors/battery.c **** 
+ 164:Sensors/battery.c **** float Battery_GetScale(void) { return scale; }...
+ 815              		.loc 1 164 30 is_stmt 1 view -0
+ 816              		.cfi_startproc
+ 817              		@ args = 0, pretend = 0, frame = 0
+ 818              		@ frame_needed = 0, uses_anonymous_args = 0
+ 819              		@ link register save eliminated.
+ 820              		.loc 1 164 32 view .LVU199
+ 821              		.loc 1 164 46 is_stmt 0 view .LVU200
+ 822 0000 014B     		ldr	r3, .L72
+ 823 0002 93ED000A 		vldr.32	s0, [r3]
+ 824 0006 7047     		bx	lr
+ 825              	.L73:
+ 826              		.align	2
+ 827              	.L72:
+ 828 0008 00000000 		.word	scale
+ 829              		.cfi_endproc
+ 830              	.LFE251:
+ 832              		.section	.bss.settle,"aw",%nobits
+ 835              	settle:
+ 836 0000 00       		.space	1
+ 837              		.section	.bss.timer,"aw",%nobits
+ 838              		.align	2
+ 841              	timer:
+ 842 0000 00000000 		.space	4
+ 843              		.section	.data.state,"aw"
+ 846              	state:
+ 847 0000 03       		.byte	3
+ 848              		.section	.bss.cells,"aw",%nobits
+ 851              	cells:
+ 852 0000 00       		.space	1
+ 853              		.section	.data.scale,"aw"
+ 854              		.align	2
+ 857              	scale:
+ARM GAS  /tmp/ccIfRnaA.s 			page 21
+
+
+ 858 0000 0000803F 		.word	1065353216
+ 859              		.section	.bss.volt,"aw",%nobits
+ 860              		.align	2
+ 863              	volt:
+ 864 0000 00000000 		.space	4
+ 865              		.section	.bss.hadc1,"aw",%nobits
+ 866              		.align	2
+ 869              	hadc1:
+ 870 0000 00000000 		.space	72
+ 870      00000000 
+ 870      00000000 
+ 870      00000000 
+ 870      00000000 
+ 871              		.text
+ 872              	.Letext0:
+ 873              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 874              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
+ 875              		.file 4 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f4xx.h"
+ 876              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 877              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_gpio.h"
+ 878              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 879              		.file 8 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc.h"
+ 880              		.file 9 "Sensors/battery.h"
+ 881              		.file 10 "Core/Inc/main.h"
+ARM GAS  /tmp/ccIfRnaA.s 			page 22
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 battery.c
+     /tmp/ccIfRnaA.s:21     .text.measure_once:00000000 $t
+     /tmp/ccIfRnaA.s:26     .text.measure_once:00000000 measure_once
+     /tmp/ccIfRnaA.s:114    .text.measure_once:00000064 $d
+     /tmp/ccIfRnaA.s:869    .bss.hadc1:00000000 hadc1
+     /tmp/ccIfRnaA.s:857    .data.scale:00000000 scale
+     /tmp/ccIfRnaA.s:122    .text.Battery_Init:00000000 $t
+     /tmp/ccIfRnaA.s:128    .text.Battery_Init:00000000 Battery_Init
+     /tmp/ccIfRnaA.s:318    .text.Battery_Init:000000c0 $d
+     /tmp/ccIfRnaA.s:863    .bss.volt:00000000 volt
+     /tmp/ccIfRnaA.s:851    .bss.cells:00000000 cells
+     /tmp/ccIfRnaA.s:846    .data.state:00000000 state
+     /tmp/ccIfRnaA.s:835    .bss.settle:00000000 settle
+     /tmp/ccIfRnaA.s:841    .bss.timer:00000000 timer
+     /tmp/ccIfRnaA.s:332    .text.Battery_Update:00000000 $t
+     /tmp/ccIfRnaA.s:338    .text.Battery_Update:00000000 Battery_Update
+     /tmp/ccIfRnaA.s:562    .text.Battery_Update:00000118 $d
+     /tmp/ccIfRnaA.s:574    .text.Battery_Volt:00000000 $t
+     /tmp/ccIfRnaA.s:580    .text.Battery_Volt:00000000 Battery_Volt
+     /tmp/ccIfRnaA.s:595    .text.Battery_Volt:00000008 $d
+     /tmp/ccIfRnaA.s:600    .text.Battery_Cells:00000000 $t
+     /tmp/ccIfRnaA.s:606    .text.Battery_Cells:00000000 Battery_Cells
+     /tmp/ccIfRnaA.s:621    .text.Battery_Cells:00000008 $d
+     /tmp/ccIfRnaA.s:626    .text.Battery_CellVolt:00000000 $t
+     /tmp/ccIfRnaA.s:632    .text.Battery_CellVolt:00000000 Battery_CellVolt
+     /tmp/ccIfRnaA.s:661    .text.Battery_CellVolt:00000020 $d
+     /tmp/ccIfRnaA.s:668    .text.Battery_State:00000000 $t
+     /tmp/ccIfRnaA.s:674    .text.Battery_State:00000000 Battery_State
+     /tmp/ccIfRnaA.s:689    .text.Battery_State:00000008 $d
+     /tmp/ccIfRnaA.s:694    .rodata.Battery_StateText.str1.4:00000000 $d
+     /tmp/ccIfRnaA.s:707    .text.Battery_StateText:00000000 $t
+     /tmp/ccIfRnaA.s:713    .text.Battery_StateText:00000000 Battery_StateText
+     /tmp/ccIfRnaA.s:746    .text.Battery_StateText:00000020 $d
+     /tmp/ccIfRnaA.s:755    .text.Battery_Calibrate:00000000 $t
+     /tmp/ccIfRnaA.s:761    .text.Battery_Calibrate:00000000 Battery_Calibrate
+     /tmp/ccIfRnaA.s:801    .text.Battery_Calibrate:0000003c $d
+     /tmp/ccIfRnaA.s:807    .text.Battery_GetScale:00000000 $t
+     /tmp/ccIfRnaA.s:813    .text.Battery_GetScale:00000000 Battery_GetScale
+     /tmp/ccIfRnaA.s:828    .text.Battery_GetScale:00000008 $d
+     /tmp/ccIfRnaA.s:836    .bss.settle:00000000 $d
+     /tmp/ccIfRnaA.s:838    .bss.timer:00000000 $d
+     /tmp/ccIfRnaA.s:852    .bss.cells:00000000 $d
+     /tmp/ccIfRnaA.s:854    .data.scale:00000000 $d
+     /tmp/ccIfRnaA.s:860    .bss.volt:00000000 $d
+     /tmp/ccIfRnaA.s:866    .bss.hadc1:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_ADC_Start
+HAL_ADC_PollForConversion
+HAL_ADC_GetValue
+HAL_ADC_Stop
+HAL_GPIO_Init
+HAL_ADC_Init
+HAL_ADC_ConfigChannel
+Error_Handler

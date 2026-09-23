@@ -11,6 +11,7 @@
 #define HAL_I2C_MODULE_ENABLED
 #define HAL_UART_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
+#define HAL_ADC_MODULE_ENABLED
 
 #define HSE_VALUE ((uint32_t)8000000U) /* WeAct Board: 8 MHz HSE */
 #define HSE_STARTUP_TIMEOUT ((uint32_t)100U)
@@ -41,6 +42,7 @@
 #include "stm32f4xx_hal_i2c.h"
 #include "stm32f4xx_hal_uart.h"
 #include "stm32f4xx_hal_tim.h"
+#include "stm32f4xx_hal_adc.h"
 
 #ifdef USE_FULL_ASSERT
 #define assert_param(expr) ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, __LINE__))

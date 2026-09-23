@@ -4,6 +4,7 @@
 #include "command.h"
 #include "control.h"
 #include "mixer.h"
+#include "battery.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -61,13 +62,14 @@ int main(void)
     Motor_Init(&htim3);
     Command_Init(&huart2);
     Control_Init();
+    Battery_Init();
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
     printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Start %u us (disarmed)\r\n",
            Motor_UpdateRateHz(), MOTOR_US_IDLE);
-    printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Modus: ANGLE\r\n");
-    printf("Befehle: arm | disarm | status | loop | pid | mix | angle | rate |\r\n");
+    printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Modus: ANGLE\r\n");
+    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | angle | rate |\r\n");
     printf("         stream on/off | t <gas> | 0-100 | m1..m4 <wert> | rrp/arp <wert>\r\n");
 
     who = 0;
@@ -77,7 +79,7 @@ int main(void)
 
         if (MPU6050_Init(&hi2c1) == HAL_OK)
         {
-            printf("MPU6050 init OK\r\n");
+            printf("MPU6050 init OK (Gyro +-500 dps, Accel +-4g, DLPF 188 Hz)\r\n");
             printf("Kalibriere Gyro... NICHT bewegen!\r\n");
             MPU6050_Calibrate(&hi2c1, &sensor, 1000);
             printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
@@ -125,7 +127,7 @@ int main(void)
 
         if (mpu_ok && MPU6050_ReadAll(&hi2c1, &sensor) == HAL_OK)
         {
-            MPU6050_Convert(&sensor);
+            MPU6050_Convert(&sensor, DT);
             MPU6050_UpdateAngles(&sensor, DT);
         }
 
@@ -134,15 +136,18 @@ int main(void)
 
         Mixer_Update(setpoint.throttle, out_roll, out_pitch, out_yaw);
 
+        Battery_Update(DT);
+
         /* ===== ENDE REGELZYKLUS ===== */
 
         /* Ausgabe stark gedrosselt - printf blockiert und darf den Takt nicht fressen */
         if (Command_StreamOn() && ++stream_div >= 20)
         {
             stream_div = 0;
-            printf("Roll:%7.2f  Pitch:%7.2f  Yaw:%7.2f  | GX:%7.2f GY:%7.2f GZ:%7.2f\r\n",
-                   sensor.roll, sensor.pitch, sensor.yaw,
-                   sensor.gyro_x_dps, sensor.gyro_y_dps, sensor.gyro_z_dps);
+            printf("R:%7.2f P:%7.2f | GX:%7.2f (roh %7.2f) GY:%7.2f (roh %7.2f)\r\n",
+                   sensor.roll, sensor.pitch,
+                   sensor.gyro_x_dps, sensor.gyro_x_raw_dps,
+                   sensor.gyro_y_dps, sensor.gyro_y_raw_dps);
         }
 
         /* LED blinkt mit ~2 Hz als Lebenszeichen */

@@ -1,4 +1,4 @@
-ARM GAS  /tmp/cc4pyRa0.s 			page 1
+ARM GAS  /tmp/cclsILbz.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -20,916 +20,1818 @@ ARM GAS  /tmp/cc4pyRa0.s 			page 1
   17              	.Ltext0:
   18              		.cfi_sections	.debug_frame
   19              		.file 1 "Sensors/mpu6050.c"
-  20              		.section	.text.MPU6050_WhoAmI,"ax",%progbits
+  20              		.section	.text.MPU6050_SetGyroLPF,"ax",%progbits
   21              		.align	1
-  22              		.global	MPU6050_WhoAmI
+  22              		.global	MPU6050_SetGyroLPF
   23              		.syntax unified
   24              		.thumb
   25              		.thumb_func
-  27              	MPU6050_WhoAmI:
+  27              	MPU6050_SetGyroLPF:
   28              	.LVL0:
-  29              	.LFB134:
+  29              	.LFB240:
    1:Sensors/mpu6050.c **** #include "mpu6050.h"
    2:Sensors/mpu6050.c **** #include <math.h>
    3:Sensors/mpu6050.c **** 
-   4:Sensors/mpu6050.c **** #define ACCEL_SCALE 16384.0f /* LSB pro g  (±2g)      */
-   5:Sensors/mpu6050.c **** #define GYRO_SCALE 131.0f    /* LSB pro °/s (±250°/s) */
-   6:Sensors/mpu6050.c **** #define ALPHA 0.98f          /* Komplementärfilter-Gewicht */
-   7:Sensors/mpu6050.c **** 
-   8:Sensors/mpu6050.c **** HAL_StatusTypeDef MPU6050_WhoAmI(I2C_HandleTypeDef *hi2c, uint8_t *id)
-   9:Sensors/mpu6050.c **** {
-  30              		.loc 1 9 1 view -0
+   4:Sensors/mpu6050.c **** #define ACCEL_SCALE 16384.0f /* LSB pro g   (+-2g)      */
+   5:Sensors/mpu6050.c **** #define GYRO_SCALE 131.0f    /* LSB pro Grad/s (+-250)  */
+   6:Sensors/mpu6050.c **** 
+   7:Sensors/mpu6050.c **** /* Einstellbare Filterparameter */
+   8:Sensors/mpu6050.c **** static float gyro_lpf_hz = GYRO_LPF_DEFAULT_HZ;
+   9:Sensors/mpu6050.c **** static float accel_lpf_hz = ACCEL_LPF_DEFAULT_HZ;
+  10:Sensors/mpu6050.c **** static float comp_tau_s = COMP_TAU_DEFAULT_S;
+  11:Sensors/mpu6050.c **** 
+  12:Sensors/mpu6050.c **** /* Zustand der Tiefpaesse */
+  13:Sensors/mpu6050.c **** static float gx_f = 0, gy_f = 0, gz_f = 0;
+  14:Sensors/mpu6050.c **** static float ax_f = 0, ay_f = 0, az_f = 1.0f;
+  15:Sensors/mpu6050.c **** static uint8_t filt_primed = 0;
+  16:Sensors/mpu6050.c **** 
+  17:Sensors/mpu6050.c **** /* Tiefpass erster Ordnung (PT1).
+  18:Sensors/mpu6050.c ****  * Grenzfrequenz f, Zeitschritt dt:
+  19:Sensors/mpu6050.c ****  *   a = dt / (1/(2*pi*f) + dt)
+  20:Sensors/mpu6050.c ****  * a nahe 1 = kaum Filterung, a klein = starke Filterung. */
+  21:Sensors/mpu6050.c **** static inline float pt1(float prev, float in, float hz, float dt)
+  22:Sensors/mpu6050.c **** {
+  23:Sensors/mpu6050.c ****     if (hz <= 0.0f)
+  24:Sensors/mpu6050.c ****         return in; /* Filter aus */
+  25:Sensors/mpu6050.c ****     const float rc = 1.0f / (2.0f * 3.14159265f * hz);
+  26:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+  27:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+  28:Sensors/mpu6050.c **** }
+  29:Sensors/mpu6050.c **** 
+ARM GAS  /tmp/cclsILbz.s 			page 2
+
+
+  30:Sensors/mpu6050.c **** void MPU6050_SetGyroLPF(float hz)
+  31:Sensors/mpu6050.c **** {
+  30              		.loc 1 31 1 view -0
   31              		.cfi_startproc
   32              		@ args = 0, pretend = 0, frame = 0
   33              		@ frame_needed = 0, uses_anonymous_args = 0
-  34              		.loc 1 9 1 is_stmt 0 view .LVU1
-  35 0000 00B5     		push	{lr}
-  36              	.LCFI0:
-  37              		.cfi_def_cfa_offset 4
-  38              		.cfi_offset 14, -4
-  39 0002 85B0     		sub	sp, sp, #20
-  40              	.LCFI1:
-  41              		.cfi_def_cfa_offset 24
-  10:Sensors/mpu6050.c ****     return HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, MPU6050_WHO_AM_I,
-  42              		.loc 1 10 5 is_stmt 1 view .LVU2
-  43              		.loc 1 10 12 is_stmt 0 view .LVU3
-  44 0004 6423     		movs	r3, #100
-  45 0006 0293     		str	r3, [sp, #8]
-  46 0008 0123     		movs	r3, #1
-  47 000a 0193     		str	r3, [sp, #4]
-  48 000c 0091     		str	r1, [sp]
-ARM GAS  /tmp/cc4pyRa0.s 			page 2
+  34              		@ link register save eliminated.
+  32:Sensors/mpu6050.c ****     if (hz >= 0.0f && hz <= 500.0f)
+  35              		.loc 1 32 5 view .LVU1
+  36              		.loc 1 32 8 is_stmt 0 view .LVU2
+  37 0000 B5EEC00A 		vcmpe.f32	s0, #0
+  38 0004 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+  39 0008 09DB     		blt	.L1
+  40              		.loc 1 32 20 discriminator 1 view .LVU3
+  41 000a DFED057A 		vldr.32	s15, .L7
+  42 000e B4EEE70A 		vcmpe.f32	s0, s15
+  43 0012 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+  44 0016 02D8     		bhi	.L1
+  33:Sensors/mpu6050.c ****         gyro_lpf_hz = hz;
+  45              		.loc 1 33 9 is_stmt 1 view .LVU4
+  46              		.loc 1 33 21 is_stmt 0 view .LVU5
+  47 0018 024B     		ldr	r3, .L7+4
+  48 001a 83ED000A 		vstr.32	s0, [r3]
+  49              	.L1:
+  34:Sensors/mpu6050.c **** }
+  50              		.loc 1 34 1 view .LVU6
+  51 001e 7047     		bx	lr
+  52              	.L8:
+  53              		.align	2
+  54              	.L7:
+  55 0020 0000FA43 		.word	1140457472
+  56 0024 00000000 		.word	gyro_lpf_hz
+  57              		.cfi_endproc
+  58              	.LFE240:
+  60              		.section	.text.MPU6050_SetAccelLPF,"ax",%progbits
+  61              		.align	1
+  62              		.global	MPU6050_SetAccelLPF
+  63              		.syntax unified
+  64              		.thumb
+  65              		.thumb_func
+  67              	MPU6050_SetAccelLPF:
+  68              	.LVL1:
+  69              	.LFB241:
+  35:Sensors/mpu6050.c **** void MPU6050_SetAccelLPF(float hz)
+  36:Sensors/mpu6050.c **** {
+  70              		.loc 1 36 1 is_stmt 1 view -0
+  71              		.cfi_startproc
+  72              		@ args = 0, pretend = 0, frame = 0
+  73              		@ frame_needed = 0, uses_anonymous_args = 0
+  74              		@ link register save eliminated.
+  37:Sensors/mpu6050.c ****     if (hz >= 0.0f && hz <= 500.0f)
+  75              		.loc 1 37 5 view .LVU8
+  76              		.loc 1 37 8 is_stmt 0 view .LVU9
+  77 0000 B5EEC00A 		vcmpe.f32	s0, #0
+  78 0004 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+  79 0008 09DB     		blt	.L9
+  80              		.loc 1 37 20 discriminator 1 view .LVU10
+ARM GAS  /tmp/cclsILbz.s 			page 3
 
 
-  49 000e 7522     		movs	r2, #117
-  50 0010 D021     		movs	r1, #208
-  51              	.LVL1:
-  52              		.loc 1 10 12 view .LVU4
-  53 0012 FFF7FEFF 		bl	HAL_I2C_Mem_Read
-  54              	.LVL2:
-  11:Sensors/mpu6050.c ****                             I2C_MEMADD_SIZE_8BIT, id, 1, 100);
-  12:Sensors/mpu6050.c **** }
-  55              		.loc 1 12 1 view .LVU5
-  56 0016 05B0     		add	sp, sp, #20
-  57              	.LCFI2:
-  58              		.cfi_def_cfa_offset 4
-  59              		@ sp needed
-  60 0018 5DF804FB 		ldr	pc, [sp], #4
-  61              		.cfi_endproc
-  62              	.LFE134:
-  64              		.section	.text.MPU6050_Init,"ax",%progbits
-  65              		.align	1
-  66              		.global	MPU6050_Init
-  67              		.syntax unified
-  68              		.thumb
-  69              		.thumb_func
-  71              	MPU6050_Init:
-  72              	.LVL3:
-  73              	.LFB135:
-  13:Sensors/mpu6050.c **** 
-  14:Sensors/mpu6050.c **** HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
-  15:Sensors/mpu6050.c **** {
-  74              		.loc 1 15 1 is_stmt 1 view -0
-  75              		.cfi_startproc
-  76              		@ args = 0, pretend = 0, frame = 8
-  77              		@ frame_needed = 0, uses_anonymous_args = 0
-  78              		.loc 1 15 1 is_stmt 0 view .LVU7
-  79 0000 10B5     		push	{r4, lr}
-  80              	.LCFI3:
-  81              		.cfi_def_cfa_offset 8
-  82              		.cfi_offset 4, -8
-  83              		.cfi_offset 14, -4
-  84 0002 86B0     		sub	sp, sp, #24
-  85              	.LCFI4:
-  86              		.cfi_def_cfa_offset 32
-  87 0004 0446     		mov	r4, r0
-  16:Sensors/mpu6050.c ****     uint8_t check;
-  88              		.loc 1 16 5 is_stmt 1 view .LVU8
-  17:Sensors/mpu6050.c ****     HAL_StatusTypeDef status;
-  89              		.loc 1 17 5 view .LVU9
-  18:Sensors/mpu6050.c **** 
-  19:Sensors/mpu6050.c ****     status = MPU6050_WhoAmI(hi2c, &check);
-  90              		.loc 1 19 5 view .LVU10
-  91              		.loc 1 19 14 is_stmt 0 view .LVU11
-  92 0006 0DF11701 		add	r1, sp, #23
-  93 000a FFF7FEFF 		bl	MPU6050_WhoAmI
-  94              	.LVL4:
-  20:Sensors/mpu6050.c ****     if (status != HAL_OK)
-  95              		.loc 1 20 5 is_stmt 1 view .LVU12
-  96              		.loc 1 20 8 is_stmt 0 view .LVU13
-  97 000e 20B9     		cbnz	r0, .L4
-ARM GAS  /tmp/cc4pyRa0.s 			page 3
+  81 000a DFED057A 		vldr.32	s15, .L15
+  82 000e B4EEE70A 		vcmpe.f32	s0, s15
+  83 0012 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+  84 0016 02D8     		bhi	.L9
+  38:Sensors/mpu6050.c ****         accel_lpf_hz = hz;
+  85              		.loc 1 38 9 is_stmt 1 view .LVU11
+  86              		.loc 1 38 22 is_stmt 0 view .LVU12
+  87 0018 024B     		ldr	r3, .L15+4
+  88 001a 83ED000A 		vstr.32	s0, [r3]
+  89              	.L9:
+  39:Sensors/mpu6050.c **** }
+  90              		.loc 1 39 1 view .LVU13
+  91 001e 7047     		bx	lr
+  92              	.L16:
+  93              		.align	2
+  94              	.L15:
+  95 0020 0000FA43 		.word	1140457472
+  96 0024 00000000 		.word	accel_lpf_hz
+  97              		.cfi_endproc
+  98              	.LFE241:
+ 100              		.section	.text.MPU6050_SetCompTau,"ax",%progbits
+ 101              		.align	1
+ 102              		.global	MPU6050_SetCompTau
+ 103              		.syntax unified
+ 104              		.thumb
+ 105              		.thumb_func
+ 107              	MPU6050_SetCompTau:
+ 108              	.LVL2:
+ 109              	.LFB242:
+  40:Sensors/mpu6050.c **** void MPU6050_SetCompTau(float s)
+  41:Sensors/mpu6050.c **** {
+ 110              		.loc 1 41 1 is_stmt 1 view -0
+ 111              		.cfi_startproc
+ 112              		@ args = 0, pretend = 0, frame = 0
+ 113              		@ frame_needed = 0, uses_anonymous_args = 0
+ 114              		@ link register save eliminated.
+  42:Sensors/mpu6050.c ****     if (s > 0.01f && s <= 10.0f)
+ 115              		.loc 1 42 5 view .LVU15
+ 116              		.loc 1 42 8 is_stmt 0 view .LVU16
+ 117 0000 DFED087A 		vldr.32	s15, .L23
+ 118 0004 B4EEE70A 		vcmpe.f32	s0, s15
+ 119 0008 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 120 000c 09DD     		ble	.L17
+ 121              		.loc 1 42 19 discriminator 1 view .LVU17
+ 122 000e F2EE047A 		vmov.f32	s15, #1.0e+1
+ 123 0012 B4EEE70A 		vcmpe.f32	s0, s15
+ 124 0016 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 125 001a 02D8     		bhi	.L17
+  43:Sensors/mpu6050.c ****         comp_tau_s = s;
+ 126              		.loc 1 43 9 is_stmt 1 view .LVU18
+ 127              		.loc 1 43 20 is_stmt 0 view .LVU19
+ 128 001c 024B     		ldr	r3, .L23+4
+ 129 001e 83ED000A 		vstr.32	s0, [r3]
+ 130              	.L17:
+  44:Sensors/mpu6050.c **** }
+ 131              		.loc 1 44 1 view .LVU20
+ 132 0022 7047     		bx	lr
+ARM GAS  /tmp/cclsILbz.s 			page 4
 
 
-  21:Sensors/mpu6050.c ****         return status;
-  22:Sensors/mpu6050.c ****     if (check != 0x68)
-  98              		.loc 1 22 5 is_stmt 1 view .LVU14
-  99              		.loc 1 22 15 is_stmt 0 view .LVU15
- 100 0010 9DF81730 		ldrb	r3, [sp, #23]	@ zero_extendqisi2
- 101              		.loc 1 22 8 view .LVU16
- 102 0014 682B     		cmp	r3, #104
- 103 0016 02D0     		beq	.L7
-  23:Sensors/mpu6050.c ****         return HAL_ERROR;
- 104              		.loc 1 23 16 view .LVU17
- 105 0018 0120     		movs	r0, #1
- 106              	.L4:
-  24:Sensors/mpu6050.c **** 
-  25:Sensors/mpu6050.c ****     /* Aus Sleep-Mode wecken */
-  26:Sensors/mpu6050.c ****     uint8_t data = 0x00;
-  27:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
-  28:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
-  29:Sensors/mpu6050.c ****     if (status != HAL_OK)
-  30:Sensors/mpu6050.c ****         return status;
-  31:Sensors/mpu6050.c **** 
-  32:Sensors/mpu6050.c ****     /* Sample Rate = 1kHz / (1+7) = 125 Hz */
-  33:Sensors/mpu6050.c ****     data = 0x07;
-  34:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
-  35:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
-  36:Sensors/mpu6050.c ****     if (status != HAL_OK)
-  37:Sensors/mpu6050.c ****         return status;
-  38:Sensors/mpu6050.c **** 
-  39:Sensors/mpu6050.c ****     /* Accel ±2g */
-  40:Sensors/mpu6050.c ****     data = 0x00;
-  41:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
-  42:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
-  43:Sensors/mpu6050.c ****     if (status != HAL_OK)
-  44:Sensors/mpu6050.c ****         return status;
-  45:Sensors/mpu6050.c **** 
-  46:Sensors/mpu6050.c ****     /* Gyro ±250°/s */
-  47:Sensors/mpu6050.c ****     data = 0x00;
-  48:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
-  49:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
-  50:Sensors/mpu6050.c ****     return status;
-  51:Sensors/mpu6050.c **** }
- 107              		.loc 1 51 1 view .LVU18
- 108 001a 06B0     		add	sp, sp, #24
- 109              	.LCFI5:
- 110              		.cfi_remember_state
- 111              		.cfi_def_cfa_offset 8
- 112              		@ sp needed
- 113 001c 10BD     		pop	{r4, pc}
- 114              	.LVL5:
- 115              	.L7:
- 116              	.LCFI6:
- 117              		.cfi_restore_state
-  26:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
- 118              		.loc 1 26 5 is_stmt 1 view .LVU19
-  26:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
- 119              		.loc 1 26 13 is_stmt 0 view .LVU20
- 120 001e 0023     		movs	r3, #0
- 121 0020 8DF81630 		strb	r3, [sp, #22]
-ARM GAS  /tmp/cc4pyRa0.s 			page 4
+ 133              	.L24:
+ 134              		.align	2
+ 135              	.L23:
+ 136 0024 0AD7233C 		.word	1008981770
+ 137 0028 00000000 		.word	comp_tau_s
+ 138              		.cfi_endproc
+ 139              	.LFE242:
+ 141              		.section	.text.MPU6050_GetGyroLPF,"ax",%progbits
+ 142              		.align	1
+ 143              		.global	MPU6050_GetGyroLPF
+ 144              		.syntax unified
+ 145              		.thumb
+ 146              		.thumb_func
+ 148              	MPU6050_GetGyroLPF:
+ 149              	.LFB243:
+  45:Sensors/mpu6050.c **** float MPU6050_GetGyroLPF(void) { return gyro_lpf_hz; }
+ 150              		.loc 1 45 32 is_stmt 1 view -0
+ 151              		.cfi_startproc
+ 152              		@ args = 0, pretend = 0, frame = 0
+ 153              		@ frame_needed = 0, uses_anonymous_args = 0
+ 154              		@ link register save eliminated.
+ 155              		.loc 1 45 34 view .LVU22
+ 156              		.loc 1 45 54 is_stmt 0 view .LVU23
+ 157 0000 014B     		ldr	r3, .L26
+ 158 0002 93ED000A 		vldr.32	s0, [r3]
+ 159 0006 7047     		bx	lr
+ 160              	.L27:
+ 161              		.align	2
+ 162              	.L26:
+ 163 0008 00000000 		.word	gyro_lpf_hz
+ 164              		.cfi_endproc
+ 165              	.LFE243:
+ 167              		.section	.text.MPU6050_GetAccelLPF,"ax",%progbits
+ 168              		.align	1
+ 169              		.global	MPU6050_GetAccelLPF
+ 170              		.syntax unified
+ 171              		.thumb
+ 172              		.thumb_func
+ 174              	MPU6050_GetAccelLPF:
+ 175              	.LFB244:
+  46:Sensors/mpu6050.c **** float MPU6050_GetAccelLPF(void) { return accel_lpf_hz; }
+ 176              		.loc 1 46 33 is_stmt 1 view -0
+ 177              		.cfi_startproc
+ 178              		@ args = 0, pretend = 0, frame = 0
+ 179              		@ frame_needed = 0, uses_anonymous_args = 0
+ 180              		@ link register save eliminated.
+ 181              		.loc 1 46 35 view .LVU25
+ 182              		.loc 1 46 56 is_stmt 0 view .LVU26
+ 183 0000 014B     		ldr	r3, .L29
+ 184 0002 93ED000A 		vldr.32	s0, [r3]
+ 185 0006 7047     		bx	lr
+ 186              	.L30:
+ 187              		.align	2
+ 188              	.L29:
+ 189 0008 00000000 		.word	accel_lpf_hz
+ 190              		.cfi_endproc
+ 191              	.LFE244:
+ARM GAS  /tmp/cclsILbz.s 			page 5
 
 
-  27:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 122              		.loc 1 27 5 is_stmt 1 view .LVU21
-  27:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 123              		.loc 1 27 14 is_stmt 0 view .LVU22
- 124 0024 6423     		movs	r3, #100
- 125 0026 0293     		str	r3, [sp, #8]
- 126 0028 0123     		movs	r3, #1
- 127 002a 0193     		str	r3, [sp, #4]
- 128 002c 0DF11602 		add	r2, sp, #22
- 129 0030 0092     		str	r2, [sp]
- 130 0032 6B22     		movs	r2, #107
- 131 0034 D021     		movs	r1, #208
- 132 0036 2046     		mov	r0, r4
- 133 0038 FFF7FEFF 		bl	HAL_I2C_Mem_Write
- 134              	.LVL6:
-  29:Sensors/mpu6050.c ****         return status;
- 135              		.loc 1 29 5 is_stmt 1 view .LVU23
-  29:Sensors/mpu6050.c ****         return status;
- 136              		.loc 1 29 8 is_stmt 0 view .LVU24
- 137 003c 0028     		cmp	r0, #0
- 138 003e ECD1     		bne	.L4
-  33:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
- 139              		.loc 1 33 5 is_stmt 1 view .LVU25
-  33:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
- 140              		.loc 1 33 10 is_stmt 0 view .LVU26
- 141 0040 0723     		movs	r3, #7
- 142 0042 8DF81630 		strb	r3, [sp, #22]
-  34:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 143              		.loc 1 34 5 is_stmt 1 view .LVU27
-  34:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 144              		.loc 1 34 14 is_stmt 0 view .LVU28
- 145 0046 6423     		movs	r3, #100
- 146 0048 0293     		str	r3, [sp, #8]
- 147 004a 0123     		movs	r3, #1
- 148 004c 0193     		str	r3, [sp, #4]
- 149 004e 0DF11602 		add	r2, sp, #22
- 150 0052 0092     		str	r2, [sp]
- 151 0054 1922     		movs	r2, #25
- 152 0056 D021     		movs	r1, #208
- 153 0058 2046     		mov	r0, r4
- 154              	.LVL7:
-  34:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 155              		.loc 1 34 14 view .LVU29
- 156 005a FFF7FEFF 		bl	HAL_I2C_Mem_Write
- 157              	.LVL8:
-  36:Sensors/mpu6050.c ****         return status;
- 158              		.loc 1 36 5 is_stmt 1 view .LVU30
-  36:Sensors/mpu6050.c ****         return status;
- 159              		.loc 1 36 8 is_stmt 0 view .LVU31
- 160 005e 0028     		cmp	r0, #0
- 161 0060 DBD1     		bne	.L4
-  40:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
- 162              		.loc 1 40 5 is_stmt 1 view .LVU32
-  40:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
- 163              		.loc 1 40 10 is_stmt 0 view .LVU33
- 164 0062 8DF81600 		strb	r0, [sp, #22]
-  41:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
-ARM GAS  /tmp/cc4pyRa0.s 			page 5
+ 193              		.section	.text.MPU6050_GetCompTau,"ax",%progbits
+ 194              		.align	1
+ 195              		.global	MPU6050_GetCompTau
+ 196              		.syntax unified
+ 197              		.thumb
+ 198              		.thumb_func
+ 200              	MPU6050_GetCompTau:
+ 201              	.LFB245:
+  47:Sensors/mpu6050.c **** float MPU6050_GetCompTau(void) { return comp_tau_s; }
+ 202              		.loc 1 47 32 is_stmt 1 view -0
+ 203              		.cfi_startproc
+ 204              		@ args = 0, pretend = 0, frame = 0
+ 205              		@ frame_needed = 0, uses_anonymous_args = 0
+ 206              		@ link register save eliminated.
+ 207              		.loc 1 47 34 view .LVU28
+ 208              		.loc 1 47 53 is_stmt 0 view .LVU29
+ 209 0000 014B     		ldr	r3, .L32
+ 210 0002 93ED000A 		vldr.32	s0, [r3]
+ 211 0006 7047     		bx	lr
+ 212              	.L33:
+ 213              		.align	2
+ 214              	.L32:
+ 215 0008 00000000 		.word	comp_tau_s
+ 216              		.cfi_endproc
+ 217              	.LFE245:
+ 219              		.section	.text.MPU6050_WhoAmI,"ax",%progbits
+ 220              		.align	1
+ 221              		.global	MPU6050_WhoAmI
+ 222              		.syntax unified
+ 223              		.thumb
+ 224              		.thumb_func
+ 226              	MPU6050_WhoAmI:
+ 227              	.LVL3:
+ 228              	.LFB246:
+  48:Sensors/mpu6050.c **** 
+  49:Sensors/mpu6050.c **** HAL_StatusTypeDef MPU6050_WhoAmI(I2C_HandleTypeDef *hi2c, uint8_t *id)
+  50:Sensors/mpu6050.c **** {
+ 229              		.loc 1 50 1 is_stmt 1 view -0
+ 230              		.cfi_startproc
+ 231              		@ args = 0, pretend = 0, frame = 0
+ 232              		@ frame_needed = 0, uses_anonymous_args = 0
+ 233              		.loc 1 50 1 is_stmt 0 view .LVU31
+ 234 0000 00B5     		push	{lr}
+ 235              	.LCFI0:
+ 236              		.cfi_def_cfa_offset 4
+ 237              		.cfi_offset 14, -4
+ 238 0002 85B0     		sub	sp, sp, #20
+ 239              	.LCFI1:
+ 240              		.cfi_def_cfa_offset 24
+  51:Sensors/mpu6050.c ****     return HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, MPU6050_WHO_AM_I,
+ 241              		.loc 1 51 5 is_stmt 1 view .LVU32
+ 242              		.loc 1 51 12 is_stmt 0 view .LVU33
+ 243 0004 6423     		movs	r3, #100
+ 244 0006 0293     		str	r3, [sp, #8]
+ 245 0008 0123     		movs	r3, #1
+ 246 000a 0193     		str	r3, [sp, #4]
+ 247 000c 0091     		str	r1, [sp]
+ARM GAS  /tmp/cclsILbz.s 			page 6
 
 
- 165              		.loc 1 41 5 is_stmt 1 view .LVU34
-  41:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 166              		.loc 1 41 14 is_stmt 0 view .LVU35
- 167 0066 6423     		movs	r3, #100
- 168 0068 0293     		str	r3, [sp, #8]
- 169 006a 0123     		movs	r3, #1
- 170 006c 0193     		str	r3, [sp, #4]
- 171 006e 0DF11602 		add	r2, sp, #22
- 172 0072 0092     		str	r2, [sp]
- 173 0074 1C22     		movs	r2, #28
- 174 0076 D021     		movs	r1, #208
- 175 0078 2046     		mov	r0, r4
- 176              	.LVL9:
-  41:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 177              		.loc 1 41 14 view .LVU36
- 178 007a FFF7FEFF 		bl	HAL_I2C_Mem_Write
- 179              	.LVL10:
-  43:Sensors/mpu6050.c ****         return status;
- 180              		.loc 1 43 5 is_stmt 1 view .LVU37
-  43:Sensors/mpu6050.c ****         return status;
- 181              		.loc 1 43 8 is_stmt 0 view .LVU38
- 182 007e 0028     		cmp	r0, #0
- 183 0080 CBD1     		bne	.L4
-  47:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
- 184              		.loc 1 47 5 is_stmt 1 view .LVU39
-  47:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
- 185              		.loc 1 47 10 is_stmt 0 view .LVU40
- 186 0082 8DF81600 		strb	r0, [sp, #22]
-  48:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 187              		.loc 1 48 5 is_stmt 1 view .LVU41
-  48:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 188              		.loc 1 48 14 is_stmt 0 view .LVU42
- 189 0086 6423     		movs	r3, #100
- 190 0088 0293     		str	r3, [sp, #8]
- 191 008a 0123     		movs	r3, #1
- 192 008c 0193     		str	r3, [sp, #4]
- 193 008e 0DF11602 		add	r2, sp, #22
- 194 0092 0092     		str	r2, [sp]
- 195 0094 1B22     		movs	r2, #27
- 196 0096 D021     		movs	r1, #208
- 197 0098 2046     		mov	r0, r4
- 198              	.LVL11:
-  48:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
- 199              		.loc 1 48 14 view .LVU43
- 200 009a FFF7FEFF 		bl	HAL_I2C_Mem_Write
- 201              	.LVL12:
-  50:Sensors/mpu6050.c **** }
- 202              		.loc 1 50 5 is_stmt 1 view .LVU44
-  50:Sensors/mpu6050.c **** }
- 203              		.loc 1 50 12 is_stmt 0 view .LVU45
- 204 009e BCE7     		b	.L4
- 205              		.cfi_endproc
- 206              	.LFE135:
- 208              		.section	.text.MPU6050_ReadAll,"ax",%progbits
- 209              		.align	1
- 210              		.global	MPU6050_ReadAll
- 211              		.syntax unified
-ARM GAS  /tmp/cc4pyRa0.s 			page 6
+ 248 000e 7522     		movs	r2, #117
+ 249 0010 D021     		movs	r1, #208
+ 250              	.LVL4:
+ 251              		.loc 1 51 12 view .LVU34
+ 252 0012 FFF7FEFF 		bl	HAL_I2C_Mem_Read
+ 253              	.LVL5:
+  52:Sensors/mpu6050.c ****                             I2C_MEMADD_SIZE_8BIT, id, 1, 100);
+  53:Sensors/mpu6050.c **** }
+ 254              		.loc 1 53 1 view .LVU35
+ 255 0016 05B0     		add	sp, sp, #20
+ 256              	.LCFI2:
+ 257              		.cfi_def_cfa_offset 4
+ 258              		@ sp needed
+ 259 0018 5DF804FB 		ldr	pc, [sp], #4
+ 260              		.cfi_endproc
+ 261              	.LFE246:
+ 263              		.section	.text.MPU6050_Init,"ax",%progbits
+ 264              		.align	1
+ 265              		.global	MPU6050_Init
+ 266              		.syntax unified
+ 267              		.thumb
+ 268              		.thumb_func
+ 270              	MPU6050_Init:
+ 271              	.LVL6:
+ 272              	.LFB247:
+  54:Sensors/mpu6050.c **** 
+  55:Sensors/mpu6050.c **** HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
+  56:Sensors/mpu6050.c **** {
+ 273              		.loc 1 56 1 is_stmt 1 view -0
+ 274              		.cfi_startproc
+ 275              		@ args = 0, pretend = 0, frame = 8
+ 276              		@ frame_needed = 0, uses_anonymous_args = 0
+ 277              		.loc 1 56 1 is_stmt 0 view .LVU37
+ 278 0000 10B5     		push	{r4, lr}
+ 279              	.LCFI3:
+ 280              		.cfi_def_cfa_offset 8
+ 281              		.cfi_offset 4, -8
+ 282              		.cfi_offset 14, -4
+ 283 0002 86B0     		sub	sp, sp, #24
+ 284              	.LCFI4:
+ 285              		.cfi_def_cfa_offset 32
+ 286 0004 0446     		mov	r4, r0
+  57:Sensors/mpu6050.c ****     uint8_t check;
+ 287              		.loc 1 57 5 is_stmt 1 view .LVU38
+  58:Sensors/mpu6050.c ****     HAL_StatusTypeDef status;
+ 288              		.loc 1 58 5 view .LVU39
+  59:Sensors/mpu6050.c **** 
+  60:Sensors/mpu6050.c ****     status = MPU6050_WhoAmI(hi2c, &check);
+ 289              		.loc 1 60 5 view .LVU40
+ 290              		.loc 1 60 14 is_stmt 0 view .LVU41
+ 291 0006 0DF11701 		add	r1, sp, #23
+ 292 000a FFF7FEFF 		bl	MPU6050_WhoAmI
+ 293              	.LVL7:
+  61:Sensors/mpu6050.c ****     if (status != HAL_OK)
+ 294              		.loc 1 61 5 is_stmt 1 view .LVU42
+ 295              		.loc 1 61 8 is_stmt 0 view .LVU43
+ 296 000e 20B9     		cbnz	r0, .L37
+ARM GAS  /tmp/cclsILbz.s 			page 7
 
 
- 212              		.thumb
- 213              		.thumb_func
- 215              	MPU6050_ReadAll:
- 216              	.LVL13:
- 217              	.LFB136:
-  52:Sensors/mpu6050.c **** 
-  53:Sensors/mpu6050.c **** HAL_StatusTypeDef MPU6050_ReadAll(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data)
-  54:Sensors/mpu6050.c **** {
- 218              		.loc 1 54 1 is_stmt 1 view -0
- 219              		.cfi_startproc
- 220              		@ args = 0, pretend = 0, frame = 16
- 221              		@ frame_needed = 0, uses_anonymous_args = 0
- 222              		.loc 1 54 1 is_stmt 0 view .LVU47
- 223 0000 10B5     		push	{r4, lr}
- 224              	.LCFI7:
- 225              		.cfi_def_cfa_offset 8
- 226              		.cfi_offset 4, -8
- 227              		.cfi_offset 14, -4
- 228 0002 88B0     		sub	sp, sp, #32
- 229              	.LCFI8:
- 230              		.cfi_def_cfa_offset 40
- 231 0004 0C46     		mov	r4, r1
-  55:Sensors/mpu6050.c ****     uint8_t buf[14];
- 232              		.loc 1 55 5 is_stmt 1 view .LVU48
-  56:Sensors/mpu6050.c ****     HAL_StatusTypeDef status;
- 233              		.loc 1 56 5 view .LVU49
-  57:Sensors/mpu6050.c **** 
-  58:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H,
- 234              		.loc 1 58 5 view .LVU50
- 235              		.loc 1 58 14 is_stmt 0 view .LVU51
- 236 0006 6423     		movs	r3, #100
- 237 0008 0293     		str	r3, [sp, #8]
- 238 000a 0E23     		movs	r3, #14
- 239 000c 0193     		str	r3, [sp, #4]
- 240 000e 04AB     		add	r3, sp, #16
- 241 0010 0093     		str	r3, [sp]
- 242 0012 0123     		movs	r3, #1
- 243 0014 3B22     		movs	r2, #59
- 244 0016 D021     		movs	r1, #208
- 245              	.LVL14:
- 246              		.loc 1 58 14 view .LVU52
- 247 0018 FFF7FEFF 		bl	HAL_I2C_Mem_Read
- 248              	.LVL15:
-  59:Sensors/mpu6050.c ****                               I2C_MEMADD_SIZE_8BIT, buf, 14, 100);
-  60:Sensors/mpu6050.c ****     if (status != HAL_OK)
- 249              		.loc 1 60 5 is_stmt 1 view .LVU53
- 250              		.loc 1 60 8 is_stmt 0 view .LVU54
- 251 001c 80BB     		cbnz	r0, .L9
-  61:Sensors/mpu6050.c ****         return status;
-  62:Sensors/mpu6050.c **** 
-  63:Sensors/mpu6050.c ****     data->accel_x = (int16_t)((buf[0] << 8) | buf[1]);
- 252              		.loc 1 63 5 is_stmt 1 view .LVU55
- 253              		.loc 1 63 35 is_stmt 0 view .LVU56
- 254 001e 9DF81020 		ldrb	r2, [sp, #16]	@ zero_extendqisi2
- 255              		.loc 1 63 50 view .LVU57
- 256 0022 9DF81130 		ldrb	r3, [sp, #17]	@ zero_extendqisi2
- 257              		.loc 1 63 21 view .LVU58
-ARM GAS  /tmp/cc4pyRa0.s 			page 7
-
-
- 258 0026 43EA0223 		orr	r3, r3, r2, lsl #8
- 259              		.loc 1 63 19 view .LVU59
- 260 002a 2380     		strh	r3, [r4]	@ movhi
-  64:Sensors/mpu6050.c ****     data->accel_y = (int16_t)((buf[2] << 8) | buf[3]);
- 261              		.loc 1 64 5 is_stmt 1 view .LVU60
- 262              		.loc 1 64 35 is_stmt 0 view .LVU61
- 263 002c 9DF81220 		ldrb	r2, [sp, #18]	@ zero_extendqisi2
- 264              		.loc 1 64 50 view .LVU62
- 265 0030 9DF81330 		ldrb	r3, [sp, #19]	@ zero_extendqisi2
- 266              		.loc 1 64 21 view .LVU63
- 267 0034 43EA0223 		orr	r3, r3, r2, lsl #8
- 268              		.loc 1 64 19 view .LVU64
- 269 0038 6380     		strh	r3, [r4, #2]	@ movhi
-  65:Sensors/mpu6050.c ****     data->accel_z = (int16_t)((buf[4] << 8) | buf[5]);
- 270              		.loc 1 65 5 is_stmt 1 view .LVU65
- 271              		.loc 1 65 35 is_stmt 0 view .LVU66
- 272 003a 9DF81420 		ldrb	r2, [sp, #20]	@ zero_extendqisi2
- 273              		.loc 1 65 50 view .LVU67
- 274 003e 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
- 275              		.loc 1 65 21 view .LVU68
- 276 0042 43EA0223 		orr	r3, r3, r2, lsl #8
- 277              		.loc 1 65 19 view .LVU69
- 278 0046 A380     		strh	r3, [r4, #4]	@ movhi
-  66:Sensors/mpu6050.c ****     data->temp_raw = (int16_t)((buf[6] << 8) | buf[7]);
- 279              		.loc 1 66 5 is_stmt 1 view .LVU70
- 280              		.loc 1 66 36 is_stmt 0 view .LVU71
- 281 0048 9DF81620 		ldrb	r2, [sp, #22]	@ zero_extendqisi2
- 282              		.loc 1 66 51 view .LVU72
- 283 004c 9DF81730 		ldrb	r3, [sp, #23]	@ zero_extendqisi2
- 284              		.loc 1 66 22 view .LVU73
- 285 0050 43EA0223 		orr	r3, r3, r2, lsl #8
- 286              		.loc 1 66 20 view .LVU74
- 287 0054 A381     		strh	r3, [r4, #12]	@ movhi
-  67:Sensors/mpu6050.c ****     data->gyro_x = (int16_t)((buf[8] << 8) | buf[9]);
- 288              		.loc 1 67 5 is_stmt 1 view .LVU75
- 289              		.loc 1 67 34 is_stmt 0 view .LVU76
- 290 0056 9DF81820 		ldrb	r2, [sp, #24]	@ zero_extendqisi2
- 291              		.loc 1 67 49 view .LVU77
- 292 005a 9DF81930 		ldrb	r3, [sp, #25]	@ zero_extendqisi2
- 293              		.loc 1 67 20 view .LVU78
- 294 005e 43EA0223 		orr	r3, r3, r2, lsl #8
- 295              		.loc 1 67 18 view .LVU79
- 296 0062 E380     		strh	r3, [r4, #6]	@ movhi
-  68:Sensors/mpu6050.c ****     data->gyro_y = (int16_t)((buf[10] << 8) | buf[11]);
- 297              		.loc 1 68 5 is_stmt 1 view .LVU80
- 298              		.loc 1 68 34 is_stmt 0 view .LVU81
- 299 0064 9DF81A20 		ldrb	r2, [sp, #26]	@ zero_extendqisi2
- 300              		.loc 1 68 50 view .LVU82
- 301 0068 9DF81B30 		ldrb	r3, [sp, #27]	@ zero_extendqisi2
- 302              		.loc 1 68 20 view .LVU83
- 303 006c 43EA0223 		orr	r3, r3, r2, lsl #8
- 304              		.loc 1 68 18 view .LVU84
- 305 0070 2381     		strh	r3, [r4, #8]	@ movhi
-  69:Sensors/mpu6050.c ****     data->gyro_z = (int16_t)((buf[12] << 8) | buf[13]);
- 306              		.loc 1 69 5 is_stmt 1 view .LVU85
- 307              		.loc 1 69 34 is_stmt 0 view .LVU86
- 308 0072 9DF81C20 		ldrb	r2, [sp, #28]	@ zero_extendqisi2
-ARM GAS  /tmp/cc4pyRa0.s 			page 8
-
-
- 309              		.loc 1 69 50 view .LVU87
- 310 0076 9DF81D30 		ldrb	r3, [sp, #29]	@ zero_extendqisi2
- 311              		.loc 1 69 20 view .LVU88
- 312 007a 43EA0223 		orr	r3, r3, r2, lsl #8
- 313              		.loc 1 69 18 view .LVU89
- 314 007e 6381     		strh	r3, [r4, #10]	@ movhi
-  70:Sensors/mpu6050.c **** 
-  71:Sensors/mpu6050.c ****     return HAL_OK;
- 315              		.loc 1 71 5 is_stmt 1 view .LVU90
- 316              	.L9:
-  72:Sensors/mpu6050.c **** }
- 317              		.loc 1 72 1 is_stmt 0 view .LVU91
- 318 0080 08B0     		add	sp, sp, #32
- 319              	.LCFI9:
- 320              		.cfi_def_cfa_offset 8
- 321              		@ sp needed
- 322 0082 10BD     		pop	{r4, pc}
- 323              		.loc 1 72 1 view .LVU92
- 324              		.cfi_endproc
- 325              	.LFE136:
- 327              		.section	.text.MPU6050_Calibrate,"ax",%progbits
- 328              		.align	1
- 329              		.global	MPU6050_Calibrate
- 330              		.syntax unified
- 331              		.thumb
- 332              		.thumb_func
- 334              	MPU6050_Calibrate:
- 335              	.LVL16:
- 336              	.LFB137:
-  73:Sensors/mpu6050.c **** 
-  74:Sensors/mpu6050.c **** /* --- Gyro-Kalibrierung: misst Offsets im Ruhezustand --- */
-  75:Sensors/mpu6050.c **** void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples)
-  76:Sensors/mpu6050.c **** {
- 337              		.loc 1 76 1 is_stmt 1 view -0
- 338              		.cfi_startproc
- 339              		@ args = 0, pretend = 0, frame = 0
- 340              		@ frame_needed = 0, uses_anonymous_args = 0
- 341              		.loc 1 76 1 is_stmt 0 view .LVU94
- 342 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
- 343              	.LCFI10:
- 344              		.cfi_def_cfa_offset 24
- 345              		.cfi_offset 3, -24
- 346              		.cfi_offset 4, -20
- 347              		.cfi_offset 5, -16
- 348              		.cfi_offset 6, -12
- 349              		.cfi_offset 7, -8
- 350              		.cfi_offset 14, -4
- 351 0002 2DED048B 		vpush.64	{d8, d9}
- 352              	.LCFI11:
- 353              		.cfi_def_cfa_offset 40
- 354              		.cfi_offset 80, -40
- 355              		.cfi_offset 81, -36
- 356              		.cfi_offset 82, -32
- 357              		.cfi_offset 83, -28
- 358 0006 0746     		mov	r7, r0
- 359 0008 0D46     		mov	r5, r1
- 360 000a 1646     		mov	r6, r2
-ARM GAS  /tmp/cc4pyRa0.s 			page 9
-
-
-  77:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
- 361              		.loc 1 77 5 is_stmt 1 view .LVU95
- 362              	.LVL17:
-  78:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
- 363              		.loc 1 78 5 view .LVU96
- 364              	.LBB2:
- 365              		.loc 1 78 10 view .LVU97
- 366              		.loc 1 78 19 is_stmt 0 view .LVU98
- 367 000c 0024     		movs	r4, #0
- 368              	.LBE2:
-  77:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
- 369              		.loc 1 77 27 view .LVU99
- 370 000e 9FED208A 		vldr.32	s16, .L17
-  77:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
- 371              		.loc 1 77 19 view .LVU100
- 372 0012 F0EE488A 		vmov.f32	s17, s16
-  77:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
- 373              		.loc 1 77 11 view .LVU101
- 374 0016 B0EE489A 		vmov.f32	s18, s16
- 375              	.LBB3:
- 376              		.loc 1 78 5 view .LVU102
- 377 001a 04E0     		b	.L12
- 378              	.LVL18:
- 379              	.L13:
-  79:Sensors/mpu6050.c ****     {
-  80:Sensors/mpu6050.c ****         if (MPU6050_ReadAll(hi2c, data) == HAL_OK)
-  81:Sensors/mpu6050.c ****         {
-  82:Sensors/mpu6050.c ****             sx += data->gyro_x;
-  83:Sensors/mpu6050.c ****             sy += data->gyro_y;
-  84:Sensors/mpu6050.c ****             sz += data->gyro_z;
-  85:Sensors/mpu6050.c ****         }
-  86:Sensors/mpu6050.c ****         HAL_Delay(2);
- 380              		.loc 1 86 9 is_stmt 1 view .LVU103
- 381 001c 0220     		movs	r0, #2
- 382 001e FFF7FEFF 		bl	HAL_Delay
- 383              	.LVL19:
-  78:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
- 384              		.loc 1 78 40 discriminator 2 view .LVU104
- 385 0022 0134     		adds	r4, r4, #1
- 386              	.LVL20:
-  78:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
- 387              		.loc 1 78 40 is_stmt 0 discriminator 2 view .LVU105
- 388 0024 A4B2     		uxth	r4, r4
- 389              	.LVL21:
- 390              	.L12:
-  78:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
- 391              		.loc 1 78 28 is_stmt 1 discriminator 1 view .LVU106
- 392 0026 B442     		cmp	r4, r6
- 393 0028 1ED2     		bcs	.L16
-  80:Sensors/mpu6050.c ****         {
- 394              		.loc 1 80 9 view .LVU107
-  80:Sensors/mpu6050.c ****         {
- 395              		.loc 1 80 13 is_stmt 0 view .LVU108
- 396 002a 2946     		mov	r1, r5
- 397 002c 3846     		mov	r0, r7
- 398 002e FFF7FEFF 		bl	MPU6050_ReadAll
- 399              	.LVL22:
-ARM GAS  /tmp/cc4pyRa0.s 			page 10
-
-
-  80:Sensors/mpu6050.c ****         {
- 400              		.loc 1 80 12 discriminator 1 view .LVU109
- 401 0032 0028     		cmp	r0, #0
- 402 0034 F2D1     		bne	.L13
-  82:Sensors/mpu6050.c ****             sy += data->gyro_y;
- 403              		.loc 1 82 13 is_stmt 1 view .LVU110
-  82:Sensors/mpu6050.c ****             sy += data->gyro_y;
- 404              		.loc 1 82 23 is_stmt 0 view .LVU111
- 405 0036 B5F90630 		ldrsh	r3, [r5, #6]
- 406 003a 07EE903A 		vmov	s15, r3	@ int
-  82:Sensors/mpu6050.c ****             sy += data->gyro_y;
- 407              		.loc 1 82 16 view .LVU112
- 408 003e F8EEE77A 		vcvt.f32.s32	s15, s15
- 409 0042 39EE279A 		vadd.f32	s18, s18, s15
- 410              	.LVL23:
-  83:Sensors/mpu6050.c ****             sz += data->gyro_z;
- 411              		.loc 1 83 13 is_stmt 1 view .LVU113
-  83:Sensors/mpu6050.c ****             sz += data->gyro_z;
- 412              		.loc 1 83 23 is_stmt 0 view .LVU114
- 413 0046 B5F90830 		ldrsh	r3, [r5, #8]
- 414 004a 07EE903A 		vmov	s15, r3	@ int
-  83:Sensors/mpu6050.c ****             sz += data->gyro_z;
- 415              		.loc 1 83 16 view .LVU115
- 416 004e F8EEE77A 		vcvt.f32.s32	s15, s15
- 417 0052 78EEA78A 		vadd.f32	s17, s17, s15
- 418              	.LVL24:
-  84:Sensors/mpu6050.c ****         }
- 419              		.loc 1 84 13 is_stmt 1 view .LVU116
-  84:Sensors/mpu6050.c ****         }
- 420              		.loc 1 84 23 is_stmt 0 view .LVU117
- 421 0056 B5F90A30 		ldrsh	r3, [r5, #10]
- 422 005a 07EE903A 		vmov	s15, r3	@ int
-  84:Sensors/mpu6050.c ****         }
- 423              		.loc 1 84 16 view .LVU118
- 424 005e F8EEE77A 		vcvt.f32.s32	s15, s15
- 425 0062 38EE278A 		vadd.f32	s16, s16, s15
- 426              	.LVL25:
-  84:Sensors/mpu6050.c ****         }
- 427              		.loc 1 84 16 view .LVU119
- 428 0066 D9E7     		b	.L13
- 429              	.L16:
-  84:Sensors/mpu6050.c ****         }
- 430              		.loc 1 84 16 view .LVU120
- 431              	.LBE3:
-  87:Sensors/mpu6050.c ****     }
-  88:Sensors/mpu6050.c ****     data->gyro_x_offset = sx / samples;
- 432              		.loc 1 88 5 is_stmt 1 view .LVU121
- 433              		.loc 1 88 30 is_stmt 0 view .LVU122
- 434 0068 07EE906A 		vmov	s15, r6	@ int
- 435 006c F8EEE77A 		vcvt.f32.s32	s15, s15
- 436 0070 89EE277A 		vdiv.f32	s14, s18, s15
- 437              		.loc 1 88 25 view .LVU123
- 438 0074 85ED0A7A 		vstr.32	s14, [r5, #40]
-  89:Sensors/mpu6050.c ****     data->gyro_y_offset = sy / samples;
- 439              		.loc 1 89 5 is_stmt 1 view .LVU124
- 440              		.loc 1 89 30 is_stmt 0 view .LVU125
- 441 0078 88EEA77A 		vdiv.f32	s14, s17, s15
-ARM GAS  /tmp/cc4pyRa0.s 			page 11
-
-
- 442              		.loc 1 89 25 view .LVU126
- 443 007c 85ED0B7A 		vstr.32	s14, [r5, #44]
-  90:Sensors/mpu6050.c ****     data->gyro_z_offset = sz / samples;
- 444              		.loc 1 90 5 is_stmt 1 view .LVU127
- 445              		.loc 1 90 30 is_stmt 0 view .LVU128
- 446 0080 88EE277A 		vdiv.f32	s14, s16, s15
- 447              		.loc 1 90 25 view .LVU129
- 448 0084 85ED0C7A 		vstr.32	s14, [r5, #48]
-  91:Sensors/mpu6050.c **** }
- 449              		.loc 1 91 1 view .LVU130
- 450 0088 BDEC048B 		vldm	sp!, {d8-d9}
- 451              	.LCFI12:
- 452              		.cfi_restore 82
- 453              		.cfi_restore 83
- 454              		.cfi_restore 80
- 455              		.cfi_restore 81
- 456              		.cfi_def_cfa_offset 24
- 457              	.LVL26:
- 458              		.loc 1 91 1 view .LVU131
- 459 008c F8BD     		pop	{r3, r4, r5, r6, r7, pc}
- 460              	.LVL27:
- 461              	.L18:
- 462              		.loc 1 91 1 view .LVU132
- 463 008e 00BF     		.align	2
- 464              	.L17:
- 465 0090 00000000 		.word	0
- 466              		.cfi_endproc
- 467              	.LFE137:
- 469              		.section	.text.MPU6050_Convert,"ax",%progbits
- 470              		.align	1
- 471              		.global	MPU6050_Convert
- 472              		.syntax unified
- 473              		.thumb
- 474              		.thumb_func
- 476              	MPU6050_Convert:
- 477              	.LVL28:
- 478              	.LFB138:
-  92:Sensors/mpu6050.c **** 
-  93:Sensors/mpu6050.c **** /* --- Rohwerte -> g und °/s umrechnen (mit Offset-Korrektur) --- */
-  94:Sensors/mpu6050.c **** void MPU6050_Convert(MPU6050_Data_t *data)
-  95:Sensors/mpu6050.c **** {
- 479              		.loc 1 95 1 is_stmt 1 view -0
- 480              		.cfi_startproc
- 481              		@ args = 0, pretend = 0, frame = 0
- 482              		@ frame_needed = 0, uses_anonymous_args = 0
- 483              		@ link register save eliminated.
-  96:Sensors/mpu6050.c ****     data->accel_x_g = data->accel_x / ACCEL_SCALE;
- 484              		.loc 1 96 5 view .LVU134
- 485              		.loc 1 96 27 is_stmt 0 view .LVU135
- 486 0000 B0F90030 		ldrsh	r3, [r0]
- 487 0004 07EE903A 		vmov	s15, r3	@ int
- 488              		.loc 1 96 37 view .LVU136
- 489 0008 F8EEE77A 		vcvt.f32.s32	s15, s15
- 490 000c 9FED237A 		vldr.32	s14, .L20
- 491 0010 67EE877A 		vmul.f32	s15, s15, s14
- 492              		.loc 1 96 21 view .LVU137
- 493 0014 C0ED047A 		vstr.32	s15, [r0, #16]
-ARM GAS  /tmp/cc4pyRa0.s 			page 12
-
-
-  97:Sensors/mpu6050.c ****     data->accel_y_g = data->accel_y / ACCEL_SCALE;
- 494              		.loc 1 97 5 is_stmt 1 view .LVU138
- 495              		.loc 1 97 27 is_stmt 0 view .LVU139
- 496 0018 B0F90230 		ldrsh	r3, [r0, #2]
- 497 001c 07EE903A 		vmov	s15, r3	@ int
- 498              		.loc 1 97 37 view .LVU140
- 499 0020 F8EEE77A 		vcvt.f32.s32	s15, s15
- 500 0024 67EE877A 		vmul.f32	s15, s15, s14
- 501              		.loc 1 97 21 view .LVU141
- 502 0028 C0ED057A 		vstr.32	s15, [r0, #20]
-  98:Sensors/mpu6050.c ****     data->accel_z_g = data->accel_z / ACCEL_SCALE;
- 503              		.loc 1 98 5 is_stmt 1 view .LVU142
- 504              		.loc 1 98 27 is_stmt 0 view .LVU143
- 505 002c B0F90430 		ldrsh	r3, [r0, #4]
- 506 0030 07EE903A 		vmov	s15, r3	@ int
- 507              		.loc 1 98 37 view .LVU144
- 508 0034 F8EEE77A 		vcvt.f32.s32	s15, s15
- 509 0038 67EE877A 		vmul.f32	s15, s15, s14
- 510              		.loc 1 98 21 view .LVU145
- 511 003c C0ED067A 		vstr.32	s15, [r0, #24]
-  99:Sensors/mpu6050.c **** 
- 100:Sensors/mpu6050.c ****     data->gyro_x_dps = (data->gyro_x - data->gyro_x_offset) / GYRO_SCALE;
- 512              		.loc 1 100 5 is_stmt 1 view .LVU146
- 513              		.loc 1 100 29 is_stmt 0 view .LVU147
- 514 0040 B0F90630 		ldrsh	r3, [r0, #6]
- 515 0044 07EE903A 		vmov	s15, r3	@ int
- 516              		.loc 1 100 44 view .LVU148
- 517 0048 90ED0A7A 		vldr.32	s14, [r0, #40]
- 518              		.loc 1 100 38 view .LVU149
- 519 004c F8EEE77A 		vcvt.f32.s32	s15, s15
- 520 0050 77EEC77A 		vsub.f32	s15, s15, s14
- 521              		.loc 1 100 61 view .LVU150
- 522 0054 9FED127A 		vldr.32	s14, .L20+4
- 523 0058 C7EE876A 		vdiv.f32	s13, s15, s14
- 524              		.loc 1 100 22 view .LVU151
- 525 005c C0ED076A 		vstr.32	s13, [r0, #28]
- 101:Sensors/mpu6050.c ****     data->gyro_y_dps = (data->gyro_y - data->gyro_y_offset) / GYRO_SCALE;
- 526              		.loc 1 101 5 is_stmt 1 view .LVU152
- 527              		.loc 1 101 29 is_stmt 0 view .LVU153
- 528 0060 B0F90830 		ldrsh	r3, [r0, #8]
- 529 0064 07EE903A 		vmov	s15, r3	@ int
- 530              		.loc 1 101 44 view .LVU154
- 531 0068 D0ED0B6A 		vldr.32	s13, [r0, #44]
- 532              		.loc 1 101 38 view .LVU155
- 533 006c F8EEE77A 		vcvt.f32.s32	s15, s15
- 534 0070 77EEE67A 		vsub.f32	s15, s15, s13
- 535              		.loc 1 101 61 view .LVU156
- 536 0074 C7EE876A 		vdiv.f32	s13, s15, s14
- 537              		.loc 1 101 22 view .LVU157
- 538 0078 C0ED086A 		vstr.32	s13, [r0, #32]
- 102:Sensors/mpu6050.c ****     data->gyro_z_dps = (data->gyro_z - data->gyro_z_offset) / GYRO_SCALE;
- 539              		.loc 1 102 5 is_stmt 1 view .LVU158
- 540              		.loc 1 102 29 is_stmt 0 view .LVU159
- 541 007c B0F90A30 		ldrsh	r3, [r0, #10]
- 542 0080 07EE903A 		vmov	s15, r3	@ int
- 543              		.loc 1 102 44 view .LVU160
- 544 0084 D0ED0C6A 		vldr.32	s13, [r0, #48]
-ARM GAS  /tmp/cc4pyRa0.s 			page 13
-
-
- 545              		.loc 1 102 38 view .LVU161
- 546 0088 F8EEE77A 		vcvt.f32.s32	s15, s15
- 547 008c 77EEE67A 		vsub.f32	s15, s15, s13
- 548              		.loc 1 102 61 view .LVU162
- 549 0090 C7EE876A 		vdiv.f32	s13, s15, s14
- 550              		.loc 1 102 22 view .LVU163
- 551 0094 C0ED096A 		vstr.32	s13, [r0, #36]
- 103:Sensors/mpu6050.c **** }
- 552              		.loc 1 103 1 view .LVU164
- 553 0098 7047     		bx	lr
- 554              	.L21:
- 555 009a 00BF     		.align	2
- 556              	.L20:
- 557 009c 00008038 		.word	947912704
- 558 00a0 00000343 		.word	1124270080
- 559              		.cfi_endproc
- 560              	.LFE138:
- 562              		.section	.text.MPU6050_UpdateAngles,"ax",%progbits
- 563              		.align	1
- 564              		.global	MPU6050_UpdateAngles
- 565              		.syntax unified
- 566              		.thumb
- 567              		.thumb_func
- 569              	MPU6050_UpdateAngles:
- 570              	.LVL29:
- 571              	.LFB139:
+  62:Sensors/mpu6050.c ****         return status;
+  63:Sensors/mpu6050.c ****     if (check != 0x68)
+ 297              		.loc 1 63 5 is_stmt 1 view .LVU44
+ 298              		.loc 1 63 15 is_stmt 0 view .LVU45
+ 299 0010 9DF81730 		ldrb	r3, [sp, #23]	@ zero_extendqisi2
+ 300              		.loc 1 63 8 view .LVU46
+ 301 0014 682B     		cmp	r3, #104
+ 302 0016 02D0     		beq	.L40
+  64:Sensors/mpu6050.c ****         return HAL_ERROR;
+ 303              		.loc 1 64 16 view .LVU47
+ 304 0018 0120     		movs	r0, #1
+ 305              	.L37:
+  65:Sensors/mpu6050.c **** 
+  66:Sensors/mpu6050.c ****     /* Aus Sleep-Mode wecken, Takt vom Gyro statt vom internen Oszillator
+  67:Sensors/mpu6050.c ****      * (stabiler, empfiehlt InvenSense selbst) */
+  68:Sensors/mpu6050.c ****     uint8_t data = 0x01;
+  69:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
+  70:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+  71:Sensors/mpu6050.c ****     if (status != HAL_OK)
+  72:Sensors/mpu6050.c ****         return status;
+  73:Sensors/mpu6050.c ****     HAL_Delay(10);
+  74:Sensors/mpu6050.c **** 
+  75:Sensors/mpu6050.c ****     /* Interner Hardware-Tiefpass: DLPF_CFG = 1 -> Gyro 188 Hz, Accel 184 Hz.
+  76:Sensors/mpu6050.c ****      * Erste Stufe gegen Motorvibrationen. Gleichzeitig sinkt die interne
+  77:Sensors/mpu6050.c ****      * Gyro-Rate von 8 kHz auf 1 kHz - passend zur Regelschleife. */
+  78:Sensors/mpu6050.c ****     data = 0x01;
+  79:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_CONFIG,
+  80:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+  81:Sensors/mpu6050.c ****     if (status != HAL_OK)
+  82:Sensors/mpu6050.c ****         return status;
+  83:Sensors/mpu6050.c **** 
+  84:Sensors/mpu6050.c ****     /* Sample Rate = 1 kHz / (1+0) = 1000 Hz - ein frischer Wert pro Regelzyklus */
+  85:Sensors/mpu6050.c ****     data = 0x00;
+  86:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
+  87:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+  88:Sensors/mpu6050.c ****     if (status != HAL_OK)
+  89:Sensors/mpu6050.c ****         return status;
+  90:Sensors/mpu6050.c **** 
+  91:Sensors/mpu6050.c ****     /* Accel +-4g. Ein 5-Zoll-Quad sieht im Flug regelmaessig mehr als 2g,
+  92:Sensors/mpu6050.c ****      * und bei Anschlag liefert der Sensor sonst Unsinn. */
+  93:Sensors/mpu6050.c ****     data = 0x08;
+  94:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
+  95:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+  96:Sensors/mpu6050.c ****     if (status != HAL_OK)
+  97:Sensors/mpu6050.c ****         return status;
+  98:Sensors/mpu6050.c **** 
+  99:Sensors/mpu6050.c ****     /* Gyro +-500 Grad/s. +-250 reicht fuer Angle, aber im Rate-Modus
+ 100:Sensors/mpu6050.c ****      * drehst du schneller, und dann wuerde der Sensor abschneiden. */
+ 101:Sensors/mpu6050.c ****     data = 0x08;
+ 102:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
+ 103:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
  104:Sensors/mpu6050.c **** 
- 105:Sensors/mpu6050.c **** /* --- Komplementärfilter: Accel + Gyro -> Roll/Pitch --- */
- 106:Sensors/mpu6050.c **** void MPU6050_UpdateAngles(MPU6050_Data_t *data, float dt)
- 107:Sensors/mpu6050.c **** {
- 572              		.loc 1 107 1 is_stmt 1 view -0
- 573              		.cfi_startproc
- 574              		@ args = 0, pretend = 0, frame = 0
- 575              		@ frame_needed = 0, uses_anonymous_args = 0
- 576              		.loc 1 107 1 is_stmt 0 view .LVU166
- 577 0000 10B5     		push	{r4, lr}
- 578              	.LCFI13:
- 579              		.cfi_def_cfa_offset 8
- 580              		.cfi_offset 4, -8
- 581              		.cfi_offset 14, -4
- 582 0002 2DED068B 		vpush.64	{d8, d9, d10}
- 583              	.LCFI14:
- 584              		.cfi_def_cfa_offset 32
- 585              		.cfi_offset 80, -32
- 586              		.cfi_offset 81, -28
- 587              		.cfi_offset 82, -24
- 588              		.cfi_offset 83, -20
- 589              		.cfi_offset 84, -16
- 590              		.cfi_offset 85, -12
- 591 0006 0446     		mov	r4, r0
- 592 0008 B0EE408A 		vmov.f32	s16, s0
- 108:Sensors/mpu6050.c ****     float accel_roll = atan2f(data->accel_y_g, data->accel_z_g) * 57.2958f;
- 593              		.loc 1 108 5 is_stmt 1 view .LVU167
- 594              		.loc 1 108 24 is_stmt 0 view .LVU168
- 595 000c D0ED059A 		vldr.32	s19, [r0, #20]
- 596 0010 90ED069A 		vldr.32	s18, [r0, #24]
- 597 0014 F0EE490A 		vmov.f32	s1, s18
-ARM GAS  /tmp/cc4pyRa0.s 			page 14
+ 105:Sensors/mpu6050.c ****     filt_primed = 0;
+ 106:Sensors/mpu6050.c ****     return status;
+ 107:Sensors/mpu6050.c **** }
+ 306              		.loc 1 107 1 view .LVU48
+ 307 001a 06B0     		add	sp, sp, #24
+ARM GAS  /tmp/cclsILbz.s 			page 8
 
 
- 598 0018 B0EE690A 		vmov.f32	s0, s19
- 599              	.LVL30:
- 600              		.loc 1 108 24 view .LVU169
- 601 001c FFF7FEFF 		bl	atan2f
- 602              	.LVL31:
- 603              		.loc 1 108 11 discriminator 1 view .LVU170
- 604 0020 9FED23AA 		vldr.32	s20, .L24
- 605 0024 60EE0A8A 		vmul.f32	s17, s0, s20
- 606              	.LVL32:
- 109:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
- 607              		.loc 1 109 5 is_stmt 1 view .LVU171
- 608              		.loc 1 109 37 is_stmt 0 view .LVU172
- 609 0028 D4ED04AA 		vldr.32	s21, [r4, #16]
- 110:Sensors/mpu6050.c ****                                sqrtf(data->accel_y_g * data->accel_y_g +
- 610              		.loc 1 110 54 view .LVU173
- 611 002c 69EEA99A 		vmul.f32	s19, s19, s19
- 111:Sensors/mpu6050.c ****                                      data->accel_z_g * data->accel_z_g)) *
- 612              		.loc 1 111 54 view .LVU174
- 613 0030 29EE099A 		vmul.f32	s18, s18, s18
- 109:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
- 614              		.loc 1 109 25 view .LVU175
- 615 0034 39EE890A 		vadd.f32	s0, s19, s18
- 616 0038 FFF7FEFF 		bl	sqrtf
- 617              	.LVL33:
- 618 003c F0EE400A 		vmov.f32	s1, s0
- 109:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
- 619              		.loc 1 109 25 discriminator 1 view .LVU176
- 620 0040 B1EE6A0A 		vneg.f32	s0, s21
- 621 0044 FFF7FEFF 		bl	atan2f
- 622              	.LVL34:
- 109:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
- 623              		.loc 1 109 11 discriminator 2 view .LVU177
- 624 0048 20EE0A0A 		vmul.f32	s0, s0, s20
- 625              	.LVL35:
- 112:Sensors/mpu6050.c ****                         57.2958f;
+ 308              	.LCFI5:
+ 309              		.cfi_remember_state
+ 310              		.cfi_def_cfa_offset 8
+ 311              		@ sp needed
+ 312 001c 10BD     		pop	{r4, pc}
+ 313              	.LVL8:
+ 314              	.L40:
+ 315              	.LCFI6:
+ 316              		.cfi_restore_state
+  68:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
+ 317              		.loc 1 68 5 is_stmt 1 view .LVU49
+  68:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
+ 318              		.loc 1 68 13 is_stmt 0 view .LVU50
+ 319 001e 0123     		movs	r3, #1
+ 320 0020 8DF81630 		strb	r3, [sp, #22]
+  69:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 321              		.loc 1 69 5 is_stmt 1 view .LVU51
+  69:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 322              		.loc 1 69 14 is_stmt 0 view .LVU52
+ 323 0024 6422     		movs	r2, #100
+ 324 0026 0292     		str	r2, [sp, #8]
+ 325 0028 0193     		str	r3, [sp, #4]
+ 326 002a 0DF11602 		add	r2, sp, #22
+ 327 002e 0092     		str	r2, [sp]
+ 328 0030 6B22     		movs	r2, #107
+ 329 0032 D021     		movs	r1, #208
+ 330 0034 2046     		mov	r0, r4
+ 331 0036 FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 332              	.LVL9:
+  71:Sensors/mpu6050.c ****         return status;
+ 333              		.loc 1 71 5 is_stmt 1 view .LVU53
+  71:Sensors/mpu6050.c ****         return status;
+ 334              		.loc 1 71 8 is_stmt 0 view .LVU54
+ 335 003a 0028     		cmp	r0, #0
+ 336 003c EDD1     		bne	.L37
+  73:Sensors/mpu6050.c **** 
+ 337              		.loc 1 73 5 is_stmt 1 view .LVU55
+ 338 003e 0A20     		movs	r0, #10
+ 339              	.LVL10:
+  73:Sensors/mpu6050.c **** 
+ 340              		.loc 1 73 5 is_stmt 0 view .LVU56
+ 341 0040 FFF7FEFF 		bl	HAL_Delay
+ 342              	.LVL11:
+  78:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_CONFIG,
+ 343              		.loc 1 78 5 is_stmt 1 view .LVU57
+  78:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_CONFIG,
+ 344              		.loc 1 78 10 is_stmt 0 view .LVU58
+ 345 0044 0123     		movs	r3, #1
+ 346 0046 8DF81630 		strb	r3, [sp, #22]
+  79:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 347              		.loc 1 79 5 is_stmt 1 view .LVU59
+  79:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 348              		.loc 1 79 14 is_stmt 0 view .LVU60
+ 349 004a 6422     		movs	r2, #100
+ 350 004c 0292     		str	r2, [sp, #8]
+ 351 004e 0193     		str	r3, [sp, #4]
+ 352 0050 0DF11602 		add	r2, sp, #22
+ARM GAS  /tmp/cclsILbz.s 			page 9
+
+
+ 353 0054 0092     		str	r2, [sp]
+ 354 0056 1A22     		movs	r2, #26
+ 355 0058 D021     		movs	r1, #208
+ 356 005a 2046     		mov	r0, r4
+ 357 005c FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 358              	.LVL12:
+  81:Sensors/mpu6050.c ****         return status;
+ 359              		.loc 1 81 5 is_stmt 1 view .LVU61
+  81:Sensors/mpu6050.c ****         return status;
+ 360              		.loc 1 81 8 is_stmt 0 view .LVU62
+ 361 0060 0028     		cmp	r0, #0
+ 362 0062 DAD1     		bne	.L37
+  85:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
+ 363              		.loc 1 85 5 is_stmt 1 view .LVU63
+  85:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
+ 364              		.loc 1 85 10 is_stmt 0 view .LVU64
+ 365 0064 8DF81600 		strb	r0, [sp, #22]
+  86:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 366              		.loc 1 86 5 is_stmt 1 view .LVU65
+  86:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 367              		.loc 1 86 14 is_stmt 0 view .LVU66
+ 368 0068 6423     		movs	r3, #100
+ 369 006a 0293     		str	r3, [sp, #8]
+ 370 006c 0123     		movs	r3, #1
+ 371 006e 0193     		str	r3, [sp, #4]
+ 372 0070 0DF11602 		add	r2, sp, #22
+ 373 0074 0092     		str	r2, [sp]
+ 374 0076 1922     		movs	r2, #25
+ 375 0078 D021     		movs	r1, #208
+ 376 007a 2046     		mov	r0, r4
+ 377              	.LVL13:
+  86:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 378              		.loc 1 86 14 view .LVU67
+ 379 007c FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 380              	.LVL14:
+  88:Sensors/mpu6050.c ****         return status;
+ 381              		.loc 1 88 5 is_stmt 1 view .LVU68
+  88:Sensors/mpu6050.c ****         return status;
+ 382              		.loc 1 88 8 is_stmt 0 view .LVU69
+ 383 0080 0028     		cmp	r0, #0
+ 384 0082 CAD1     		bne	.L37
+  93:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
+ 385              		.loc 1 93 5 is_stmt 1 view .LVU70
+  93:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
+ 386              		.loc 1 93 10 is_stmt 0 view .LVU71
+ 387 0084 0823     		movs	r3, #8
+ 388 0086 8DF81630 		strb	r3, [sp, #22]
+  94:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 389              		.loc 1 94 5 is_stmt 1 view .LVU72
+  94:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 390              		.loc 1 94 14 is_stmt 0 view .LVU73
+ 391 008a 6423     		movs	r3, #100
+ 392 008c 0293     		str	r3, [sp, #8]
+ 393 008e 0123     		movs	r3, #1
+ 394 0090 0193     		str	r3, [sp, #4]
+ 395 0092 0DF11602 		add	r2, sp, #22
+ 396 0096 0092     		str	r2, [sp]
+ARM GAS  /tmp/cclsILbz.s 			page 10
+
+
+ 397 0098 1C22     		movs	r2, #28
+ 398 009a D021     		movs	r1, #208
+ 399 009c 2046     		mov	r0, r4
+ 400              	.LVL15:
+  94:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 401              		.loc 1 94 14 view .LVU74
+ 402 009e FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 403              	.LVL16:
+  96:Sensors/mpu6050.c ****         return status;
+ 404              		.loc 1 96 5 is_stmt 1 view .LVU75
+  96:Sensors/mpu6050.c ****         return status;
+ 405              		.loc 1 96 8 is_stmt 0 view .LVU76
+ 406 00a2 0028     		cmp	r0, #0
+ 407 00a4 B9D1     		bne	.L37
+ 101:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
+ 408              		.loc 1 101 5 is_stmt 1 view .LVU77
+ 101:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
+ 409              		.loc 1 101 10 is_stmt 0 view .LVU78
+ 410 00a6 0823     		movs	r3, #8
+ 411 00a8 8DF81630 		strb	r3, [sp, #22]
+ 102:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 412              		.loc 1 102 5 is_stmt 1 view .LVU79
+ 102:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 413              		.loc 1 102 14 is_stmt 0 view .LVU80
+ 414 00ac 6423     		movs	r3, #100
+ 415 00ae 0293     		str	r3, [sp, #8]
+ 416 00b0 0123     		movs	r3, #1
+ 417 00b2 0193     		str	r3, [sp, #4]
+ 418 00b4 0DF11602 		add	r2, sp, #22
+ 419 00b8 0092     		str	r2, [sp]
+ 420 00ba 1B22     		movs	r2, #27
+ 421 00bc D021     		movs	r1, #208
+ 422 00be 2046     		mov	r0, r4
+ 423              	.LVL17:
+ 102:Sensors/mpu6050.c ****                                I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+ 424              		.loc 1 102 14 view .LVU81
+ 425 00c0 FFF7FEFF 		bl	HAL_I2C_Mem_Write
+ 426              	.LVL18:
+ 105:Sensors/mpu6050.c ****     return status;
+ 427              		.loc 1 105 5 is_stmt 1 view .LVU82
+ 105:Sensors/mpu6050.c ****     return status;
+ 428              		.loc 1 105 17 is_stmt 0 view .LVU83
+ 429 00c4 014B     		ldr	r3, .L41
+ 430 00c6 0022     		movs	r2, #0
+ 431 00c8 1A70     		strb	r2, [r3]
+ 106:Sensors/mpu6050.c **** }
+ 432              		.loc 1 106 5 is_stmt 1 view .LVU84
+ 106:Sensors/mpu6050.c **** }
+ 433              		.loc 1 106 12 is_stmt 0 view .LVU85
+ 434 00ca A6E7     		b	.L37
+ 435              	.L42:
+ 436              		.align	2
+ 437              	.L41:
+ 438 00cc 00000000 		.word	filt_primed
+ 439              		.cfi_endproc
+ 440              	.LFE247:
+ 442              		.section	.text.MPU6050_ReadAll,"ax",%progbits
+ARM GAS  /tmp/cclsILbz.s 			page 11
+
+
+ 443              		.align	1
+ 444              		.global	MPU6050_ReadAll
+ 445              		.syntax unified
+ 446              		.thumb
+ 447              		.thumb_func
+ 449              	MPU6050_ReadAll:
+ 450              	.LVL19:
+ 451              	.LFB248:
+ 108:Sensors/mpu6050.c **** 
+ 109:Sensors/mpu6050.c **** HAL_StatusTypeDef MPU6050_ReadAll(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data)
+ 110:Sensors/mpu6050.c **** {
+ 452              		.loc 1 110 1 is_stmt 1 view -0
+ 453              		.cfi_startproc
+ 454              		@ args = 0, pretend = 0, frame = 16
+ 455              		@ frame_needed = 0, uses_anonymous_args = 0
+ 456              		.loc 1 110 1 is_stmt 0 view .LVU87
+ 457 0000 10B5     		push	{r4, lr}
+ 458              	.LCFI7:
+ 459              		.cfi_def_cfa_offset 8
+ 460              		.cfi_offset 4, -8
+ 461              		.cfi_offset 14, -4
+ 462 0002 88B0     		sub	sp, sp, #32
+ 463              	.LCFI8:
+ 464              		.cfi_def_cfa_offset 40
+ 465 0004 0C46     		mov	r4, r1
+ 111:Sensors/mpu6050.c ****     uint8_t buf[14];
+ 466              		.loc 1 111 5 is_stmt 1 view .LVU88
+ 112:Sensors/mpu6050.c ****     HAL_StatusTypeDef status;
+ 467              		.loc 1 112 5 view .LVU89
  113:Sensors/mpu6050.c **** 
- 114:Sensors/mpu6050.c ****     data->roll = ALPHA * (data->roll + data->gyro_x_dps * dt) + (1.0f - ALPHA) * accel_roll;
- 626              		.loc 1 114 5 is_stmt 1 view .LVU178
- 627              		.loc 1 114 31 is_stmt 0 view .LVU179
- 628 004c D4ED0D7A 		vldr.32	s15, [r4, #52]
- 629              		.loc 1 114 44 view .LVU180
- 630 0050 94ED077A 		vldr.32	s14, [r4, #28]
- 631              		.loc 1 114 57 view .LVU181
- 632 0054 27EE087A 		vmul.f32	s14, s14, s16
- 633              		.loc 1 114 38 view .LVU182
- 634 0058 77EE877A 		vadd.f32	s15, s15, s14
- 635              		.loc 1 114 24 view .LVU183
- 636 005c 9FED156A 		vldr.32	s12, .L24+4
- 637 0060 67EE867A 		vmul.f32	s15, s15, s12
- 638              		.loc 1 114 80 view .LVU184
- 639 0064 DFED146A 		vldr.32	s13, .L24+8
- 640 0068 68EEA68A 		vmul.f32	s17, s17, s13
- 641              	.LVL36:
- 642              		.loc 1 114 63 view .LVU185
- 643 006c 77EEA87A 		vadd.f32	s15, s15, s17
- 644              		.loc 1 114 16 view .LVU186
- 645 0070 C4ED0D7A 		vstr.32	s15, [r4, #52]
-ARM GAS  /tmp/cc4pyRa0.s 			page 15
+ 114:Sensors/mpu6050.c ****     status = HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H,
+ 468              		.loc 1 114 5 view .LVU90
+ 469              		.loc 1 114 14 is_stmt 0 view .LVU91
+ 470 0006 6423     		movs	r3, #100
+ 471 0008 0293     		str	r3, [sp, #8]
+ 472 000a 0E23     		movs	r3, #14
+ 473 000c 0193     		str	r3, [sp, #4]
+ 474 000e 04AB     		add	r3, sp, #16
+ 475 0010 0093     		str	r3, [sp]
+ 476 0012 0123     		movs	r3, #1
+ 477 0014 3B22     		movs	r2, #59
+ 478 0016 D021     		movs	r1, #208
+ 479              	.LVL20:
+ 480              		.loc 1 114 14 view .LVU92
+ 481 0018 FFF7FEFF 		bl	HAL_I2C_Mem_Read
+ 482              	.LVL21:
+ 115:Sensors/mpu6050.c ****                               I2C_MEMADD_SIZE_8BIT, buf, 14, 100);
+ 116:Sensors/mpu6050.c ****     if (status != HAL_OK)
+ 483              		.loc 1 116 5 is_stmt 1 view .LVU93
+ 484              		.loc 1 116 8 is_stmt 0 view .LVU94
+ 485 001c 80BB     		cbnz	r0, .L44
+ 117:Sensors/mpu6050.c ****         return status;
+ 118:Sensors/mpu6050.c **** 
+ 119:Sensors/mpu6050.c ****     data->accel_x = (int16_t)((buf[0] << 8) | buf[1]);
+ 486              		.loc 1 119 5 is_stmt 1 view .LVU95
+ 487              		.loc 1 119 35 is_stmt 0 view .LVU96
+ 488 001e 9DF81020 		ldrb	r2, [sp, #16]	@ zero_extendqisi2
+ARM GAS  /tmp/cclsILbz.s 			page 12
 
 
- 115:Sensors/mpu6050.c ****     data->pitch = ALPHA * (data->pitch + data->gyro_y_dps * dt) + (1.0f - ALPHA) * accel_pitch;
- 646              		.loc 1 115 5 is_stmt 1 view .LVU187
- 647              		.loc 1 115 32 is_stmt 0 view .LVU188
- 648 0074 D4ED0E7A 		vldr.32	s15, [r4, #56]
- 649              		.loc 1 115 46 view .LVU189
- 650 0078 94ED087A 		vldr.32	s14, [r4, #32]
- 651              		.loc 1 115 59 view .LVU190
- 652 007c 27EE087A 		vmul.f32	s14, s14, s16
- 653              		.loc 1 115 40 view .LVU191
- 654 0080 77EE877A 		vadd.f32	s15, s15, s14
- 655              		.loc 1 115 25 view .LVU192
- 656 0084 67EE867A 		vmul.f32	s15, s15, s12
- 657              		.loc 1 115 82 view .LVU193
- 658 0088 20EE260A 		vmul.f32	s0, s0, s13
- 659              	.LVL37:
- 660              		.loc 1 115 65 view .LVU194
- 661 008c 77EE807A 		vadd.f32	s15, s15, s0
- 662              		.loc 1 115 17 view .LVU195
- 663 0090 C4ED0E7A 		vstr.32	s15, [r4, #56]
- 116:Sensors/mpu6050.c **** 
- 117:Sensors/mpu6050.c ****     /* Yaw: nur Gyro-Integration (kein Accel-Bezug -> driftet langsam) */
- 118:Sensors/mpu6050.c ****     data->yaw += data->gyro_z_dps * dt;
- 664              		.loc 1 118 5 is_stmt 1 view .LVU196
- 665              		.loc 1 118 9 is_stmt 0 view .LVU197
- 666 0094 D4ED0F7A 		vldr.32	s15, [r4, #60]
- 667              		.loc 1 118 22 view .LVU198
- 668 0098 94ED097A 		vldr.32	s14, [r4, #36]
- 669              		.loc 1 118 35 view .LVU199
- 670 009c 27EE087A 		vmul.f32	s14, s14, s16
- 671              		.loc 1 118 15 view .LVU200
- 672 00a0 77EE877A 		vadd.f32	s15, s15, s14
- 673 00a4 C4ED0F7A 		vstr.32	s15, [r4, #60]
- 119:Sensors/mpu6050.c **** }...
- 674              		.loc 1 119 1 view .LVU201
- 675 00a8 BDEC068B 		vldm	sp!, {d8-d10}
- 676              	.LCFI15:
- 677              		.cfi_restore 84
- 678              		.cfi_restore 85
- 679              		.cfi_restore 82
- 680              		.cfi_restore 83
- 681              		.cfi_restore 80
- 682              		.cfi_restore 81
- 683              		.cfi_def_cfa_offset 8
- 684              	.LVL38:
- 685              		.loc 1 119 1 view .LVU202
- 686 00ac 10BD     		pop	{r4, pc}
- 687              	.LVL39:
- 688              	.L25:
- 689              		.loc 1 119 1 view .LVU203
- 690 00ae 00BF     		.align	2
- 691              	.L24:
- 692 00b0 E62E6542 		.word	1113927398
- 693 00b4 48E17A3F 		.word	1065017672
- 694 00b8 00D7A33C 		.word	1017370368
- 695              		.cfi_endproc
- 696              	.LFE139:
- 698              		.text
-ARM GAS  /tmp/cc4pyRa0.s 			page 16
+ 489              		.loc 1 119 50 view .LVU97
+ 490 0022 9DF81130 		ldrb	r3, [sp, #17]	@ zero_extendqisi2
+ 491              		.loc 1 119 21 view .LVU98
+ 492 0026 43EA0223 		orr	r3, r3, r2, lsl #8
+ 493              		.loc 1 119 19 view .LVU99
+ 494 002a 2380     		strh	r3, [r4]	@ movhi
+ 120:Sensors/mpu6050.c ****     data->accel_y = (int16_t)((buf[2] << 8) | buf[3]);
+ 495              		.loc 1 120 5 is_stmt 1 view .LVU100
+ 496              		.loc 1 120 35 is_stmt 0 view .LVU101
+ 497 002c 9DF81220 		ldrb	r2, [sp, #18]	@ zero_extendqisi2
+ 498              		.loc 1 120 50 view .LVU102
+ 499 0030 9DF81330 		ldrb	r3, [sp, #19]	@ zero_extendqisi2
+ 500              		.loc 1 120 21 view .LVU103
+ 501 0034 43EA0223 		orr	r3, r3, r2, lsl #8
+ 502              		.loc 1 120 19 view .LVU104
+ 503 0038 6380     		strh	r3, [r4, #2]	@ movhi
+ 121:Sensors/mpu6050.c ****     data->accel_z = (int16_t)((buf[4] << 8) | buf[5]);
+ 504              		.loc 1 121 5 is_stmt 1 view .LVU105
+ 505              		.loc 1 121 35 is_stmt 0 view .LVU106
+ 506 003a 9DF81420 		ldrb	r2, [sp, #20]	@ zero_extendqisi2
+ 507              		.loc 1 121 50 view .LVU107
+ 508 003e 9DF81530 		ldrb	r3, [sp, #21]	@ zero_extendqisi2
+ 509              		.loc 1 121 21 view .LVU108
+ 510 0042 43EA0223 		orr	r3, r3, r2, lsl #8
+ 511              		.loc 1 121 19 view .LVU109
+ 512 0046 A380     		strh	r3, [r4, #4]	@ movhi
+ 122:Sensors/mpu6050.c ****     data->temp_raw = (int16_t)((buf[6] << 8) | buf[7]);
+ 513              		.loc 1 122 5 is_stmt 1 view .LVU110
+ 514              		.loc 1 122 36 is_stmt 0 view .LVU111
+ 515 0048 9DF81620 		ldrb	r2, [sp, #22]	@ zero_extendqisi2
+ 516              		.loc 1 122 51 view .LVU112
+ 517 004c 9DF81730 		ldrb	r3, [sp, #23]	@ zero_extendqisi2
+ 518              		.loc 1 122 22 view .LVU113
+ 519 0050 43EA0223 		orr	r3, r3, r2, lsl #8
+ 520              		.loc 1 122 20 view .LVU114
+ 521 0054 A381     		strh	r3, [r4, #12]	@ movhi
+ 123:Sensors/mpu6050.c ****     data->gyro_x = (int16_t)((buf[8] << 8) | buf[9]);
+ 522              		.loc 1 123 5 is_stmt 1 view .LVU115
+ 523              		.loc 1 123 34 is_stmt 0 view .LVU116
+ 524 0056 9DF81820 		ldrb	r2, [sp, #24]	@ zero_extendqisi2
+ 525              		.loc 1 123 49 view .LVU117
+ 526 005a 9DF81930 		ldrb	r3, [sp, #25]	@ zero_extendqisi2
+ 527              		.loc 1 123 20 view .LVU118
+ 528 005e 43EA0223 		orr	r3, r3, r2, lsl #8
+ 529              		.loc 1 123 18 view .LVU119
+ 530 0062 E380     		strh	r3, [r4, #6]	@ movhi
+ 124:Sensors/mpu6050.c ****     data->gyro_y = (int16_t)((buf[10] << 8) | buf[11]);
+ 531              		.loc 1 124 5 is_stmt 1 view .LVU120
+ 532              		.loc 1 124 34 is_stmt 0 view .LVU121
+ 533 0064 9DF81A20 		ldrb	r2, [sp, #26]	@ zero_extendqisi2
+ 534              		.loc 1 124 50 view .LVU122
+ 535 0068 9DF81B30 		ldrb	r3, [sp, #27]	@ zero_extendqisi2
+ 536              		.loc 1 124 20 view .LVU123
+ 537 006c 43EA0223 		orr	r3, r3, r2, lsl #8
+ 538              		.loc 1 124 18 view .LVU124
+ 539 0070 2381     		strh	r3, [r4, #8]	@ movhi
+ 125:Sensors/mpu6050.c ****     data->gyro_z = (int16_t)((buf[12] << 8) | buf[13]);
+ARM GAS  /tmp/cclsILbz.s 			page 13
 
 
- 699              	.Letext0:
- 700              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
- 701              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
- 702              		.file 4 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
- 703              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
- 704              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h"
- 705              		.file 7 "Sensors/mpu6050.h"
- 706              		.file 8 "/usr/include/newlib/math.h"
- 707              		.file 9 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
-ARM GAS  /tmp/cc4pyRa0.s 			page 17
+ 540              		.loc 1 125 5 is_stmt 1 view .LVU125
+ 541              		.loc 1 125 34 is_stmt 0 view .LVU126
+ 542 0072 9DF81C20 		ldrb	r2, [sp, #28]	@ zero_extendqisi2
+ 543              		.loc 1 125 50 view .LVU127
+ 544 0076 9DF81D30 		ldrb	r3, [sp, #29]	@ zero_extendqisi2
+ 545              		.loc 1 125 20 view .LVU128
+ 546 007a 43EA0223 		orr	r3, r3, r2, lsl #8
+ 547              		.loc 1 125 18 view .LVU129
+ 548 007e 6381     		strh	r3, [r4, #10]	@ movhi
+ 126:Sensors/mpu6050.c **** 
+ 127:Sensors/mpu6050.c ****     return HAL_OK;
+ 549              		.loc 1 127 5 is_stmt 1 view .LVU130
+ 550              	.L44:
+ 128:Sensors/mpu6050.c **** }
+ 551              		.loc 1 128 1 is_stmt 0 view .LVU131
+ 552 0080 08B0     		add	sp, sp, #32
+ 553              	.LCFI9:
+ 554              		.cfi_def_cfa_offset 8
+ 555              		@ sp needed
+ 556 0082 10BD     		pop	{r4, pc}
+ 557              		.loc 1 128 1 view .LVU132
+ 558              		.cfi_endproc
+ 559              	.LFE248:
+ 561              		.section	.text.MPU6050_Calibrate,"ax",%progbits
+ 562              		.align	1
+ 563              		.global	MPU6050_Calibrate
+ 564              		.syntax unified
+ 565              		.thumb
+ 566              		.thumb_func
+ 568              	MPU6050_Calibrate:
+ 569              	.LVL22:
+ 570              	.LFB249:
+ 129:Sensors/mpu6050.c **** 
+ 130:Sensors/mpu6050.c **** /* --- Gyro-Kalibrierung: misst Offsets im Ruhezustand --- */
+ 131:Sensors/mpu6050.c **** void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples)
+ 132:Sensors/mpu6050.c **** {
+ 571              		.loc 1 132 1 is_stmt 1 view -0
+ 572              		.cfi_startproc
+ 573              		@ args = 0, pretend = 0, frame = 0
+ 574              		@ frame_needed = 0, uses_anonymous_args = 0
+ 575              		.loc 1 132 1 is_stmt 0 view .LVU134
+ 576 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 577              	.LCFI10:
+ 578              		.cfi_def_cfa_offset 24
+ 579              		.cfi_offset 3, -24
+ 580              		.cfi_offset 4, -20
+ 581              		.cfi_offset 5, -16
+ 582              		.cfi_offset 6, -12
+ 583              		.cfi_offset 7, -8
+ 584              		.cfi_offset 14, -4
+ 585 0002 2DED048B 		vpush.64	{d8, d9}
+ 586              	.LCFI11:
+ 587              		.cfi_def_cfa_offset 40
+ 588              		.cfi_offset 80, -40
+ 589              		.cfi_offset 81, -36
+ 590              		.cfi_offset 82, -32
+ 591              		.cfi_offset 83, -28
+ARM GAS  /tmp/cclsILbz.s 			page 14
+
+
+ 592 0006 0746     		mov	r7, r0
+ 593 0008 0D46     		mov	r5, r1
+ 594 000a 1646     		mov	r6, r2
+ 133:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
+ 595              		.loc 1 133 5 is_stmt 1 view .LVU135
+ 596              	.LVL23:
+ 134:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
+ 597              		.loc 1 134 5 view .LVU136
+ 598              	.LBB14:
+ 599              		.loc 1 134 10 view .LVU137
+ 600              		.loc 1 134 19 is_stmt 0 view .LVU138
+ 601 000c 0024     		movs	r4, #0
+ 602              	.LBE14:
+ 133:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
+ 603              		.loc 1 133 27 view .LVU139
+ 604 000e 9FED218A 		vldr.32	s16, .L52
+ 133:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
+ 605              		.loc 1 133 19 view .LVU140
+ 606 0012 F0EE488A 		vmov.f32	s17, s16
+ 133:Sensors/mpu6050.c ****     float sx = 0, sy = 0, sz = 0;
+ 607              		.loc 1 133 11 view .LVU141
+ 608 0016 B0EE489A 		vmov.f32	s18, s16
+ 609              	.LBB15:
+ 610              		.loc 1 134 5 view .LVU142
+ 611 001a 04E0     		b	.L47
+ 612              	.LVL24:
+ 613              	.L48:
+ 135:Sensors/mpu6050.c ****     {
+ 136:Sensors/mpu6050.c ****         if (MPU6050_ReadAll(hi2c, data) == HAL_OK)
+ 137:Sensors/mpu6050.c ****         {
+ 138:Sensors/mpu6050.c ****             sx += data->gyro_x;
+ 139:Sensors/mpu6050.c ****             sy += data->gyro_y;
+ 140:Sensors/mpu6050.c ****             sz += data->gyro_z;
+ 141:Sensors/mpu6050.c ****         }
+ 142:Sensors/mpu6050.c ****         HAL_Delay(2);
+ 614              		.loc 1 142 9 is_stmt 1 view .LVU143
+ 615 001c 0220     		movs	r0, #2
+ 616 001e FFF7FEFF 		bl	HAL_Delay
+ 617              	.LVL25:
+ 134:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
+ 618              		.loc 1 134 40 discriminator 2 view .LVU144
+ 619 0022 0134     		adds	r4, r4, #1
+ 620              	.LVL26:
+ 134:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
+ 621              		.loc 1 134 40 is_stmt 0 discriminator 2 view .LVU145
+ 622 0024 A4B2     		uxth	r4, r4
+ 623              	.LVL27:
+ 624              	.L47:
+ 134:Sensors/mpu6050.c ****     for (uint16_t i = 0; i < samples; i++)
+ 625              		.loc 1 134 28 is_stmt 1 discriminator 1 view .LVU146
+ 626 0026 B442     		cmp	r4, r6
+ 627 0028 1ED2     		bcs	.L51
+ 136:Sensors/mpu6050.c ****         {
+ 628              		.loc 1 136 9 view .LVU147
+ 136:Sensors/mpu6050.c ****         {
+ 629              		.loc 1 136 13 is_stmt 0 view .LVU148
+ 630 002a 2946     		mov	r1, r5
+ARM GAS  /tmp/cclsILbz.s 			page 15
+
+
+ 631 002c 3846     		mov	r0, r7
+ 632 002e FFF7FEFF 		bl	MPU6050_ReadAll
+ 633              	.LVL28:
+ 136:Sensors/mpu6050.c ****         {
+ 634              		.loc 1 136 12 discriminator 1 view .LVU149
+ 635 0032 0028     		cmp	r0, #0
+ 636 0034 F2D1     		bne	.L48
+ 138:Sensors/mpu6050.c ****             sy += data->gyro_y;
+ 637              		.loc 1 138 13 is_stmt 1 view .LVU150
+ 138:Sensors/mpu6050.c ****             sy += data->gyro_y;
+ 638              		.loc 1 138 23 is_stmt 0 view .LVU151
+ 639 0036 B5F90630 		ldrsh	r3, [r5, #6]
+ 640 003a 07EE903A 		vmov	s15, r3	@ int
+ 138:Sensors/mpu6050.c ****             sy += data->gyro_y;
+ 641              		.loc 1 138 16 view .LVU152
+ 642 003e F8EEE77A 		vcvt.f32.s32	s15, s15
+ 643 0042 39EE279A 		vadd.f32	s18, s18, s15
+ 644              	.LVL29:
+ 139:Sensors/mpu6050.c ****             sz += data->gyro_z;
+ 645              		.loc 1 139 13 is_stmt 1 view .LVU153
+ 139:Sensors/mpu6050.c ****             sz += data->gyro_z;
+ 646              		.loc 1 139 23 is_stmt 0 view .LVU154
+ 647 0046 B5F90830 		ldrsh	r3, [r5, #8]
+ 648 004a 07EE903A 		vmov	s15, r3	@ int
+ 139:Sensors/mpu6050.c ****             sz += data->gyro_z;
+ 649              		.loc 1 139 16 view .LVU155
+ 650 004e F8EEE77A 		vcvt.f32.s32	s15, s15
+ 651 0052 78EEA78A 		vadd.f32	s17, s17, s15
+ 652              	.LVL30:
+ 140:Sensors/mpu6050.c ****         }
+ 653              		.loc 1 140 13 is_stmt 1 view .LVU156
+ 140:Sensors/mpu6050.c ****         }
+ 654              		.loc 1 140 23 is_stmt 0 view .LVU157
+ 655 0056 B5F90A30 		ldrsh	r3, [r5, #10]
+ 656 005a 07EE903A 		vmov	s15, r3	@ int
+ 140:Sensors/mpu6050.c ****         }
+ 657              		.loc 1 140 16 view .LVU158
+ 658 005e F8EEE77A 		vcvt.f32.s32	s15, s15
+ 659 0062 38EE278A 		vadd.f32	s16, s16, s15
+ 660              	.LVL31:
+ 140:Sensors/mpu6050.c ****         }
+ 661              		.loc 1 140 16 view .LVU159
+ 662 0066 D9E7     		b	.L48
+ 663              	.L51:
+ 140:Sensors/mpu6050.c ****         }
+ 664              		.loc 1 140 16 view .LVU160
+ 665              	.LBE15:
+ 143:Sensors/mpu6050.c ****     }
+ 144:Sensors/mpu6050.c ****     data->gyro_x_offset = sx / samples;
+ 666              		.loc 1 144 5 is_stmt 1 view .LVU161
+ 667              		.loc 1 144 30 is_stmt 0 view .LVU162
+ 668 0068 07EE906A 		vmov	s15, r6	@ int
+ 669 006c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 670 0070 89EE277A 		vdiv.f32	s14, s18, s15
+ 671              		.loc 1 144 25 view .LVU163
+ 672 0074 85ED0D7A 		vstr.32	s14, [r5, #52]
+ 145:Sensors/mpu6050.c ****     data->gyro_y_offset = sy / samples;
+ARM GAS  /tmp/cclsILbz.s 			page 16
+
+
+ 673              		.loc 1 145 5 is_stmt 1 view .LVU164
+ 674              		.loc 1 145 30 is_stmt 0 view .LVU165
+ 675 0078 88EEA77A 		vdiv.f32	s14, s17, s15
+ 676              		.loc 1 145 25 view .LVU166
+ 677 007c 85ED0E7A 		vstr.32	s14, [r5, #56]
+ 146:Sensors/mpu6050.c ****     data->gyro_z_offset = sz / samples;
+ 678              		.loc 1 146 5 is_stmt 1 view .LVU167
+ 679              		.loc 1 146 30 is_stmt 0 view .LVU168
+ 680 0080 88EE277A 		vdiv.f32	s14, s16, s15
+ 681              		.loc 1 146 25 view .LVU169
+ 682 0084 85ED0F7A 		vstr.32	s14, [r5, #60]
+ 147:Sensors/mpu6050.c **** 
+ 148:Sensors/mpu6050.c ****     filt_primed = 0;
+ 683              		.loc 1 148 5 is_stmt 1 view .LVU170
+ 684              		.loc 1 148 17 is_stmt 0 view .LVU171
+ 685 0088 034B     		ldr	r3, .L52+4
+ 686 008a 0022     		movs	r2, #0
+ 687 008c 1A70     		strb	r2, [r3]
+ 149:Sensors/mpu6050.c **** }
+ 688              		.loc 1 149 1 view .LVU172
+ 689 008e BDEC048B 		vldm	sp!, {d8-d9}
+ 690              	.LCFI12:
+ 691              		.cfi_restore 82
+ 692              		.cfi_restore 83
+ 693              		.cfi_restore 80
+ 694              		.cfi_restore 81
+ 695              		.cfi_def_cfa_offset 24
+ 696              	.LVL32:
+ 697              		.loc 1 149 1 view .LVU173
+ 698 0092 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 699              	.LVL33:
+ 700              	.L53:
+ 701              		.loc 1 149 1 view .LVU174
+ 702              		.align	2
+ 703              	.L52:
+ 704 0094 00000000 		.word	0
+ 705 0098 00000000 		.word	filt_primed
+ 706              		.cfi_endproc
+ 707              	.LFE249:
+ 709              		.section	.text.MPU6050_Convert,"ax",%progbits
+ 710              		.align	1
+ 711              		.global	MPU6050_Convert
+ 712              		.syntax unified
+ 713              		.thumb
+ 714              		.thumb_func
+ 716              	MPU6050_Convert:
+ 717              	.LVL34:
+ 718              	.LFB250:
+ 150:Sensors/mpu6050.c **** 
+ 151:Sensors/mpu6050.c **** /* --- Rohwerte -> g und Grad/s, danach Tiefpass --- */
+ 152:Sensors/mpu6050.c **** void MPU6050_Convert(MPU6050_Data_t *data, float dt)
+ 153:Sensors/mpu6050.c **** {
+ 719              		.loc 1 153 1 is_stmt 1 view -0
+ 720              		.cfi_startproc
+ 721              		@ args = 0, pretend = 0, frame = 0
+ 722              		@ frame_needed = 0, uses_anonymous_args = 0
+ 723              		@ link register save eliminated.
+ARM GAS  /tmp/cclsILbz.s 			page 17
+
+
+ 154:Sensors/mpu6050.c ****     /* Skalierung passend zu den Bereichen aus MPU6050_Init:
+ 155:Sensors/mpu6050.c ****      * Accel +-4g  -> halbe Empfindlichkeit
+ 156:Sensors/mpu6050.c ****      * Gyro  +-500 -> halbe Empfindlichkeit */
+ 157:Sensors/mpu6050.c ****     const float acc_s = ACCEL_SCALE / 2.0f; /* 8192 LSB pro g     */
+ 724              		.loc 1 157 5 view .LVU176
+ 158:Sensors/mpu6050.c ****     const float gyr_s = GYRO_SCALE / 2.0f;  /* 65.5 LSB pro Grad/s */
+ 725              		.loc 1 158 5 view .LVU177
+ 159:Sensors/mpu6050.c **** 
+ 160:Sensors/mpu6050.c ****     const float ax = data->accel_x / acc_s;
+ 726              		.loc 1 160 5 view .LVU178
+ 727              		.loc 1 160 26 is_stmt 0 view .LVU179
+ 728 0000 B0F90030 		ldrsh	r3, [r0]
+ 729 0004 07EE903A 		vmov	s15, r3	@ int
+ 730              		.loc 1 160 36 view .LVU180
+ 731 0008 F8EEE77A 		vcvt.f32.s32	s15, s15
+ 732              		.loc 1 160 17 view .LVU181
+ 733 000c 9FED8C7A 		vldr.32	s14, .L62
+ 734 0010 27EE874A 		vmul.f32	s8, s15, s14
+ 735              	.LVL35:
+ 161:Sensors/mpu6050.c ****     const float ay = data->accel_y / acc_s;
+ 736              		.loc 1 161 5 is_stmt 1 view .LVU182
+ 737              		.loc 1 161 26 is_stmt 0 view .LVU183
+ 738 0014 B0F90230 		ldrsh	r3, [r0, #2]
+ 739 0018 07EE903A 		vmov	s15, r3	@ int
+ 740              		.loc 1 161 36 view .LVU184
+ 741 001c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 742              		.loc 1 161 17 view .LVU185
+ 743 0020 67EE874A 		vmul.f32	s9, s15, s14
+ 744              	.LVL36:
+ 162:Sensors/mpu6050.c ****     const float az = data->accel_z / acc_s;
+ 745              		.loc 1 162 5 is_stmt 1 view .LVU186
+ 746              		.loc 1 162 26 is_stmt 0 view .LVU187
+ 747 0024 B0F90430 		ldrsh	r3, [r0, #4]
+ 748 0028 07EE903A 		vmov	s15, r3	@ int
+ 749              		.loc 1 162 36 view .LVU188
+ 750 002c F8EEE77A 		vcvt.f32.s32	s15, s15
+ 751              		.loc 1 162 17 view .LVU189
+ 752 0030 67EE877A 		vmul.f32	s15, s15, s14
+ 753              	.LVL37:
+ 163:Sensors/mpu6050.c **** 
+ 164:Sensors/mpu6050.c ****     const float gx = (data->gyro_x - data->gyro_x_offset) / gyr_s;
+ 754              		.loc 1 164 5 is_stmt 1 view .LVU190
+ 755              		.loc 1 164 27 is_stmt 0 view .LVU191
+ 756 0034 B0F90630 		ldrsh	r3, [r0, #6]
+ 757 0038 07EE103A 		vmov	s14, r3	@ int
+ 758              		.loc 1 164 42 view .LVU192
+ 759 003c D0ED0D6A 		vldr.32	s13, [r0, #52]
+ 760              		.loc 1 164 36 view .LVU193
+ 761 0040 B8EEC77A 		vcvt.f32.s32	s14, s14
+ 762 0044 37EE667A 		vsub.f32	s14, s14, s13
+ 763              		.loc 1 164 17 view .LVU194
+ 764 0048 9FED7E5A 		vldr.32	s10, .L62+4
+ 765 004c C7EE055A 		vdiv.f32	s11, s14, s10
+ 766              	.LVL38:
+ 165:Sensors/mpu6050.c ****     const float gy = (data->gyro_y - data->gyro_y_offset) / gyr_s;
+ 767              		.loc 1 165 5 is_stmt 1 view .LVU195
+ 768              		.loc 1 165 27 is_stmt 0 view .LVU196
+ARM GAS  /tmp/cclsILbz.s 			page 18
+
+
+ 769 0050 B0F90830 		ldrsh	r3, [r0, #8]
+ 770 0054 07EE103A 		vmov	s14, r3	@ int
+ 771              		.loc 1 165 42 view .LVU197
+ 772 0058 D0ED0E6A 		vldr.32	s13, [r0, #56]
+ 773              		.loc 1 165 36 view .LVU198
+ 774 005c B8EEC77A 		vcvt.f32.s32	s14, s14
+ 775 0060 37EE667A 		vsub.f32	s14, s14, s13
+ 776              		.loc 1 165 17 view .LVU199
+ 777 0064 87EE056A 		vdiv.f32	s12, s14, s10
+ 778              	.LVL39:
+ 166:Sensors/mpu6050.c ****     const float gz = (data->gyro_z - data->gyro_z_offset) / gyr_s;
+ 779              		.loc 1 166 5 is_stmt 1 view .LVU200
+ 780              		.loc 1 166 27 is_stmt 0 view .LVU201
+ 781 0068 B0F90A30 		ldrsh	r3, [r0, #10]
+ 782 006c 07EE103A 		vmov	s14, r3	@ int
+ 783              		.loc 1 166 42 view .LVU202
+ 784 0070 D0ED0F6A 		vldr.32	s13, [r0, #60]
+ 785              		.loc 1 166 36 view .LVU203
+ 786 0074 B8EEC77A 		vcvt.f32.s32	s14, s14
+ 787 0078 37EE667A 		vsub.f32	s14, s14, s13
+ 788              		.loc 1 166 17 view .LVU204
+ 789 007c C7EE056A 		vdiv.f32	s13, s14, s10
+ 790              	.LVL40:
+ 167:Sensors/mpu6050.c **** 
+ 168:Sensors/mpu6050.c ****     /* ungefiltert mitfuehren, damit man im Stream vergleichen kann */
+ 169:Sensors/mpu6050.c ****     data->gyro_x_raw_dps = gx;
+ 791              		.loc 1 169 5 is_stmt 1 view .LVU205
+ 792              		.loc 1 169 26 is_stmt 0 view .LVU206
+ 793 0080 C0ED0A5A 		vstr.32	s11, [r0, #40]
+ 170:Sensors/mpu6050.c ****     data->gyro_y_raw_dps = gy;
+ 794              		.loc 1 170 5 is_stmt 1 view .LVU207
+ 795              		.loc 1 170 26 is_stmt 0 view .LVU208
+ 796 0084 80ED0B6A 		vstr.32	s12, [r0, #44]
+ 171:Sensors/mpu6050.c ****     data->gyro_z_raw_dps = gz;
+ 797              		.loc 1 171 5 is_stmt 1 view .LVU209
+ 798              		.loc 1 171 26 is_stmt 0 view .LVU210
+ 799 0088 C0ED0C6A 		vstr.32	s13, [r0, #48]
+ 172:Sensors/mpu6050.c **** 
+ 173:Sensors/mpu6050.c ****     /* Beim ersten Durchlauf die Filter auf den Istwert setzen,
+ 174:Sensors/mpu6050.c ****      * sonst laufen sie aus der Null hoch und erzeugen einen Einschwinger. */
+ 175:Sensors/mpu6050.c ****     if (!filt_primed)
+ 800              		.loc 1 175 5 is_stmt 1 view .LVU211
+ 801              		.loc 1 175 9 is_stmt 0 view .LVU212
+ 802 008c 6E4B     		ldr	r3, .L62+8
+ 803 008e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 804              		.loc 1 175 8 view .LVU213
+ 805 0090 A3B9     		cbnz	r3, .L55
+ 176:Sensors/mpu6050.c ****     {
+ 177:Sensors/mpu6050.c ****         gx_f = gx;
+ 806              		.loc 1 177 9 is_stmt 1 view .LVU214
+ 807              		.loc 1 177 14 is_stmt 0 view .LVU215
+ 808 0092 6E4B     		ldr	r3, .L62+12
+ 809 0094 C3ED005A 		vstr.32	s11, [r3]
+ 178:Sensors/mpu6050.c ****         gy_f = gy;
+ 810              		.loc 1 178 9 is_stmt 1 view .LVU216
+ 811              		.loc 1 178 14 is_stmt 0 view .LVU217
+ 812 0098 6D4B     		ldr	r3, .L62+16
+ARM GAS  /tmp/cclsILbz.s 			page 19
+
+
+ 813 009a 83ED006A 		vstr.32	s12, [r3]
+ 179:Sensors/mpu6050.c ****         gz_f = gz;
+ 814              		.loc 1 179 9 is_stmt 1 view .LVU218
+ 815              		.loc 1 179 14 is_stmt 0 view .LVU219
+ 816 009e 6D4B     		ldr	r3, .L62+20
+ 817 00a0 C3ED006A 		vstr.32	s13, [r3]
+ 180:Sensors/mpu6050.c ****         ax_f = ax;
+ 818              		.loc 1 180 9 is_stmt 1 view .LVU220
+ 819              		.loc 1 180 14 is_stmt 0 view .LVU221
+ 820 00a4 6C4B     		ldr	r3, .L62+24
+ 821 00a6 83ED004A 		vstr.32	s8, [r3]
+ 181:Sensors/mpu6050.c ****         ay_f = ay;
+ 822              		.loc 1 181 9 is_stmt 1 view .LVU222
+ 823              		.loc 1 181 14 is_stmt 0 view .LVU223
+ 824 00aa 6C4B     		ldr	r3, .L62+28
+ 825 00ac C3ED004A 		vstr.32	s9, [r3]
+ 182:Sensors/mpu6050.c ****         az_f = az;
+ 826              		.loc 1 182 9 is_stmt 1 view .LVU224
+ 827              		.loc 1 182 14 is_stmt 0 view .LVU225
+ 828 00b0 6B4B     		ldr	r3, .L62+32
+ 829 00b2 C3ED007A 		vstr.32	s15, [r3]
+ 183:Sensors/mpu6050.c ****         filt_primed = 1;
+ 830              		.loc 1 183 9 is_stmt 1 view .LVU226
+ 831              		.loc 1 183 21 is_stmt 0 view .LVU227
+ 832 00b6 644B     		ldr	r3, .L62+8
+ 833 00b8 0122     		movs	r2, #1
+ 834 00ba 1A70     		strb	r2, [r3]
+ 835              	.L55:
+ 184:Sensors/mpu6050.c ****     }
+ 185:Sensors/mpu6050.c **** 
+ 186:Sensors/mpu6050.c ****     gx_f = pt1(gx_f, gx, gyro_lpf_hz, dt);
+ 836              		.loc 1 186 5 is_stmt 1 view .LVU228
+ 837              		.loc 1 186 12 is_stmt 0 view .LVU229
+ 838 00bc 634B     		ldr	r3, .L62+12
+ 839 00be 93ED003A 		vldr.32	s6, [r3]
+ 840 00c2 684B     		ldr	r3, .L62+36
+ 841 00c4 93ED007A 		vldr.32	s14, [r3]
+ 842              	.LVL41:
+ 843              	.LBB16:
+ 844              	.LBI16:
+  21:Sensors/mpu6050.c **** {
+ 845              		.loc 1 21 21 is_stmt 1 view .LVU230
+ 846              	.LBB17:
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 847              		.loc 1 23 5 view .LVU231
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 848              		.loc 1 23 8 is_stmt 0 view .LVU232
+ 849 00c8 B5EEC07A 		vcmpe.f32	s14, #0
+ 850 00cc F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 851 00d0 11D9     		bls	.L56
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 852              		.loc 1 25 5 is_stmt 1 view .LVU233
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 853              		.loc 1 25 49 is_stmt 0 view .LVU234
+ 854 00d2 9FED655A 		vldr.32	s10, .L62+40
+ 855 00d6 27EE055A 		vmul.f32	s10, s14, s10
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ARM GAS  /tmp/cclsILbz.s 			page 20
+
+
+ 856              		.loc 1 25 17 view .LVU235
+ 857 00da F7EE002A 		vmov.f32	s5, #1.0e+0
+ 858 00de C2EE853A 		vdiv.f32	s7, s5, s10
+ 859              	.LVL42:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 860              		.loc 1 26 5 is_stmt 1 view .LVU236
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 861              		.loc 1 26 30 is_stmt 0 view .LVU237
+ 862 00e2 70EE233A 		vadd.f32	s7, s0, s7
+ 863              	.LVL43:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 864              		.loc 1 26 17 view .LVU238
+ 865 00e6 80EE235A 		vdiv.f32	s10, s0, s7
+ 866              	.LVL44:
+  27:Sensors/mpu6050.c **** }
+ 867              		.loc 1 27 5 is_stmt 1 view .LVU239
+  27:Sensors/mpu6050.c **** }
+ 868              		.loc 1 27 27 is_stmt 0 view .LVU240
+ 869 00ea 75EEC35A 		vsub.f32	s11, s11, s6
+ 870              	.LVL45:
+  27:Sensors/mpu6050.c **** }
+ 871              		.loc 1 27 21 view .LVU241
+ 872 00ee 65EE255A 		vmul.f32	s11, s10, s11
+  27:Sensors/mpu6050.c **** }
+ 873              		.loc 1 27 17 view .LVU242
+ 874 00f2 73EE255A 		vadd.f32	s11, s6, s11
+ 875              	.LVL46:
+ 876              	.L56:
+  27:Sensors/mpu6050.c **** }
+ 877              		.loc 1 27 17 view .LVU243
+ 878              	.LBE17:
+ 879              	.LBE16:
+ 880              		.loc 1 186 10 discriminator 1 view .LVU244
+ 881 00f6 554B     		ldr	r3, .L62+12
+ 882 00f8 C3ED005A 		vstr.32	s11, [r3]
+ 187:Sensors/mpu6050.c ****     gy_f = pt1(gy_f, gy, gyro_lpf_hz, dt);
+ 883              		.loc 1 187 5 is_stmt 1 view .LVU245
+ 884              		.loc 1 187 12 is_stmt 0 view .LVU246
+ 885 00fc 544B     		ldr	r3, .L62+16
+ 886 00fe 93ED003A 		vldr.32	s6, [r3]
+ 887              	.LVL47:
+ 888              	.LBB18:
+ 889              	.LBI18:
+  21:Sensors/mpu6050.c **** {
+ 890              		.loc 1 21 21 is_stmt 1 view .LVU247
+ 891              	.LBB19:
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 892              		.loc 1 23 5 view .LVU248
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 893              		.loc 1 23 8 is_stmt 0 view .LVU249
+ 894 0102 B5EEC07A 		vcmpe.f32	s14, #0
+ 895 0106 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 896 010a 11D9     		bls	.L57
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 897              		.loc 1 25 5 is_stmt 1 view .LVU250
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 898              		.loc 1 25 49 is_stmt 0 view .LVU251
+ARM GAS  /tmp/cclsILbz.s 			page 21
+
+
+ 899 010c 9FED565A 		vldr.32	s10, .L62+40
+ 900 0110 27EE055A 		vmul.f32	s10, s14, s10
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 901              		.loc 1 25 17 view .LVU252
+ 902 0114 F7EE002A 		vmov.f32	s5, #1.0e+0
+ 903 0118 C2EE853A 		vdiv.f32	s7, s5, s10
+ 904              	.LVL48:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 905              		.loc 1 26 5 is_stmt 1 view .LVU253
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 906              		.loc 1 26 30 is_stmt 0 view .LVU254
+ 907 011c 70EE233A 		vadd.f32	s7, s0, s7
+ 908              	.LVL49:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 909              		.loc 1 26 17 view .LVU255
+ 910 0120 80EE235A 		vdiv.f32	s10, s0, s7
+ 911              	.LVL50:
+  27:Sensors/mpu6050.c **** }
+ 912              		.loc 1 27 5 is_stmt 1 view .LVU256
+  27:Sensors/mpu6050.c **** }
+ 913              		.loc 1 27 27 is_stmt 0 view .LVU257
+ 914 0124 36EE436A 		vsub.f32	s12, s12, s6
+ 915              	.LVL51:
+  27:Sensors/mpu6050.c **** }
+ 916              		.loc 1 27 21 view .LVU258
+ 917 0128 25EE066A 		vmul.f32	s12, s10, s12
+  27:Sensors/mpu6050.c **** }
+ 918              		.loc 1 27 17 view .LVU259
+ 919 012c 33EE066A 		vadd.f32	s12, s6, s12
+ 920              	.LVL52:
+ 921              	.L57:
+  27:Sensors/mpu6050.c **** }
+ 922              		.loc 1 27 17 view .LVU260
+ 923              	.LBE19:
+ 924              	.LBE18:
+ 925              		.loc 1 187 10 discriminator 1 view .LVU261
+ 926 0130 474B     		ldr	r3, .L62+16
+ 927 0132 83ED006A 		vstr.32	s12, [r3]
+ 188:Sensors/mpu6050.c ****     gz_f = pt1(gz_f, gz, gyro_lpf_hz, dt);
+ 928              		.loc 1 188 5 is_stmt 1 view .LVU262
+ 929              		.loc 1 188 12 is_stmt 0 view .LVU263
+ 930 0136 474B     		ldr	r3, .L62+20
+ 931 0138 D3ED003A 		vldr.32	s7, [r3]
+ 932              	.LVL53:
+ 933              	.LBB20:
+ 934              	.LBI20:
+  21:Sensors/mpu6050.c **** {
+ 935              		.loc 1 21 21 is_stmt 1 view .LVU264
+ 936              	.LBB21:
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 937              		.loc 1 23 5 view .LVU265
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 938              		.loc 1 23 8 is_stmt 0 view .LVU266
+ 939 013c B5EEC07A 		vcmpe.f32	s14, #0
+ 940 0140 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 941 0144 11D9     		bls	.L58
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ARM GAS  /tmp/cclsILbz.s 			page 22
+
+
+ 942              		.loc 1 25 5 is_stmt 1 view .LVU267
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 943              		.loc 1 25 49 is_stmt 0 view .LVU268
+ 944 0146 9FED485A 		vldr.32	s10, .L62+40
+ 945 014a 27EE057A 		vmul.f32	s14, s14, s10
+ 946              	.LVL54:
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 947              		.loc 1 25 17 view .LVU269
+ 948 014e B7EE003A 		vmov.f32	s6, #1.0e+0
+ 949 0152 83EE075A 		vdiv.f32	s10, s6, s14
+ 950              	.LVL55:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 951              		.loc 1 26 5 is_stmt 1 view .LVU270
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 952              		.loc 1 26 30 is_stmt 0 view .LVU271
+ 953 0156 30EE055A 		vadd.f32	s10, s0, s10
+ 954              	.LVL56:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 955              		.loc 1 26 17 view .LVU272
+ 956 015a 80EE057A 		vdiv.f32	s14, s0, s10
+ 957              	.LVL57:
+  27:Sensors/mpu6050.c **** }
+ 958              		.loc 1 27 5 is_stmt 1 view .LVU273
+  27:Sensors/mpu6050.c **** }
+ 959              		.loc 1 27 27 is_stmt 0 view .LVU274
+ 960 015e 76EEE36A 		vsub.f32	s13, s13, s7
+ 961              	.LVL58:
+  27:Sensors/mpu6050.c **** }
+ 962              		.loc 1 27 21 view .LVU275
+ 963 0162 67EE266A 		vmul.f32	s13, s14, s13
+  27:Sensors/mpu6050.c **** }
+ 964              		.loc 1 27 17 view .LVU276
+ 965 0166 73EEA66A 		vadd.f32	s13, s7, s13
+ 966              	.LVL59:
+ 967              	.L58:
+  27:Sensors/mpu6050.c **** }
+ 968              		.loc 1 27 17 view .LVU277
+ 969              	.LBE21:
+ 970              	.LBE20:
+ 971              		.loc 1 188 10 discriminator 1 view .LVU278
+ 972 016a 3A4B     		ldr	r3, .L62+20
+ 973 016c C3ED006A 		vstr.32	s13, [r3]
+ 189:Sensors/mpu6050.c **** 
+ 190:Sensors/mpu6050.c ****     ax_f = pt1(ax_f, ax, accel_lpf_hz, dt);
+ 974              		.loc 1 190 5 is_stmt 1 view .LVU279
+ 975              		.loc 1 190 12 is_stmt 0 view .LVU280
+ 976 0170 394B     		ldr	r3, .L62+24
+ 977 0172 93ED003A 		vldr.32	s6, [r3]
+ 978 0176 3D4B     		ldr	r3, .L62+44
+ 979 0178 93ED007A 		vldr.32	s14, [r3]
+ 980              	.LVL60:
+ 981              	.LBB22:
+ 982              	.LBI22:
+  21:Sensors/mpu6050.c **** {
+ 983              		.loc 1 21 21 is_stmt 1 view .LVU281
+ 984              	.LBB23:
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ARM GAS  /tmp/cclsILbz.s 			page 23
+
+
+ 985              		.loc 1 23 5 view .LVU282
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 986              		.loc 1 23 8 is_stmt 0 view .LVU283
+ 987 017c B5EEC07A 		vcmpe.f32	s14, #0
+ 988 0180 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 989 0184 11D9     		bls	.L59
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 990              		.loc 1 25 5 is_stmt 1 view .LVU284
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 991              		.loc 1 25 49 is_stmt 0 view .LVU285
+ 992 0186 9FED385A 		vldr.32	s10, .L62+40
+ 993 018a 27EE055A 		vmul.f32	s10, s14, s10
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 994              		.loc 1 25 17 view .LVU286
+ 995 018e F7EE002A 		vmov.f32	s5, #1.0e+0
+ 996 0192 C2EE853A 		vdiv.f32	s7, s5, s10
+ 997              	.LVL61:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 998              		.loc 1 26 5 is_stmt 1 view .LVU287
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 999              		.loc 1 26 30 is_stmt 0 view .LVU288
+ 1000 0196 70EE233A 		vadd.f32	s7, s0, s7
+ 1001              	.LVL62:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1002              		.loc 1 26 17 view .LVU289
+ 1003 019a 80EE235A 		vdiv.f32	s10, s0, s7
+ 1004              	.LVL63:
+  27:Sensors/mpu6050.c **** }
+ 1005              		.loc 1 27 5 is_stmt 1 view .LVU290
+  27:Sensors/mpu6050.c **** }
+ 1006              		.loc 1 27 27 is_stmt 0 view .LVU291
+ 1007 019e 34EE434A 		vsub.f32	s8, s8, s6
+ 1008              	.LVL64:
+  27:Sensors/mpu6050.c **** }
+ 1009              		.loc 1 27 21 view .LVU292
+ 1010 01a2 25EE044A 		vmul.f32	s8, s10, s8
+  27:Sensors/mpu6050.c **** }
+ 1011              		.loc 1 27 17 view .LVU293
+ 1012 01a6 33EE044A 		vadd.f32	s8, s6, s8
+ 1013              	.LVL65:
+ 1014              	.L59:
+  27:Sensors/mpu6050.c **** }
+ 1015              		.loc 1 27 17 view .LVU294
+ 1016              	.LBE23:
+ 1017              	.LBE22:
+ 1018              		.loc 1 190 10 discriminator 1 view .LVU295
+ 1019 01aa 2B4B     		ldr	r3, .L62+24
+ 1020 01ac 83ED004A 		vstr.32	s8, [r3]
+ 191:Sensors/mpu6050.c ****     ay_f = pt1(ay_f, ay, accel_lpf_hz, dt);
+ 1021              		.loc 1 191 5 is_stmt 1 view .LVU296
+ 1022              		.loc 1 191 12 is_stmt 0 view .LVU297
+ 1023 01b0 2A4B     		ldr	r3, .L62+28
+ 1024 01b2 93ED003A 		vldr.32	s6, [r3]
+ 1025              	.LVL66:
+ 1026              	.LBB24:
+ 1027              	.LBI24:
+  21:Sensors/mpu6050.c **** {
+ARM GAS  /tmp/cclsILbz.s 			page 24
+
+
+ 1028              		.loc 1 21 21 is_stmt 1 view .LVU298
+ 1029              	.LBB25:
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 1030              		.loc 1 23 5 view .LVU299
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 1031              		.loc 1 23 8 is_stmt 0 view .LVU300
+ 1032 01b6 B5EEC07A 		vcmpe.f32	s14, #0
+ 1033 01ba F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 1034 01be 11D9     		bls	.L60
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 1035              		.loc 1 25 5 is_stmt 1 view .LVU301
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 1036              		.loc 1 25 49 is_stmt 0 view .LVU302
+ 1037 01c0 9FED295A 		vldr.32	s10, .L62+40
+ 1038 01c4 27EE055A 		vmul.f32	s10, s14, s10
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 1039              		.loc 1 25 17 view .LVU303
+ 1040 01c8 F7EE002A 		vmov.f32	s5, #1.0e+0
+ 1041 01cc C2EE853A 		vdiv.f32	s7, s5, s10
+ 1042              	.LVL67:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1043              		.loc 1 26 5 is_stmt 1 view .LVU304
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1044              		.loc 1 26 30 is_stmt 0 view .LVU305
+ 1045 01d0 70EE233A 		vadd.f32	s7, s0, s7
+ 1046              	.LVL68:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1047              		.loc 1 26 17 view .LVU306
+ 1048 01d4 80EE235A 		vdiv.f32	s10, s0, s7
+ 1049              	.LVL69:
+  27:Sensors/mpu6050.c **** }
+ 1050              		.loc 1 27 5 is_stmt 1 view .LVU307
+  27:Sensors/mpu6050.c **** }
+ 1051              		.loc 1 27 27 is_stmt 0 view .LVU308
+ 1052 01d8 74EEC34A 		vsub.f32	s9, s9, s6
+ 1053              	.LVL70:
+  27:Sensors/mpu6050.c **** }
+ 1054              		.loc 1 27 21 view .LVU309
+ 1055 01dc 65EE244A 		vmul.f32	s9, s10, s9
+  27:Sensors/mpu6050.c **** }
+ 1056              		.loc 1 27 17 view .LVU310
+ 1057 01e0 73EE244A 		vadd.f32	s9, s6, s9
+ 1058              	.LVL71:
+ 1059              	.L60:
+  27:Sensors/mpu6050.c **** }
+ 1060              		.loc 1 27 17 view .LVU311
+ 1061              	.LBE25:
+ 1062              	.LBE24:
+ 1063              		.loc 1 191 10 discriminator 1 view .LVU312
+ 1064 01e4 1D4B     		ldr	r3, .L62+28
+ 1065 01e6 C3ED004A 		vstr.32	s9, [r3]
+ 192:Sensors/mpu6050.c ****     az_f = pt1(az_f, az, accel_lpf_hz, dt);
+ 1066              		.loc 1 192 5 is_stmt 1 view .LVU313
+ 1067              		.loc 1 192 12 is_stmt 0 view .LVU314
+ 1068 01ea 1D4B     		ldr	r3, .L62+32
+ 1069 01ec D3ED003A 		vldr.32	s7, [r3]
+ 1070              	.LVL72:
+ARM GAS  /tmp/cclsILbz.s 			page 25
+
+
+ 1071              	.LBB26:
+ 1072              	.LBI26:
+  21:Sensors/mpu6050.c **** {
+ 1073              		.loc 1 21 21 is_stmt 1 view .LVU315
+ 1074              	.LBB27:
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 1075              		.loc 1 23 5 view .LVU316
+  23:Sensors/mpu6050.c ****         return in; /* Filter aus */
+ 1076              		.loc 1 23 8 is_stmt 0 view .LVU317
+ 1077 01f0 B5EEC07A 		vcmpe.f32	s14, #0
+ 1078 01f4 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 1079 01f8 11D9     		bls	.L61
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 1080              		.loc 1 25 5 is_stmt 1 view .LVU318
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 1081              		.loc 1 25 49 is_stmt 0 view .LVU319
+ 1082 01fa 9FED1B5A 		vldr.32	s10, .L62+40
+ 1083 01fe 27EE057A 		vmul.f32	s14, s14, s10
+ 1084              	.LVL73:
+  25:Sensors/mpu6050.c ****     const float a = dt / (rc + dt);
+ 1085              		.loc 1 25 17 view .LVU320
+ 1086 0202 B7EE003A 		vmov.f32	s6, #1.0e+0
+ 1087 0206 83EE075A 		vdiv.f32	s10, s6, s14
+ 1088              	.LVL74:
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1089              		.loc 1 26 5 is_stmt 1 view .LVU321
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1090              		.loc 1 26 30 is_stmt 0 view .LVU322
+ 1091 020a 30EE057A 		vadd.f32	s14, s0, s10
+  26:Sensors/mpu6050.c ****     return prev + a * (in - prev);
+ 1092              		.loc 1 26 17 view .LVU323
+ 1093 020e 80EE075A 		vdiv.f32	s10, s0, s14
+ 1094              	.LVL75:
+  27:Sensors/mpu6050.c **** }
+ 1095              		.loc 1 27 5 is_stmt 1 view .LVU324
+  27:Sensors/mpu6050.c **** }
+ 1096              		.loc 1 27 27 is_stmt 0 view .LVU325
+ 1097 0212 37EEE37A 		vsub.f32	s14, s15, s7
+  27:Sensors/mpu6050.c **** }
+ 1098              		.loc 1 27 21 view .LVU326
+ 1099 0216 27EE057A 		vmul.f32	s14, s14, s10
+  27:Sensors/mpu6050.c **** }
+ 1100              		.loc 1 27 17 view .LVU327
+ 1101 021a 73EE877A 		vadd.f32	s15, s7, s14
+ 1102              	.LVL76:
+ 1103              	.L61:
+  27:Sensors/mpu6050.c **** }
+ 1104              		.loc 1 27 17 view .LVU328
+ 1105              	.LBE27:
+ 1106              	.LBE26:
+ 1107              		.loc 1 192 10 discriminator 1 view .LVU329
+ 1108 021e 104B     		ldr	r3, .L62+32
+ 1109 0220 C3ED007A 		vstr.32	s15, [r3]
+ 193:Sensors/mpu6050.c **** 
+ 194:Sensors/mpu6050.c ****     data->gyro_x_dps = gx_f;
+ 1110              		.loc 1 194 5 is_stmt 1 view .LVU330
+ 1111              		.loc 1 194 22 is_stmt 0 view .LVU331
+ARM GAS  /tmp/cclsILbz.s 			page 26
+
+
+ 1112 0224 C0ED075A 		vstr.32	s11, [r0, #28]
+ 195:Sensors/mpu6050.c ****     data->gyro_y_dps = gy_f;
+ 1113              		.loc 1 195 5 is_stmt 1 view .LVU332
+ 1114              		.loc 1 195 22 is_stmt 0 view .LVU333
+ 1115 0228 80ED086A 		vstr.32	s12, [r0, #32]
+ 196:Sensors/mpu6050.c ****     data->gyro_z_dps = gz_f;
+ 1116              		.loc 1 196 5 is_stmt 1 view .LVU334
+ 1117              		.loc 1 196 22 is_stmt 0 view .LVU335
+ 1118 022c C0ED096A 		vstr.32	s13, [r0, #36]
+ 197:Sensors/mpu6050.c **** 
+ 198:Sensors/mpu6050.c ****     data->accel_x_g = ax_f;
+ 1119              		.loc 1 198 5 is_stmt 1 view .LVU336
+ 1120              		.loc 1 198 21 is_stmt 0 view .LVU337
+ 1121 0230 80ED044A 		vstr.32	s8, [r0, #16]
+ 199:Sensors/mpu6050.c ****     data->accel_y_g = ay_f;
+ 1122              		.loc 1 199 5 is_stmt 1 view .LVU338
+ 1123              		.loc 1 199 21 is_stmt 0 view .LVU339
+ 1124 0234 C0ED054A 		vstr.32	s9, [r0, #20]
+ 200:Sensors/mpu6050.c ****     data->accel_z_g = az_f;
+ 1125              		.loc 1 200 5 is_stmt 1 view .LVU340
+ 1126              		.loc 1 200 21 is_stmt 0 view .LVU341
+ 1127 0238 C0ED067A 		vstr.32	s15, [r0, #24]
+ 201:Sensors/mpu6050.c **** }
+ 1128              		.loc 1 201 1 view .LVU342
+ 1129 023c 7047     		bx	lr
+ 1130              	.L63:
+ 1131 023e 00BF     		.align	2
+ 1132              	.L62:
+ 1133 0240 00000039 		.word	956301312
+ 1134 0244 00008342 		.word	1115881472
+ 1135 0248 00000000 		.word	filt_primed
+ 1136 024c 00000000 		.word	gx_f
+ 1137 0250 00000000 		.word	gy_f
+ 1138 0254 00000000 		.word	gz_f
+ 1139 0258 00000000 		.word	ax_f
+ 1140 025c 00000000 		.word	ay_f
+ 1141 0260 00000000 		.word	az_f
+ 1142 0264 00000000 		.word	gyro_lpf_hz
+ 1143 0268 DB0FC940 		.word	1086918619
+ 1144 026c 00000000 		.word	accel_lpf_hz
+ 1145              		.cfi_endproc
+ 1146              	.LFE250:
+ 1148              		.section	.text.MPU6050_UpdateAngles,"ax",%progbits
+ 1149              		.align	1
+ 1150              		.global	MPU6050_UpdateAngles
+ 1151              		.syntax unified
+ 1152              		.thumb
+ 1153              		.thumb_func
+ 1155              	MPU6050_UpdateAngles:
+ 1156              	.LVL77:
+ 1157              	.LFB251:
+ 202:Sensors/mpu6050.c **** 
+ 203:Sensors/mpu6050.c **** /* --- Komplementaerfilter: Accel + Gyro -> Roll/Pitch --- */
+ 204:Sensors/mpu6050.c **** void MPU6050_UpdateAngles(MPU6050_Data_t *data, float dt)
+ 205:Sensors/mpu6050.c **** {
+ 1158              		.loc 1 205 1 is_stmt 1 view -0
+ 1159              		.cfi_startproc
+ARM GAS  /tmp/cclsILbz.s 			page 27
+
+
+ 1160              		@ args = 0, pretend = 0, frame = 0
+ 1161              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1162              		.loc 1 205 1 is_stmt 0 view .LVU344
+ 1163 0000 10B5     		push	{r4, lr}
+ 1164              	.LCFI13:
+ 1165              		.cfi_def_cfa_offset 8
+ 1166              		.cfi_offset 4, -8
+ 1167              		.cfi_offset 14, -4
+ 1168 0002 2DED068B 		vpush.64	{d8, d9, d10}
+ 1169              	.LCFI14:
+ 1170              		.cfi_def_cfa_offset 32
+ 1171              		.cfi_offset 80, -32
+ 1172              		.cfi_offset 81, -28
+ 1173              		.cfi_offset 82, -24
+ 1174              		.cfi_offset 83, -20
+ 1175              		.cfi_offset 84, -16
+ 1176              		.cfi_offset 85, -12
+ 1177 0006 0446     		mov	r4, r0
+ 1178 0008 B0EE408A 		vmov.f32	s16, s0
+ 206:Sensors/mpu6050.c ****     float accel_roll = atan2f(data->accel_y_g, data->accel_z_g) * 57.2958f;
+ 1179              		.loc 1 206 5 is_stmt 1 view .LVU345
+ 1180              		.loc 1 206 24 is_stmt 0 view .LVU346
+ 1181 000c D0ED059A 		vldr.32	s19, [r0, #20]
+ 1182 0010 90ED069A 		vldr.32	s18, [r0, #24]
+ 1183 0014 F0EE490A 		vmov.f32	s1, s18
+ 1184 0018 B0EE690A 		vmov.f32	s0, s19
+ 1185              	.LVL78:
+ 1186              		.loc 1 206 24 view .LVU347
+ 1187 001c FFF7FEFF 		bl	atan2f
+ 1188              	.LVL79:
+ 1189              		.loc 1 206 11 discriminator 1 view .LVU348
+ 1190 0020 9FED26AA 		vldr.32	s20, .L66
+ 1191 0024 60EE0A8A 		vmul.f32	s17, s0, s20
+ 1192              	.LVL80:
+ 207:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
+ 1193              		.loc 1 207 5 is_stmt 1 view .LVU349
+ 1194              		.loc 1 207 37 is_stmt 0 view .LVU350
+ 1195 0028 D4ED04AA 		vldr.32	s21, [r4, #16]
+ 208:Sensors/mpu6050.c ****                                sqrtf(data->accel_y_g * data->accel_y_g +
+ 1196              		.loc 1 208 54 view .LVU351
+ 1197 002c 69EEA99A 		vmul.f32	s19, s19, s19
+ 209:Sensors/mpu6050.c ****                                      data->accel_z_g * data->accel_z_g)) *
+ 1198              		.loc 1 209 54 view .LVU352
+ 1199 0030 29EE099A 		vmul.f32	s18, s18, s18
+ 207:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
+ 1200              		.loc 1 207 25 view .LVU353
+ 1201 0034 39EE890A 		vadd.f32	s0, s19, s18
+ 1202 0038 FFF7FEFF 		bl	sqrtf
+ 1203              	.LVL81:
+ 1204 003c F0EE400A 		vmov.f32	s1, s0
+ 207:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
+ 1205              		.loc 1 207 25 discriminator 1 view .LVU354
+ 1206 0040 B1EE6A0A 		vneg.f32	s0, s21
+ 1207 0044 FFF7FEFF 		bl	atan2f
+ 1208              	.LVL82:
+ 207:Sensors/mpu6050.c ****     float accel_pitch = atan2f(-data->accel_x_g,
+ 1209              		.loc 1 207 11 discriminator 2 view .LVU355
+ARM GAS  /tmp/cclsILbz.s 			page 28
+
+
+ 1210 0048 20EE0A0A 		vmul.f32	s0, s0, s20
+ 1211              	.LVL83:
+ 210:Sensors/mpu6050.c ****                         57.2958f;
+ 211:Sensors/mpu6050.c **** 
+ 212:Sensors/mpu6050.c ****     /* Gewicht aus der Zeitkonstante rechnen statt fest 0.98.
+ 213:Sensors/mpu6050.c ****      * Fest waere an die Schleifenfrequenz gekoppelt: bei 1000 Hz wuerde
+ 214:Sensors/mpu6050.c ****      * 0.98 nur 49 ms bedeuten, der Winkel haenge fast nur am Accel. */
+ 215:Sensors/mpu6050.c ****     const float alpha = comp_tau_s / (comp_tau_s + dt);
+ 1212              		.loc 1 215 5 is_stmt 1 view .LVU356
+ 1213              		.loc 1 215 36 is_stmt 0 view .LVU357
+ 1214 004c 1C4B     		ldr	r3, .L66+4
+ 1215 004e D3ED007A 		vldr.32	s15, [r3]
+ 1216              		.loc 1 215 50 view .LVU358
+ 1217 0052 37EE887A 		vadd.f32	s14, s15, s16
+ 1218              		.loc 1 215 17 view .LVU359
+ 1219 0056 C7EE876A 		vdiv.f32	s13, s15, s14
+ 1220              	.LVL84:
+ 216:Sensors/mpu6050.c **** 
+ 217:Sensors/mpu6050.c ****     data->roll = alpha * (data->roll + data->gyro_x_dps * dt) + (1.0f - alpha) * accel_roll;
+ 1221              		.loc 1 217 5 is_stmt 1 view .LVU360
+ 1222              		.loc 1 217 31 is_stmt 0 view .LVU361
+ 1223 005a D4ED107A 		vldr.32	s15, [r4, #64]
+ 1224              		.loc 1 217 44 view .LVU362
+ 1225 005e 94ED077A 		vldr.32	s14, [r4, #28]
+ 1226              		.loc 1 217 57 view .LVU363
+ 1227 0062 27EE087A 		vmul.f32	s14, s14, s16
+ 1228              		.loc 1 217 38 view .LVU364
+ 1229 0066 77EE877A 		vadd.f32	s15, s15, s14
+ 1230              		.loc 1 217 24 view .LVU365
+ 1231 006a 67EEA67A 		vmul.f32	s15, s15, s13
+ 1232              		.loc 1 217 71 view .LVU366
+ 1233 006e B7EE007A 		vmov.f32	s14, #1.0e+0
+ 1234 0072 37EE667A 		vsub.f32	s14, s14, s13
+ 1235              		.loc 1 217 80 view .LVU367
+ 1236 0076 67EE288A 		vmul.f32	s17, s14, s17
+ 1237              	.LVL85:
+ 1238              		.loc 1 217 63 view .LVU368
+ 1239 007a 77EEA87A 		vadd.f32	s15, s15, s17
+ 1240              		.loc 1 217 16 view .LVU369
+ 1241 007e C4ED107A 		vstr.32	s15, [r4, #64]
+ 218:Sensors/mpu6050.c ****     data->pitch = alpha * (data->pitch + data->gyro_y_dps * dt) + (1.0f - alpha) * accel_pitch;
+ 1242              		.loc 1 218 5 is_stmt 1 view .LVU370
+ 1243              		.loc 1 218 32 is_stmt 0 view .LVU371
+ 1244 0082 D4ED117A 		vldr.32	s15, [r4, #68]
+ 1245              		.loc 1 218 46 view .LVU372
+ 1246 0086 94ED086A 		vldr.32	s12, [r4, #32]
+ 1247              		.loc 1 218 59 view .LVU373
+ 1248 008a 26EE086A 		vmul.f32	s12, s12, s16
+ 1249              		.loc 1 218 40 view .LVU374
+ 1250 008e 77EE867A 		vadd.f32	s15, s15, s12
+ 1251              		.loc 1 218 25 view .LVU375
+ 1252 0092 67EEA67A 		vmul.f32	s15, s15, s13
+ 1253              		.loc 1 218 82 view .LVU376
+ 1254 0096 27EE007A 		vmul.f32	s14, s14, s0
+ 1255              		.loc 1 218 65 view .LVU377
+ 1256 009a 77EE877A 		vadd.f32	s15, s15, s14
+ 1257              		.loc 1 218 17 view .LVU378
+ARM GAS  /tmp/cclsILbz.s 			page 29
+
+
+ 1258 009e C4ED117A 		vstr.32	s15, [r4, #68]
+ 219:Sensors/mpu6050.c **** 
+ 220:Sensors/mpu6050.c ****     /* Yaw: nur Gyro-Integration (kein Accel-Bezug -> driftet langsam) */
+ 221:Sensors/mpu6050.c ****     data->yaw += data->gyro_z_dps * dt;
+ 1259              		.loc 1 221 5 is_stmt 1 view .LVU379
+ 1260              		.loc 1 221 9 is_stmt 0 view .LVU380
+ 1261 00a2 D4ED127A 		vldr.32	s15, [r4, #72]
+ 1262              		.loc 1 221 22 view .LVU381
+ 1263 00a6 94ED097A 		vldr.32	s14, [r4, #36]
+ 1264              		.loc 1 221 35 view .LVU382
+ 1265 00aa 27EE087A 		vmul.f32	s14, s14, s16
+ 1266              		.loc 1 221 15 view .LVU383
+ 1267 00ae 77EE877A 		vadd.f32	s15, s15, s14
+ 1268 00b2 C4ED127A 		vstr.32	s15, [r4, #72]
+ 222:Sensors/mpu6050.c **** }...
+ 1269              		.loc 1 222 1 view .LVU384
+ 1270 00b6 BDEC068B 		vldm	sp!, {d8-d10}
+ 1271              	.LCFI15:
+ 1272              		.cfi_restore 84
+ 1273              		.cfi_restore 85
+ 1274              		.cfi_restore 82
+ 1275              		.cfi_restore 83
+ 1276              		.cfi_restore 80
+ 1277              		.cfi_restore 81
+ 1278              		.cfi_def_cfa_offset 8
+ 1279              	.LVL86:
+ 1280              		.loc 1 222 1 view .LVU385
+ 1281 00ba 10BD     		pop	{r4, pc}
+ 1282              	.LVL87:
+ 1283              	.L67:
+ 1284              		.loc 1 222 1 view .LVU386
+ 1285              		.align	2
+ 1286              	.L66:
+ 1287 00bc E62E6542 		.word	1113927398
+ 1288 00c0 00000000 		.word	comp_tau_s
+ 1289              		.cfi_endproc
+ 1290              	.LFE251:
+ 1292              		.section	.bss.filt_primed,"aw",%nobits
+ 1295              	filt_primed:
+ 1296 0000 00       		.space	1
+ 1297              		.section	.data.az_f,"aw"
+ 1298              		.align	2
+ 1301              	az_f:
+ 1302 0000 0000803F 		.word	1065353216
+ 1303              		.section	.bss.ay_f,"aw",%nobits
+ 1304              		.align	2
+ 1307              	ay_f:
+ 1308 0000 00000000 		.space	4
+ 1309              		.section	.bss.ax_f,"aw",%nobits
+ 1310              		.align	2
+ 1313              	ax_f:
+ 1314 0000 00000000 		.space	4
+ 1315              		.section	.bss.gz_f,"aw",%nobits
+ 1316              		.align	2
+ 1319              	gz_f:
+ 1320 0000 00000000 		.space	4
+ 1321              		.section	.bss.gy_f,"aw",%nobits
+ARM GAS  /tmp/cclsILbz.s 			page 30
+
+
+ 1322              		.align	2
+ 1325              	gy_f:
+ 1326 0000 00000000 		.space	4
+ 1327              		.section	.bss.gx_f,"aw",%nobits
+ 1328              		.align	2
+ 1331              	gx_f:
+ 1332 0000 00000000 		.space	4
+ 1333              		.section	.data.comp_tau_s,"aw"
+ 1334              		.align	2
+ 1337              	comp_tau_s:
+ 1338 0000 0000003F 		.word	1056964608
+ 1339              		.section	.data.accel_lpf_hz,"aw"
+ 1340              		.align	2
+ 1343              	accel_lpf_hz:
+ 1344 0000 0000A041 		.word	1101004800
+ 1345              		.section	.data.gyro_lpf_hz,"aw"
+ 1346              		.align	2
+ 1349              	gyro_lpf_hz:
+ 1350 0000 0000B442 		.word	1119092736
+ 1351              		.text
+ 1352              	.Letext0:
+ 1353              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 1354              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
+ 1355              		.file 4 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 1356              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 1357              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h"
+ 1358              		.file 7 "Sensors/mpu6050.h"
+ 1359              		.file 8 "/usr/include/newlib/math.h"
+ 1360              		.file 9 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  /tmp/cclsILbz.s 			page 31
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 mpu6050.c
-     /tmp/cc4pyRa0.s:21     .text.MPU6050_WhoAmI:00000000 $t
-     /tmp/cc4pyRa0.s:27     .text.MPU6050_WhoAmI:00000000 MPU6050_WhoAmI
-     /tmp/cc4pyRa0.s:65     .text.MPU6050_Init:00000000 $t
-     /tmp/cc4pyRa0.s:71     .text.MPU6050_Init:00000000 MPU6050_Init
-     /tmp/cc4pyRa0.s:209    .text.MPU6050_ReadAll:00000000 $t
-     /tmp/cc4pyRa0.s:215    .text.MPU6050_ReadAll:00000000 MPU6050_ReadAll
-     /tmp/cc4pyRa0.s:328    .text.MPU6050_Calibrate:00000000 $t
-     /tmp/cc4pyRa0.s:334    .text.MPU6050_Calibrate:00000000 MPU6050_Calibrate
-     /tmp/cc4pyRa0.s:465    .text.MPU6050_Calibrate:00000090 $d
-     /tmp/cc4pyRa0.s:470    .text.MPU6050_Convert:00000000 $t
-     /tmp/cc4pyRa0.s:476    .text.MPU6050_Convert:00000000 MPU6050_Convert
-     /tmp/cc4pyRa0.s:557    .text.MPU6050_Convert:0000009c $d
-     /tmp/cc4pyRa0.s:563    .text.MPU6050_UpdateAngles:00000000 $t
-     /tmp/cc4pyRa0.s:569    .text.MPU6050_UpdateAngles:00000000 MPU6050_UpdateAngles
-     /tmp/cc4pyRa0.s:692    .text.MPU6050_UpdateAngles:000000b0 $d
+     /tmp/cclsILbz.s:21     .text.MPU6050_SetGyroLPF:00000000 $t
+     /tmp/cclsILbz.s:27     .text.MPU6050_SetGyroLPF:00000000 MPU6050_SetGyroLPF
+     /tmp/cclsILbz.s:55     .text.MPU6050_SetGyroLPF:00000020 $d
+     /tmp/cclsILbz.s:1349   .data.gyro_lpf_hz:00000000 gyro_lpf_hz
+     /tmp/cclsILbz.s:61     .text.MPU6050_SetAccelLPF:00000000 $t
+     /tmp/cclsILbz.s:67     .text.MPU6050_SetAccelLPF:00000000 MPU6050_SetAccelLPF
+     /tmp/cclsILbz.s:95     .text.MPU6050_SetAccelLPF:00000020 $d
+     /tmp/cclsILbz.s:1343   .data.accel_lpf_hz:00000000 accel_lpf_hz
+     /tmp/cclsILbz.s:101    .text.MPU6050_SetCompTau:00000000 $t
+     /tmp/cclsILbz.s:107    .text.MPU6050_SetCompTau:00000000 MPU6050_SetCompTau
+     /tmp/cclsILbz.s:136    .text.MPU6050_SetCompTau:00000024 $d
+     /tmp/cclsILbz.s:1337   .data.comp_tau_s:00000000 comp_tau_s
+     /tmp/cclsILbz.s:142    .text.MPU6050_GetGyroLPF:00000000 $t
+     /tmp/cclsILbz.s:148    .text.MPU6050_GetGyroLPF:00000000 MPU6050_GetGyroLPF
+     /tmp/cclsILbz.s:163    .text.MPU6050_GetGyroLPF:00000008 $d
+     /tmp/cclsILbz.s:168    .text.MPU6050_GetAccelLPF:00000000 $t
+     /tmp/cclsILbz.s:174    .text.MPU6050_GetAccelLPF:00000000 MPU6050_GetAccelLPF
+     /tmp/cclsILbz.s:189    .text.MPU6050_GetAccelLPF:00000008 $d
+     /tmp/cclsILbz.s:194    .text.MPU6050_GetCompTau:00000000 $t
+     /tmp/cclsILbz.s:200    .text.MPU6050_GetCompTau:00000000 MPU6050_GetCompTau
+     /tmp/cclsILbz.s:215    .text.MPU6050_GetCompTau:00000008 $d
+     /tmp/cclsILbz.s:220    .text.MPU6050_WhoAmI:00000000 $t
+     /tmp/cclsILbz.s:226    .text.MPU6050_WhoAmI:00000000 MPU6050_WhoAmI
+     /tmp/cclsILbz.s:264    .text.MPU6050_Init:00000000 $t
+     /tmp/cclsILbz.s:270    .text.MPU6050_Init:00000000 MPU6050_Init
+     /tmp/cclsILbz.s:438    .text.MPU6050_Init:000000cc $d
+     /tmp/cclsILbz.s:1295   .bss.filt_primed:00000000 filt_primed
+     /tmp/cclsILbz.s:443    .text.MPU6050_ReadAll:00000000 $t
+     /tmp/cclsILbz.s:449    .text.MPU6050_ReadAll:00000000 MPU6050_ReadAll
+     /tmp/cclsILbz.s:562    .text.MPU6050_Calibrate:00000000 $t
+     /tmp/cclsILbz.s:568    .text.MPU6050_Calibrate:00000000 MPU6050_Calibrate
+     /tmp/cclsILbz.s:704    .text.MPU6050_Calibrate:00000094 $d
+     /tmp/cclsILbz.s:710    .text.MPU6050_Convert:00000000 $t
+     /tmp/cclsILbz.s:716    .text.MPU6050_Convert:00000000 MPU6050_Convert
+     /tmp/cclsILbz.s:1133   .text.MPU6050_Convert:00000240 $d
+     /tmp/cclsILbz.s:1331   .bss.gx_f:00000000 gx_f
+     /tmp/cclsILbz.s:1325   .bss.gy_f:00000000 gy_f
+     /tmp/cclsILbz.s:1319   .bss.gz_f:00000000 gz_f
+     /tmp/cclsILbz.s:1313   .bss.ax_f:00000000 ax_f
+     /tmp/cclsILbz.s:1307   .bss.ay_f:00000000 ay_f
+     /tmp/cclsILbz.s:1301   .data.az_f:00000000 az_f
+     /tmp/cclsILbz.s:1149   .text.MPU6050_UpdateAngles:00000000 $t
+     /tmp/cclsILbz.s:1155   .text.MPU6050_UpdateAngles:00000000 MPU6050_UpdateAngles
+     /tmp/cclsILbz.s:1287   .text.MPU6050_UpdateAngles:000000bc $d
+     /tmp/cclsILbz.s:1296   .bss.filt_primed:00000000 $d
+     /tmp/cclsILbz.s:1298   .data.az_f:00000000 $d
+     /tmp/cclsILbz.s:1304   .bss.ay_f:00000000 $d
+     /tmp/cclsILbz.s:1310   .bss.ax_f:00000000 $d
+     /tmp/cclsILbz.s:1316   .bss.gz_f:00000000 $d
+     /tmp/cclsILbz.s:1322   .bss.gy_f:00000000 $d
+     /tmp/cclsILbz.s:1328   .bss.gx_f:00000000 $d
+     /tmp/cclsILbz.s:1334   .data.comp_tau_s:00000000 $d
+     /tmp/cclsILbz.s:1340   .data.accel_lpf_hz:00000000 $d
+     /tmp/cclsILbz.s:1346   .data.gyro_lpf_hz:00000000 $d
+
+ARM GAS  /tmp/cclsILbz.s 			page 32
+
 
 UNDEFINED SYMBOLS
 HAL_I2C_Mem_Read

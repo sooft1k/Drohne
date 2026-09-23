@@ -2,6 +2,8 @@
 #include "motor.h"
 #include "control.h"
 #include "mixer.h"
+#include "mpu6050.h"
+#include "battery.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -74,17 +76,67 @@ void Command_Process(void)
     /* ---------- Status ---------- */
     else if (strcmp(line, "status") == 0)
     {
-        printf(">> Status: %s | Modus: %s | Gas: %.0f%% | Stream: %s | Loop: %lu Hz\r\n",
+        printf(">> Status: %s | Modus: %s | Gas: %.0f%% | Stream: %s | Loop: %lu Hz | Motoren: %lu Hz\r\n",
                Motor_IsArmed() ? "ARMED" : "DISARMED",
                (flight_mode == MODE_ANGLE) ? "ANGLE" : "RATE",
                setpoint.throttle,
                stream_on ? "AN" : "AUS",
-               loop_hz);
+               loop_hz,
+               Motor_UpdateRateHz());
     }
     else if (strcmp(line, "loop") == 0)
     {
         printf(">> Regeltakt: %lu Hz | verpasste Zyklen: %lu\r\n",
                loop_hz, loop_missed);
+    }
+
+    /* ---------- Akku ---------- */
+    else if (strcmp(line, "bat") == 0)
+    {
+        if (Battery_Cells() == 0)
+        {
+            printf(">> Akku: kein Akku erkannt (%.2f V am Teiler)\r\n", Battery_Volt());
+        }
+        else
+        {
+            printf(">> Akku: %.2f V | %uS | %.2f V pro Zelle | %s\r\n",
+                   Battery_Volt(), Battery_Cells(),
+                   Battery_CellVolt(), Battery_StateText());
+        }
+    }
+    else if (strncmp(line, "batcal ", 7) == 0)
+    {
+        float v = strtof(line + 7, 0);
+        Battery_Calibrate(v);
+        printf(">> Kalibriert auf %.2f V (Faktor %.4f)\r\n", Battery_Volt(), Battery_GetScale());
+    }
+
+    /* ---------- Filter ----------
+     * Muss VOR dem PID-Block stehen, sonst wird 'alpf' als Angle-Befehl gelesen. */
+    else if (strcmp(line, "filt") == 0)
+    {
+        printf(">> Gyro-Tiefpass : %.0f Hz\r\n", MPU6050_GetGyroLPF());
+        printf(">> Accel-Tiefpass: %.0f Hz\r\n", MPU6050_GetAccelLPF());
+        printf(">> Komplementaer : tau %.2f s\r\n", MPU6050_GetCompTau());
+    }
+    else if (strncmp(line, "glpf ", 5) == 0)
+    {
+        float v = strtof(line + 5, 0);
+        MPU6050_SetGyroLPF(v);
+        printf(">> Gyro-Tiefpass: %.0f Hz%s\r\n", MPU6050_GetGyroLPF(),
+               (v <= 0.0f) ? " (aus)" : "");
+    }
+    else if (strncmp(line, "alpf ", 5) == 0)
+    {
+        float v = strtof(line + 5, 0);
+        MPU6050_SetAccelLPF(v);
+        printf(">> Accel-Tiefpass: %.0f Hz\r\n", MPU6050_GetAccelLPF());
+    }
+    else if (strncmp(line, "tau ", 4) == 0)
+    {
+        float v = strtof(line + 4, 0);
+        MPU6050_SetCompTau(v);
+        printf(">> Komplementaerfilter tau: %.2f s\r\n", MPU6050_GetCompTau());
     }
 
     /* ---------- Flugmodus ---------- */
@@ -227,8 +279,9 @@ void Command_Process(void)
         else
         {
             printf(">> Unbekannt: '%s'\r\n", line);
-            printf(">> arm | disarm | status | loop | pid | mix | angle | rate |\r\n");
-            printf(">> stream on/off | t <gas> | 0-100 | m1..m4 <wert> | rrp/arp <wert>\r\n");
+            printf(">> arm | disarm | status | loop | pid | mix | filt | bat | angle | rate |\r\n");
+            printf(">> stream on/off | t <gas> | 0-100 | m1..m4 <wert> |\r\n");
+            printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt>\r\n");
         }
     }
 

@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccSNKn4O.s 			page 1
+ARM GAS  /tmp/ccCT7jaq.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -27,7 +27,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   24              		.thumb_func
   26              	motor_write_raw:
   27              	.LVL0:
-  28              	.LFB134:
+  28              	.LFB239:
    1:Sensors/motor.c **** #include "motor.h"
    2:Sensors/motor.c **** 
    3:Sensors/motor.c **** static TIM_HandleTypeDef *motor_tim = 0;
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   38              		.loc 1 18 5 is_stmt 0 discriminator 1 view .LVU2
   39 0008 0C4B     		ldr	r3, .L8+4
   40 000a 1B68     		ldr	r3, [r3]
-ARM GAS  /tmp/ccSNKn4O.s 			page 2
+ARM GAS  /tmp/ccCT7jaq.s 			page 2
 
 
   41 000c 1B68     		ldr	r3, [r3]
@@ -101,7 +101,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   75 0038 00000000 		.word	motor_ch
   76 003c 00000000 		.word	motor_tim
   77              		.cfi_endproc
-  78              	.LFE134:
+  78              	.LFE239:
   80              		.section	.text.Motor_SetUs,"ax",%progbits
   81              		.align	1
   82              		.global	Motor_SetUs
@@ -110,7 +110,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   85              		.thumb_func
   87              	Motor_SetUs:
   88              	.LVL1:
-  89              	.LFB136:
+  89              	.LFB241:
   20:Sensors/motor.c **** 
   21:Sensors/motor.c **** void Motor_Init(TIM_HandleTypeDef *htim)
   22:Sensors/motor.c **** {
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   24:Sensors/motor.c **** 
   25:Sensors/motor.c ****     __HAL_RCC_TIM3_CLK_ENABLE();
   26:Sensors/motor.c ****     __HAL_RCC_GPIOA_CLK_ENABLE();
-ARM GAS  /tmp/ccSNKn4O.s 			page 3
+ARM GAS  /tmp/ccCT7jaq.s 			page 3
 
 
   27:Sensors/motor.c ****     __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   95              		.loc 1 75 19 is_stmt 0 view .LVU11
   96 0000 0138     		subs	r0, r0, #1
   97              	.LVL2:
-ARM GAS  /tmp/ccSNKn4O.s 			page 4
+ARM GAS  /tmp/ccCT7jaq.s 			page 4
 
 
   98              		.loc 1 75 19 view .LVU12
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  135              	.LVL7:
   83:Sensors/motor.c ****         return;
  136              		.loc 1 83 9 is_stmt 0 view .LVU26
-ARM GAS  /tmp/ccSNKn4O.s 			page 5
+ARM GAS  /tmp/ccCT7jaq.s 			page 5
 
 
  137 0020 FFF7FEFF 		bl	motor_write_raw
@@ -279,7 +279,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  167              	.L21:
  168 0038 00000000 		.word	armed
  169              		.cfi_endproc
- 170              	.LFE136:
+ 170              	.LFE241:
  172              		.section	.text.Motor_SetPercent,"ax",%progbits
  173              		.align	1
  174              		.global	Motor_SetPercent
@@ -288,7 +288,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  177              		.thumb_func
  179              	Motor_SetPercent:
  180              	.LVL14:
- 181              	.LFB137:
+ 181              	.LFB242:
   94:Sensors/motor.c **** 
   95:Sensors/motor.c **** void Motor_SetPercent(uint8_t motor, float percent)
   96:Sensors/motor.c **** {
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  185              		@ frame_needed = 0, uses_anonymous_args = 0
   97:Sensors/motor.c ****     if (motor < 1 || motor > MOTOR_COUNT)
  186              		.loc 1 97 5 view .LVU34
-ARM GAS  /tmp/ccSNKn4O.s 			page 6
+ARM GAS  /tmp/ccCT7jaq.s 			page 6
 
 
  187              		.loc 1 97 19 is_stmt 0 view .LVU35
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  229              		.loc 1 107 8 view .LVU49
  230 0030 8BB1     		cbz	r3, .L33
  108:Sensors/motor.c ****     {
-ARM GAS  /tmp/ccSNKn4O.s 			page 7
+ARM GAS  /tmp/ccCT7jaq.s 			page 7
 
 
  109:Sensors/motor.c ****         motor_write_raw(idx, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US);
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  110:Sensors/motor.c ****     }
  269              		.loc 1 110 9 is_stmt 0 view .LVU61
  270 0060 7047     		bx	lr
-ARM GAS  /tmp/ccSNKn4O.s 			page 8
+ARM GAS  /tmp/ccCT7jaq.s 			page 8
 
 
  271              	.L35:
@@ -429,7 +429,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  276 006c 00000000 		.word	armed
  277 0070 0010A445 		.word	1168379904
  278              		.cfi_endproc
- 279              	.LFE137:
+ 279              	.LFE242:
  281              		.section	.text.Motor_SetAllUs,"ax",%progbits
  282              		.align	1
  283              		.global	Motor_SetAllUs
@@ -438,7 +438,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  286              		.thumb_func
  288              	Motor_SetAllUs:
  289              	.LVL27:
- 290              	.LFB138:
+ 290              	.LFB243:
  123:Sensors/motor.c **** 
  124:Sensors/motor.c **** void Motor_SetAllUs(uint16_t us)
  125:Sensors/motor.c **** {
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  321              	.LVL31:
  126:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
  322              		.loc 1 126 44 is_stmt 0 discriminator 3 view .LVU70
-ARM GAS  /tmp/ccSNKn4O.s 			page 9
+ARM GAS  /tmp/ccCT7jaq.s 			page 9
 
 
  323 0012 E4B2     		uxtb	r4, r4
@@ -494,7 +494,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  331 0018 38BD     		pop	{r3, r4, r5, pc}
  332              		.loc 1 128 1 view .LVU73
  333              		.cfi_endproc
- 334              	.LFE138:
+ 334              	.LFE243:
  336              		.section	.text.Motor_Init,"ax",%progbits
  337              		.align	1
  338              		.global	Motor_Init
@@ -503,7 +503,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  341              		.thumb_func
  343              	Motor_Init:
  344              	.LVL33:
- 345              	.LFB135:
+ 345              	.LFB240:
   22:Sensors/motor.c ****     motor_tim = htim;
  346              		.loc 1 22 1 is_stmt 1 view -0
  347              		.cfi_startproc
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  370 000c 394B     		ldr	r3, .L48+4
  371 000e 1A6C     		ldr	r2, [r3, #64]
  372 0010 42F00202 		orr	r2, r2, #2
-ARM GAS  /tmp/ccSNKn4O.s 			page 10
+ARM GAS  /tmp/ccCT7jaq.s 			page 10
 
 
  373 0014 1A64     		str	r2, [r3, #64]
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
   27:Sensors/motor.c **** 
  413              		.loc 1 27 5 view .LVU95
   29:Sensors/motor.c ****     g.Mode = GPIO_MODE_AF_PP;
-ARM GAS  /tmp/ccSNKn4O.s 			page 11
+ARM GAS  /tmp/ccCT7jaq.s 			page 11
 
 
  414              		.loc 1 29 5 view .LVU96
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  452              		.loc 1 46 5 view .LVU112
   46:Sensors/motor.c ****     motor_tim->Init.Prescaler = MOTOR_TIM_PRESCALER;
  453              		.loc 1 46 14 is_stmt 0 view .LVU113
-ARM GAS  /tmp/ccSNKn4O.s 			page 12
+ARM GAS  /tmp/ccCT7jaq.s 			page 12
 
 
  454 0072 2868     		ldr	r0, [r5]
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  492 009e 0A94     		str	r4, [sp, #40]
   57:Sensors/motor.c ****     oc.Pulse = (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US; /* SICHER: Stopp */
  493              		.loc 1 57 5 is_stmt 1 view .LVU130
-ARM GAS  /tmp/ccSNKn4O.s 			page 13
+ARM GAS  /tmp/ccCT7jaq.s 			page 13
 
 
   57:Sensors/motor.c ****     oc.Pulse = (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US; /* SICHER: Stopp */
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  534 00c0 032C     		cmp	r4, #3
  535 00c2 0DD8     		bhi	.L47
   64:Sensors/motor.c ****             Error_Handler();
-ARM GAS  /tmp/ccSNKn4O.s 			page 14
+ARM GAS  /tmp/ccCT7jaq.s 			page 14
 
 
  536              		.loc 1 64 9 view .LVU145
@@ -838,10 +838,10 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  581 0104 00000000 		.word	motor_ch
  582 0108 00000000 		.word	armed
  583              		.cfi_endproc
-ARM GAS  /tmp/ccSNKn4O.s 			page 15
+ARM GAS  /tmp/ccCT7jaq.s 			page 15
 
 
- 584              	.LFE135:
+ 584              	.LFE240:
  586              		.section	.text.Motor_SetAllPercent,"ax",%progbits
  587              		.align	1
  588              		.global	Motor_SetAllPercent
@@ -850,7 +850,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  591              		.thumb_func
  593              	Motor_SetAllPercent:
  594              	.LVL49:
- 595              	.LFB139:
+ 595              	.LFB244:
  129:Sensors/motor.c **** 
  130:Sensors/motor.c **** void Motor_SetAllPercent(float percent)
  131:Sensors/motor.c **** {
@@ -898,7 +898,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  633              	.L51:
  132:Sensors/motor.c ****     for (uint8_t m = 1; m <= MOTOR_COUNT; m++)
  634              		.loc 1 132 27 is_stmt 1 discriminator 1 view .LVU164
-ARM GAS  /tmp/ccSNKn4O.s 			page 16
+ARM GAS  /tmp/ccCT7jaq.s 			page 16
 
 
  635 001c 042C     		cmp	r4, #4
@@ -916,7 +916,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  646 0024 10BD     		pop	{r4, pc}
  647              		.loc 1 134 1 view .LVU167
  648              		.cfi_endproc
- 649              	.LFE139:
+ 649              	.LFE244:
  651              		.section	.text.Motor_Arm,"ax",%progbits
  652              		.align	1
  653              		.global	Motor_Arm
@@ -924,7 +924,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  655              		.thumb
  656              		.thumb_func
  658              	Motor_Arm:
- 659              	.LFB140:
+ 659              	.LFB245:
  135:Sensors/motor.c **** 
  136:Sensors/motor.c **** void Motor_Arm(void)
  137:Sensors/motor.c **** {
@@ -947,7 +947,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  674              	.L55:
  675 0008 00000000 		.word	armed
  676              		.cfi_endproc
- 677              	.LFE140:
+ 677              	.LFE245:
  679              		.section	.text.Motor_Disarm,"ax",%progbits
  680              		.align	1
  681              		.global	Motor_Disarm
@@ -955,10 +955,10 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  683              		.thumb
  684              		.thumb_func
  686              	Motor_Disarm:
- 687              	.LFB141:
+ 687              	.LFB246:
  140:Sensors/motor.c **** 
  141:Sensors/motor.c **** void Motor_Disarm(void)
-ARM GAS  /tmp/ccSNKn4O.s 			page 17
+ARM GAS  /tmp/ccCT7jaq.s 			page 17
 
 
  142:Sensors/motor.c **** {
@@ -1016,9 +1016,9 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  732              	.L61:
  733 0020 00000000 		.word	armed
  734              		.cfi_endproc
- 735              	.LFE141:
+ 735              	.LFE246:
  737              		.section	.text.Motor_IsArmed,"ax",%progbits
-ARM GAS  /tmp/ccSNKn4O.s 			page 18
+ARM GAS  /tmp/ccCT7jaq.s 			page 18
 
 
  738              		.align	1
@@ -1027,7 +1027,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  741              		.thumb
  742              		.thumb_func
  744              	Motor_IsArmed:
- 745              	.LFB142:
+ 745              	.LFB247:
  147:Sensors/motor.c **** 
  148:Sensors/motor.c **** uint8_t Motor_IsArmed(void)
  149:Sensors/motor.c **** {
@@ -1048,7 +1048,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  758              	.L64:
  759 0008 00000000 		.word	armed
  760              		.cfi_endproc
- 761              	.LFE142:
+ 761              	.LFE247:
  763              		.section	.text.Motor_UpdateRateHz,"ax",%progbits
  764              		.align	1
  765              		.global	Motor_UpdateRateHz
@@ -1056,7 +1056,7 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  767              		.thumb
  768              		.thumb_func
  770              	Motor_UpdateRateHz:
- 771              	.LFB143:
+ 771              	.LFB248:
  152:Sensors/motor.c **** 
  153:Sensors/motor.c **** uint32_t Motor_UpdateRateHz(void)
  154:Sensors/motor.c **** {
@@ -1073,12 +1073,12 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  779 0000 4FF47A70 		mov	r0, #1000
  780 0004 7047     		bx	lr
  781              		.cfi_endproc
- 782              	.LFE143:
+ 782              	.LFE248:
  784              		.section	.rodata.motor_ch,"a"
  785              		.align	2
  788              	motor_ch:
  789 0000 08000000 		.word	8
-ARM GAS  /tmp/ccSNKn4O.s 			page 19
+ARM GAS  /tmp/ccCT7jaq.s 			page 19
 
 
  790 0004 0C000000 		.word	12
@@ -1100,44 +1100,44 @@ ARM GAS  /tmp/ccSNKn4O.s 			page 1
  810              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
  811              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h"
  812              		.file 8 "Core/Inc/main.h"
-ARM GAS  /tmp/ccSNKn4O.s 			page 20
+ARM GAS  /tmp/ccCT7jaq.s 			page 20
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 motor.c
-     /tmp/ccSNKn4O.s:21     .text.motor_write_raw:00000000 $t
-     /tmp/ccSNKn4O.s:26     .text.motor_write_raw:00000000 motor_write_raw
-     /tmp/ccSNKn4O.s:75     .text.motor_write_raw:00000038 $d
-     /tmp/ccSNKn4O.s:788    .rodata.motor_ch:00000000 motor_ch
-     /tmp/ccSNKn4O.s:802    .bss.motor_tim:00000000 motor_tim
-     /tmp/ccSNKn4O.s:81     .text.Motor_SetUs:00000000 $t
-     /tmp/ccSNKn4O.s:87     .text.Motor_SetUs:00000000 Motor_SetUs
-     /tmp/ccSNKn4O.s:168    .text.Motor_SetUs:00000038 $d
-     /tmp/ccSNKn4O.s:796    .bss.armed:00000000 armed
-     /tmp/ccSNKn4O.s:173    .text.Motor_SetPercent:00000000 $t
-     /tmp/ccSNKn4O.s:179    .text.Motor_SetPercent:00000000 Motor_SetPercent
-     /tmp/ccSNKn4O.s:274    .text.Motor_SetPercent:00000064 $d
-     /tmp/ccSNKn4O.s:282    .text.Motor_SetAllUs:00000000 $t
-     /tmp/ccSNKn4O.s:288    .text.Motor_SetAllUs:00000000 Motor_SetAllUs
-     /tmp/ccSNKn4O.s:337    .text.Motor_Init:00000000 $t
-     /tmp/ccSNKn4O.s:343    .text.Motor_Init:00000000 Motor_Init
-     /tmp/ccSNKn4O.s:576    .text.Motor_Init:000000f0 $d
-     /tmp/ccSNKn4O.s:587    .text.Motor_SetAllPercent:00000000 $t
-     /tmp/ccSNKn4O.s:593    .text.Motor_SetAllPercent:00000000 Motor_SetAllPercent
-     /tmp/ccSNKn4O.s:652    .text.Motor_Arm:00000000 $t
-     /tmp/ccSNKn4O.s:658    .text.Motor_Arm:00000000 Motor_Arm
-     /tmp/ccSNKn4O.s:675    .text.Motor_Arm:00000008 $d
-     /tmp/ccSNKn4O.s:680    .text.Motor_Disarm:00000000 $t
-     /tmp/ccSNKn4O.s:686    .text.Motor_Disarm:00000000 Motor_Disarm
-     /tmp/ccSNKn4O.s:733    .text.Motor_Disarm:00000020 $d
-     /tmp/ccSNKn4O.s:738    .text.Motor_IsArmed:00000000 $t
-     /tmp/ccSNKn4O.s:744    .text.Motor_IsArmed:00000000 Motor_IsArmed
-     /tmp/ccSNKn4O.s:759    .text.Motor_IsArmed:00000008 $d
-     /tmp/ccSNKn4O.s:764    .text.Motor_UpdateRateHz:00000000 $t
-     /tmp/ccSNKn4O.s:770    .text.Motor_UpdateRateHz:00000000 Motor_UpdateRateHz
-     /tmp/ccSNKn4O.s:785    .rodata.motor_ch:00000000 $d
-     /tmp/ccSNKn4O.s:797    .bss.armed:00000000 $d
-     /tmp/ccSNKn4O.s:799    .bss.motor_tim:00000000 $d
+     /tmp/ccCT7jaq.s:21     .text.motor_write_raw:00000000 $t
+     /tmp/ccCT7jaq.s:26     .text.motor_write_raw:00000000 motor_write_raw
+     /tmp/ccCT7jaq.s:75     .text.motor_write_raw:00000038 $d
+     /tmp/ccCT7jaq.s:788    .rodata.motor_ch:00000000 motor_ch
+     /tmp/ccCT7jaq.s:802    .bss.motor_tim:00000000 motor_tim
+     /tmp/ccCT7jaq.s:81     .text.Motor_SetUs:00000000 $t
+     /tmp/ccCT7jaq.s:87     .text.Motor_SetUs:00000000 Motor_SetUs
+     /tmp/ccCT7jaq.s:168    .text.Motor_SetUs:00000038 $d
+     /tmp/ccCT7jaq.s:796    .bss.armed:00000000 armed
+     /tmp/ccCT7jaq.s:173    .text.Motor_SetPercent:00000000 $t
+     /tmp/ccCT7jaq.s:179    .text.Motor_SetPercent:00000000 Motor_SetPercent
+     /tmp/ccCT7jaq.s:274    .text.Motor_SetPercent:00000064 $d
+     /tmp/ccCT7jaq.s:282    .text.Motor_SetAllUs:00000000 $t
+     /tmp/ccCT7jaq.s:288    .text.Motor_SetAllUs:00000000 Motor_SetAllUs
+     /tmp/ccCT7jaq.s:337    .text.Motor_Init:00000000 $t
+     /tmp/ccCT7jaq.s:343    .text.Motor_Init:00000000 Motor_Init
+     /tmp/ccCT7jaq.s:576    .text.Motor_Init:000000f0 $d
+     /tmp/ccCT7jaq.s:587    .text.Motor_SetAllPercent:00000000 $t
+     /tmp/ccCT7jaq.s:593    .text.Motor_SetAllPercent:00000000 Motor_SetAllPercent
+     /tmp/ccCT7jaq.s:652    .text.Motor_Arm:00000000 $t
+     /tmp/ccCT7jaq.s:658    .text.Motor_Arm:00000000 Motor_Arm
+     /tmp/ccCT7jaq.s:675    .text.Motor_Arm:00000008 $d
+     /tmp/ccCT7jaq.s:680    .text.Motor_Disarm:00000000 $t
+     /tmp/ccCT7jaq.s:686    .text.Motor_Disarm:00000000 Motor_Disarm
+     /tmp/ccCT7jaq.s:733    .text.Motor_Disarm:00000020 $d
+     /tmp/ccCT7jaq.s:738    .text.Motor_IsArmed:00000000 $t
+     /tmp/ccCT7jaq.s:744    .text.Motor_IsArmed:00000000 Motor_IsArmed
+     /tmp/ccCT7jaq.s:759    .text.Motor_IsArmed:00000008 $d
+     /tmp/ccCT7jaq.s:764    .text.Motor_UpdateRateHz:00000000 $t
+     /tmp/ccCT7jaq.s:770    .text.Motor_UpdateRateHz:00000000 Motor_UpdateRateHz
+     /tmp/ccCT7jaq.s:785    .rodata.motor_ch:00000000 $d
+     /tmp/ccCT7jaq.s:797    .bss.armed:00000000 $d
+     /tmp/ccCT7jaq.s:799    .bss.motor_tim:00000000 $d
 
 UNDEFINED SYMBOLS
 HAL_GPIO_Init
