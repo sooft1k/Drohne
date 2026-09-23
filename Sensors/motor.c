@@ -11,10 +11,11 @@ static const uint32_t motor_ch[MOTOR_COUNT] = {
     TIM_CHANNEL_2  /* Motor 4 -> PA7 */
 };
 
-/* Schreibt direkt ins Timer-Register, ohne Pruefung. Nur intern! */
-static void motor_write_raw(uint8_t idx, uint16_t us)
+/* Schreibt direkt ins Timer-Register, ohne Pruefung. Nur intern!
+ * Erwartet Timer-Ticks, nicht Mikrosekunden. */
+static void motor_write_raw(uint8_t idx, uint32_t ticks)
 {
-    __HAL_TIM_SET_COMPARE(motor_tim, motor_ch[idx], us);
+    __HAL_TIM_SET_COMPARE(motor_tim, motor_ch[idx], ticks);
 }
 
 void Motor_Init(TIM_HandleTypeDef *htim)
@@ -39,11 +40,13 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
     HAL_GPIO_Init(GPIOA, &g);
 
-    /* Timer-Basis: 1 MHz Tick (1 us), 20 ms Periode (50 Hz) */
+    /* Timer-Basis: Werte kommen aus motor.h, je nach Protokoll.
+     * Oneshot125: 42 MHz Tick, 1 kHz Wiederholrate, Pulse 125..250 us
+     * PWM:         1 MHz Tick, 50 Hz Wiederholrate, Pulse 1000..2000 us */
     motor_tim->Instance = TIM3;
-    motor_tim->Init.Prescaler = 84 - 1;
+    motor_tim->Init.Prescaler = MOTOR_TIM_PRESCALER;
     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
-    motor_tim->Init.Period = 20000 - 1;
+    motor_tim->Init.Period = MOTOR_TIM_PERIOD;
     motor_tim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     motor_tim->Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     if (HAL_TIM_PWM_Init(motor_tim) != HAL_OK)
@@ -52,7 +55,7 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     /* Alle vier Kanaele gleich konfigurieren */
     TIM_OC_InitTypeDef oc = {0};
     oc.OCMode = TIM_OCMODE_PWM1;
-    oc.Pulse = MOTOR_US_IDLE; /* SICHER: 1000 us = Stopp */
+    oc.Pulse = (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US; /* SICHER: Stopp */
     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
     oc.OCFastMode = TIM_OCFAST_DISABLE;
 
@@ -77,7 +80,7 @@ void Motor_SetUs(uint8_t motor, uint16_t us)
     /* Sicherheit: ohne arm immer Stopp */
     if (!armed)
     {
-        motor_write_raw(idx, MOTOR_US_IDLE);
+        motor_write_raw(idx, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US);
         return;
     }
 
@@ -86,19 +89,36 @@ void Motor_SetUs(uint8_t motor, uint16_t us)
     if (us > MOTOR_US_MAX)
         us = MOTOR_US_MAX;
 
-    motor_write_raw(idx, us);
+    motor_write_raw(idx, (uint32_t)us * MOTOR_TICKS_PER_US);
 }
 
 void Motor_SetPercent(uint8_t motor, float percent)
 {
+    if (motor < 1 || motor > MOTOR_COUNT)
+        return;
+
     if (percent < 0.0f)
         percent = 0.0f;
     if (percent > 100.0f)
         percent = 100.0f;
 
-    uint16_t us = (uint16_t)(MOTOR_US_MIN +
-                             (percent / 100.0f) * (MOTOR_US_MAX - MOTOR_US_MIN));
-    Motor_SetUs(motor, us);
+    uint8_t idx = motor - 1;
+
+    if (!armed)
+    {
+        motor_write_raw(idx, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US);
+        return;
+    }
+
+    /* Direkt in Ticks rechnen statt ueber ganze Mikrosekunden.
+     * Bei Oneshot125 sind 125 us Stellbereich nur 125 ganze Schritte -
+     * in Ticks sind es 5250, also fein genug fuer die Regelung. */
+    const uint32_t t_min = (uint32_t)MOTOR_US_MIN * MOTOR_TICKS_PER_US;
+    const uint32_t t_max = (uint32_t)MOTOR_US_MAX * MOTOR_TICKS_PER_US;
+
+    uint32_t ticks = t_min + (uint32_t)((percent / 100.0f) * (float)(t_max - t_min));
+
+    motor_write_raw(idx, ticks);
 }
 
 void Motor_SetAllUs(uint16_t us)
@@ -122,10 +142,16 @@ void Motor_Disarm(void)
 {
     armed = 0;
     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
-        motor_write_raw(i, MOTOR_US_IDLE); /* sofort Stopp */
+        motor_write_raw(i, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US); /* sofort Stopp */
 }
 
 uint8_t Motor_IsArmed(void)
 {
     return armed;
+}
+
+uint32_t Motor_UpdateRateHz(void)
+{
+    /* Timer-Takt / (Periode + 1) */
+    return (84000000UL / (MOTOR_TIM_PRESCALER + 1)) / (MOTOR_TIM_PERIOD + 1);
 }

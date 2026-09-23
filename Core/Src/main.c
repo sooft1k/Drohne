@@ -10,7 +10,7 @@
 I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
 TIM_HandleTypeDef htim2; /* Regeltakt 1 kHz */
-TIM_HandleTypeDef htim3; /* Motor-PWM */
+TIM_HandleTypeDef htim3; /* Motorsignal */
 
 uint8_t who = 0;
 uint8_t mpu_ok = 0;
@@ -64,10 +64,11 @@ int main(void)
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
-    printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, 50 Hz, Start 1000 us (disarmed)\r\n");
+    printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Start %u us (disarmed)\r\n",
+           Motor_UpdateRateHz(), MOTOR_US_IDLE);
     printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Modus: ANGLE\r\n");
-    printf("Befehle: arm | disarm | status | loop | pid | angle | rate |\r\n");
-    printf("         stream on/off | 0-100 | m1..m4 <wert> | rrp/arp <wert>\r\n");
+    printf("Befehle: arm | disarm | status | loop | pid | mix | angle | rate |\r\n");
+    printf("         stream on/off | t <gas> | 0-100 | m1..m4 <wert> | rrp/arp <wert>\r\n");
 
     who = 0;
     if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
@@ -132,10 +133,6 @@ int main(void)
         Control_Update(&sensor, DT, &out_roll, &out_pitch, &out_yaw);
 
         Mixer_Update(setpoint.throttle, out_roll, out_pitch, out_yaw);
-        /* Noch ungenutzt - in Schritt 3 holt der Mixer die Werte ab */
-        (void)out_roll;
-        (void)out_pitch;
-        (void)out_yaw;
 
         /* ===== ENDE REGELZYKLUS ===== */
 
