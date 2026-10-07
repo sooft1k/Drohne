@@ -1,5 +1,6 @@
 #include "main.h"
 
+extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim2;
 
@@ -36,6 +37,11 @@ void UsageFault_Handler(void)
 void SVC_Handler(void) {}
 void DebugMon_Handler(void) {}
 void PendSV_Handler(void) {}
+
+void USART1_IRQHandler(void)
+{
+    HAL_UART_IRQHandler(&huart1);
+}
 
 void USART2_IRQHandler(void)
 {

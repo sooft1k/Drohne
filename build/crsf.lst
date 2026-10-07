@@ -1,0 +1,1306 @@
+ARM GAS  /tmp/cc3LQbOH.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"crsf.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/crsf.c"
+  20              		.section	.text.crc8,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	crc8:
+  27              	.LVL0:
+  28              	.LFB239:
+   1:Sensors/crsf.c **** #include "crsf.h"
+   2:Sensors/crsf.c **** #include <string.h>
+   3:Sensors/crsf.c **** 
+   4:Sensors/crsf.c **** #define CRSF_TYPE_RC_CHANNELS 0x16
+   5:Sensors/crsf.c **** 
+   6:Sensors/crsf.c **** static UART_HandleTypeDef *crsf_uart = 0;
+   7:Sensors/crsf.c **** static uint8_t rx_byte;
+   8:Sensors/crsf.c **** 
+   9:Sensors/crsf.c **** /* Empfangspuffer und Zustandsmaschine */
+  10:Sensors/crsf.c **** static uint8_t buf[CRSF_FRAME_MAX];
+  11:Sensors/crsf.c **** static uint8_t pos = 0;
+  12:Sensors/crsf.c **** static uint8_t frame_len = 0;
+  13:Sensors/crsf.c **** 
+  14:Sensors/crsf.c **** static volatile uint16_t ch_us[CRSF_CHANNELS];
+  15:Sensors/crsf.c **** static volatile uint32_t last_frame_ms = 0;
+  16:Sensors/crsf.c **** static volatile uint32_t frame_count = 0;
+  17:Sensors/crsf.c **** static volatile uint32_t error_count = 0;
+  18:Sensors/crsf.c **** 
+  19:Sensors/crsf.c **** /* CRC8 mit Polynom 0xD5, so schreibt es CRSF vor. */
+  20:Sensors/crsf.c **** static uint8_t crc8(const uint8_t *data, uint8_t len)
+  21:Sensors/crsf.c **** {
+  29              		.loc 1 21 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		.loc 1 21 1 is_stmt 0 view .LVU1
+  34 0000 00B5     		push	{lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 4
+  37              		.cfi_offset 14, -4
+ARM GAS  /tmp/cc3LQbOH.s 			page 2
+
+
+  38 0002 8646     		mov	lr, r0
+  22:Sensors/crsf.c ****     uint8_t crc = 0;
+  39              		.loc 1 22 5 is_stmt 1 view .LVU2
+  40              	.LVL1:
+  23:Sensors/crsf.c ****     for (uint8_t i = 0; i < len; i++)
+  41              		.loc 1 23 5 view .LVU3
+  42              	.LBB2:
+  43              		.loc 1 23 10 view .LVU4
+  44              		.loc 1 23 18 is_stmt 0 view .LVU5
+  45 0004 4FF0000C 		mov	ip, #0
+  46              	.LBE2:
+  22:Sensors/crsf.c ****     uint8_t crc = 0;
+  47              		.loc 1 22 13 view .LVU6
+  48 0008 6046     		mov	r0, ip
+  49              	.LVL2:
+  50              	.LBB5:
+  51              		.loc 1 23 5 view .LVU7
+  52 000a 11E0     		b	.L2
+  53              	.LVL3:
+  54              	.L4:
+  55              	.LBB3:
+  24:Sensors/crsf.c ****     {
+  25:Sensors/crsf.c ****         crc ^= data[i];
+  26:Sensors/crsf.c ****         for (uint8_t b = 0; b < 8; b++)
+  27:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+  56              		.loc 1 27 17 discriminator 2 view .LVU8
+  57 000c 4000     		lsls	r0, r0, #1
+  58              	.LVL4:
+  59              		.loc 1 27 17 discriminator 2 view .LVU9
+  60 000e C0B2     		uxtb	r0, r0
+  61              	.LVL5:
+  62              	.L5:
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+  63              		.loc 1 26 37 is_stmt 1 discriminator 2 view .LVU10
+  64 0010 0133     		adds	r3, r3, #1
+  65              	.LVL6:
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+  66              		.loc 1 26 37 is_stmt 0 discriminator 2 view .LVU11
+  67 0012 DBB2     		uxtb	r3, r3
+  68              	.LVL7:
+  69              	.L3:
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+  70              		.loc 1 26 31 is_stmt 1 discriminator 1 view .LVU12
+  71 0014 072B     		cmp	r3, #7
+  72 0016 07D8     		bhi	.L9
+  73              		.loc 1 27 13 view .LVU13
+  74              		.loc 1 27 32 is_stmt 0 view .LVU14
+  75 0018 42B2     		sxtb	r2, r0
+  76              		.loc 1 27 17 view .LVU15
+  77 001a 002A     		cmp	r2, #0
+  78 001c F6DA     		bge	.L4
+  79              		.loc 1 27 55 discriminator 1 view .LVU16
+  80 001e 5200     		lsls	r2, r2, #1
+  81 0020 82F0D502 		eor	r2, r2, #213
+  82              		.loc 1 27 17 discriminator 1 view .LVU17
+  83 0024 D0B2     		uxtb	r0, r2
+  84              	.LVL8:
+ARM GAS  /tmp/cc3LQbOH.s 			page 3
+
+
+  85              		.loc 1 27 17 discriminator 1 view .LVU18
+  86 0026 F3E7     		b	.L5
+  87              	.LVL9:
+  88              	.L9:
+  89              		.loc 1 27 17 discriminator 1 view .LVU19
+  90              	.LBE3:
+  23:Sensors/crsf.c ****     for (uint8_t i = 0; i < len; i++)
+  91              		.loc 1 23 35 is_stmt 1 discriminator 2 view .LVU20
+  92 0028 0CF1010C 		add	ip, ip, #1
+  93              	.LVL10:
+  23:Sensors/crsf.c ****     for (uint8_t i = 0; i < len; i++)
+  94              		.loc 1 23 35 is_stmt 0 discriminator 2 view .LVU21
+  95 002c 5FFA8CFC 		uxtb	ip, ip
+  96              	.LVL11:
+  97              	.L2:
+  23:Sensors/crsf.c ****     for (uint8_t i = 0; i < len; i++)
+  98              		.loc 1 23 27 is_stmt 1 discriminator 1 view .LVU22
+  99 0030 8C45     		cmp	ip, r1
+ 100 0032 04D2     		bcs	.L10
+  25:Sensors/crsf.c ****         for (uint8_t b = 0; b < 8; b++)
+ 101              		.loc 1 25 9 view .LVU23
+  25:Sensors/crsf.c ****         for (uint8_t b = 0; b < 8; b++)
+ 102              		.loc 1 25 20 is_stmt 0 view .LVU24
+ 103 0034 1EF80C30 		ldrb	r3, [lr, ip]	@ zero_extendqisi2
+  25:Sensors/crsf.c ****         for (uint8_t b = 0; b < 8; b++)
+ 104              		.loc 1 25 13 view .LVU25
+ 105 0038 5840     		eors	r0, r0, r3
+ 106              	.LVL12:
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+ 107              		.loc 1 26 9 is_stmt 1 view .LVU26
+ 108              	.LBB4:
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+ 109              		.loc 1 26 14 view .LVU27
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+ 110              		.loc 1 26 22 is_stmt 0 view .LVU28
+ 111 003a 0023     		movs	r3, #0
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+ 112              		.loc 1 26 9 view .LVU29
+ 113 003c EAE7     		b	.L3
+ 114              	.LVL13:
+ 115              	.L10:
+  26:Sensors/crsf.c ****             crc = (crc & 0x80) ? (uint8_t)((crc << 1) ^ 0xD5) : (uint8_t)(crc << 1);
+ 116              		.loc 1 26 9 view .LVU30
+ 117              	.LBE4:
+ 118              	.LBE5:
+  28:Sensors/crsf.c ****     }
+  29:Sensors/crsf.c ****     return crc;
+ 119              		.loc 1 29 5 is_stmt 1 view .LVU31
+  30:Sensors/crsf.c **** }
+ 120              		.loc 1 30 1 is_stmt 0 view .LVU32
+ 121 003e 5DF804FB 		ldr	pc, [sp], #4
+ 122              		.cfi_endproc
+ 123              	.LFE239:
+ 125              		.section	.text.to_us,"ax",%progbits
+ 126              		.align	1
+ 127              		.syntax unified
+ 128              		.thumb
+ARM GAS  /tmp/cc3LQbOH.s 			page 4
+
+
+ 129              		.thumb_func
+ 131              	to_us:
+ 132              	.LVL14:
+ 133              	.LFB240:
+  31:Sensors/crsf.c **** 
+  32:Sensors/crsf.c **** /* Rohwert 172..1811 in Mikrosekunden 988..2012 umrechnen */
+  33:Sensors/crsf.c **** static uint16_t to_us(uint16_t raw)
+  34:Sensors/crsf.c **** {
+ 134              		.loc 1 34 1 is_stmt 1 view -0
+ 135              		.cfi_startproc
+ 136              		@ args = 0, pretend = 0, frame = 0
+ 137              		@ frame_needed = 0, uses_anonymous_args = 0
+ 138              		@ link register save eliminated.
+  35:Sensors/crsf.c ****     int32_t us = ((int32_t)raw * 1024) / 1639 + 881;
+ 139              		.loc 1 35 5 view .LVU34
+ 140              		.loc 1 35 32 is_stmt 0 view .LVU35
+ 141 0000 8002     		lsls	r0, r0, #10
+ 142              	.LVL15:
+ 143              		.loc 1 35 40 view .LVU36
+ 144 0002 0A4B     		ldr	r3, .L15
+ 145 0004 83FB0030 		smull	r3, r0, r3, r0
+ 146 0008 C011     		asrs	r0, r0, #7
+ 147              		.loc 1 35 13 view .LVU37
+ 148 000a 00F27130 		addw	r0, r0, #881
+ 149              	.LVL16:
+  36:Sensors/crsf.c ****     if (us < 800)
+ 150              		.loc 1 36 5 is_stmt 1 view .LVU38
+ 151              		.loc 1 36 8 is_stmt 0 view .LVU39
+ 152 000e B0F5487F 		cmp	r0, #800
+ 153 0012 06DB     		blt	.L13
+  37:Sensors/crsf.c ****         us = 800;
+  38:Sensors/crsf.c ****     if (us > 2200)
+ 154              		.loc 1 38 5 is_stmt 1 view .LVU40
+ 155              		.loc 1 38 8 is_stmt 0 view .LVU41
+ 156 0014 40F69803 		movw	r3, #2200
+ 157 0018 9842     		cmp	r0, r3
+ 158 001a 04DD     		ble	.L12
+  39:Sensors/crsf.c ****         us = 2200;
+ 159              		.loc 1 39 12 view .LVU42
+ 160 001c 40F69800 		movw	r0, #2200
+ 161              	.LVL17:
+ 162              		.loc 1 39 12 view .LVU43
+ 163 0020 01E0     		b	.L12
+ 164              	.LVL18:
+ 165              	.L13:
+  37:Sensors/crsf.c ****         us = 800;
+ 166              		.loc 1 37 12 view .LVU44
+ 167 0022 4FF44870 		mov	r0, #800
+ 168              	.LVL19:
+ 169              	.L12:
+  40:Sensors/crsf.c ****     return (uint16_t)us;
+ 170              		.loc 1 40 5 is_stmt 1 view .LVU45
+  41:Sensors/crsf.c **** }
+ 171              		.loc 1 41 1 is_stmt 0 view .LVU46
+ 172 0026 80B2     		uxth	r0, r0
+ 173              	.LVL20:
+ 174              		.loc 1 41 1 view .LVU47
+ARM GAS  /tmp/cc3LQbOH.s 			page 5
+
+
+ 175 0028 7047     		bx	lr
+ 176              	.L16:
+ 177 002a 00BF     		.align	2
+ 178              	.L15:
+ 179 002c 2D20FE13 		.word	335421485
+ 180              		.cfi_endproc
+ 181              	.LFE240:
+ 183              		.section	.text.unpack_channels,"ax",%progbits
+ 184              		.align	1
+ 185              		.syntax unified
+ 186              		.thumb
+ 187              		.thumb_func
+ 189              	unpack_channels:
+ 190              	.LVL21:
+ 191              	.LFB241:
+  42:Sensors/crsf.c **** 
+  43:Sensors/crsf.c **** /* 22 Bytes enthalten 16 Kanaele zu je 11 Bit, luecklos aneinandergereiht. */
+  44:Sensors/crsf.c **** static void unpack_channels(const uint8_t *p)
+  45:Sensors/crsf.c **** {
+ 192              		.loc 1 45 1 is_stmt 1 view -0
+ 193              		.cfi_startproc
+ 194              		@ args = 0, pretend = 0, frame = 0
+ 195              		@ frame_needed = 0, uses_anonymous_args = 0
+ 196              		.loc 1 45 1 is_stmt 0 view .LVU49
+ 197 0000 2DE9F843 		push	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 198              	.LCFI1:
+ 199              		.cfi_def_cfa_offset 32
+ 200              		.cfi_offset 3, -32
+ 201              		.cfi_offset 4, -28
+ 202              		.cfi_offset 5, -24
+ 203              		.cfi_offset 6, -20
+ 204              		.cfi_offset 7, -16
+ 205              		.cfi_offset 8, -12
+ 206              		.cfi_offset 9, -8
+ 207              		.cfi_offset 14, -4
+ 208 0004 8046     		mov	r8, r0
+  46:Sensors/crsf.c ****     uint32_t bits = 0;
+ 209              		.loc 1 46 5 is_stmt 1 view .LVU50
+ 210              	.LVL22:
+  47:Sensors/crsf.c ****     uint8_t nbits = 0;
+ 211              		.loc 1 47 5 view .LVU51
+  48:Sensors/crsf.c ****     uint8_t idx = 0;
+ 212              		.loc 1 48 5 view .LVU52
+  49:Sensors/crsf.c **** 
+  50:Sensors/crsf.c ****     for (uint8_t i = 0; i < 22 && idx < CRSF_CHANNELS; i++)
+ 213              		.loc 1 50 5 view .LVU53
+ 214              	.LBB6:
+ 215              		.loc 1 50 10 view .LVU54
+ 216              		.loc 1 50 18 is_stmt 0 view .LVU55
+ 217 0006 0027     		movs	r7, #0
+ 218              	.LBE6:
+  48:Sensors/crsf.c ****     uint8_t idx = 0;
+ 219              		.loc 1 48 13 view .LVU56
+ 220 0008 B946     		mov	r9, r7
+  47:Sensors/crsf.c ****     uint8_t idx = 0;
+ 221              		.loc 1 47 13 view .LVU57
+ 222 000a 3C46     		mov	r4, r7
+ARM GAS  /tmp/cc3LQbOH.s 			page 6
+
+
+  46:Sensors/crsf.c ****     uint8_t nbits = 0;
+ 223              		.loc 1 46 14 view .LVU58
+ 224 000c 3E46     		mov	r6, r7
+ 225              	.LBB7:
+ 226              		.loc 1 50 5 view .LVU59
+ 227 000e 14E0     		b	.L18
+ 228              	.LVL23:
+ 229              	.L21:
+  51:Sensors/crsf.c ****     {
+  52:Sensors/crsf.c ****         bits |= ((uint32_t)p[i]) << nbits;
+  53:Sensors/crsf.c ****         nbits += 8;
+  54:Sensors/crsf.c ****         while (nbits >= 11 && idx < CRSF_CHANNELS)
+  55:Sensors/crsf.c ****         {
+  56:Sensors/crsf.c ****             ch_us[idx++] = to_us((uint16_t)(bits & 0x7FF));
+ 230              		.loc 1 56 13 is_stmt 1 view .LVU60
+ 231              		.loc 1 56 22 is_stmt 0 view .LVU61
+ 232 0010 09F10105 		add	r5, r9, #1
+ 233 0014 EDB2     		uxtb	r5, r5
+ 234              	.LVL24:
+ 235              		.loc 1 56 28 view .LVU62
+ 236 0016 C6F30A00 		ubfx	r0, r6, #0, #11
+ 237 001a FFF7FEFF 		bl	to_us
+ 238              	.LVL25:
+ 239              		.loc 1 56 26 discriminator 1 view .LVU63
+ 240 001e 0E4B     		ldr	r3, .L25
+ 241 0020 23F81900 		strh	r0, [r3, r9, lsl #1]	@ movhi
+  57:Sensors/crsf.c ****             bits >>= 11;
+ 242              		.loc 1 57 13 is_stmt 1 view .LVU64
+ 243              		.loc 1 57 18 is_stmt 0 view .LVU65
+ 244 0024 F60A     		lsrs	r6, r6, #11
+ 245              	.LVL26:
+  58:Sensors/crsf.c ****             nbits -= 11;
+ 246              		.loc 1 58 13 is_stmt 1 view .LVU66
+ 247              		.loc 1 58 19 is_stmt 0 view .LVU67
+ 248 0026 0B3C     		subs	r4, r4, #11
+ 249              	.LVL27:
+ 250              		.loc 1 58 19 view .LVU68
+ 251 0028 E4B2     		uxtb	r4, r4
+ 252              	.LVL28:
+  56:Sensors/crsf.c ****             bits >>= 11;
+ 253              		.loc 1 56 22 view .LVU69
+ 254 002a A946     		mov	r9, r5
+ 255              	.LVL29:
+ 256              	.L19:
+  54:Sensors/crsf.c ****         {
+ 257              		.loc 1 54 28 is_stmt 1 view .LVU70
+ 258 002c 0A2C     		cmp	r4, #10
+ 259 002e 02D9     		bls	.L20
+  54:Sensors/crsf.c ****         {
+ 260              		.loc 1 54 28 is_stmt 0 discriminator 1 view .LVU71
+ 261 0030 B9F10F0F 		cmp	r9, #15
+ 262 0034 ECD9     		bls	.L21
+ 263              	.L20:
+  50:Sensors/crsf.c ****     {
+ 264              		.loc 1 50 57 is_stmt 1 discriminator 2 view .LVU72
+ 265 0036 0137     		adds	r7, r7, #1
+ 266              	.LVL30:
+ARM GAS  /tmp/cc3LQbOH.s 			page 7
+
+
+  50:Sensors/crsf.c ****     {
+ 267              		.loc 1 50 57 is_stmt 0 discriminator 2 view .LVU73
+ 268 0038 FFB2     		uxtb	r7, r7
+ 269              	.LVL31:
+ 270              	.L18:
+  50:Sensors/crsf.c ****     {
+ 271              		.loc 1 50 32 is_stmt 1 discriminator 1 view .LVU74
+ 272 003a 152F     		cmp	r7, #21
+ 273 003c 09D8     		bhi	.L17
+  50:Sensors/crsf.c ****     {
+ 274              		.loc 1 50 32 is_stmt 0 discriminator 3 view .LVU75
+ 275 003e B9F10F0F 		cmp	r9, #15
+ 276 0042 06D8     		bhi	.L17
+  52:Sensors/crsf.c ****         nbits += 8;
+ 277              		.loc 1 52 9 is_stmt 1 view .LVU76
+  52:Sensors/crsf.c ****         nbits += 8;
+ 278              		.loc 1 52 29 is_stmt 0 view .LVU77
+ 279 0044 18F80730 		ldrb	r3, [r8, r7]	@ zero_extendqisi2
+  52:Sensors/crsf.c ****         nbits += 8;
+ 280              		.loc 1 52 34 view .LVU78
+ 281 0048 A340     		lsls	r3, r3, r4
+  52:Sensors/crsf.c ****         nbits += 8;
+ 282              		.loc 1 52 14 view .LVU79
+ 283 004a 1E43     		orrs	r6, r6, r3
+ 284              	.LVL32:
+  53:Sensors/crsf.c ****         while (nbits >= 11 && idx < CRSF_CHANNELS)
+ 285              		.loc 1 53 9 is_stmt 1 view .LVU80
+  53:Sensors/crsf.c ****         while (nbits >= 11 && idx < CRSF_CHANNELS)
+ 286              		.loc 1 53 15 is_stmt 0 view .LVU81
+ 287 004c 0834     		adds	r4, r4, #8
+ 288              	.LVL33:
+  53:Sensors/crsf.c ****         while (nbits >= 11 && idx < CRSF_CHANNELS)
+ 289              		.loc 1 53 15 view .LVU82
+ 290 004e E4B2     		uxtb	r4, r4
+ 291              	.LVL34:
+  54:Sensors/crsf.c ****         {
+ 292              		.loc 1 54 9 is_stmt 1 view .LVU83
+  54:Sensors/crsf.c ****         {
+ 293              		.loc 1 54 15 is_stmt 0 view .LVU84
+ 294 0050 ECE7     		b	.L19
+ 295              	.L17:
+  54:Sensors/crsf.c ****         {
+ 296              		.loc 1 54 15 view .LVU85
+ 297              	.LBE7:
+  59:Sensors/crsf.c ****         }
+  60:Sensors/crsf.c ****     }
+  61:Sensors/crsf.c **** }
+ 298              		.loc 1 61 1 view .LVU86
+ 299 0052 BDE8F883 		pop	{r3, r4, r5, r6, r7, r8, r9, pc}
+ 300              	.LVL35:
+ 301              	.L26:
+ 302              		.loc 1 61 1 view .LVU87
+ 303 0056 00BF     		.align	2
+ 304              	.L25:
+ 305 0058 00000000 		.word	ch_us
+ 306              		.cfi_endproc
+ 307              	.LFE241:
+ARM GAS  /tmp/cc3LQbOH.s 			page 8
+
+
+ 309              		.section	.text.CRSF_Init,"ax",%progbits
+ 310              		.align	1
+ 311              		.global	CRSF_Init
+ 312              		.syntax unified
+ 313              		.thumb
+ 314              		.thumb_func
+ 316              	CRSF_Init:
+ 317              	.LVL36:
+ 318              	.LFB242:
+  62:Sensors/crsf.c **** 
+  63:Sensors/crsf.c **** void CRSF_Init(UART_HandleTypeDef *huart)
+  64:Sensors/crsf.c **** {
+ 319              		.loc 1 64 1 is_stmt 1 view -0
+ 320              		.cfi_startproc
+ 321              		@ args = 0, pretend = 0, frame = 0
+ 322              		@ frame_needed = 0, uses_anonymous_args = 0
+ 323              		.loc 1 64 1 is_stmt 0 view .LVU89
+ 324 0000 08B5     		push	{r3, lr}
+ 325              	.LCFI2:
+ 326              		.cfi_def_cfa_offset 8
+ 327              		.cfi_offset 3, -8
+ 328              		.cfi_offset 14, -4
+  65:Sensors/crsf.c ****     crsf_uart = huart;
+ 329              		.loc 1 65 5 is_stmt 1 view .LVU90
+ 330              		.loc 1 65 15 is_stmt 0 view .LVU91
+ 331 0002 104B     		ldr	r3, .L31
+ 332 0004 1860     		str	r0, [r3]
+  66:Sensors/crsf.c ****     pos = 0;
+ 333              		.loc 1 66 5 is_stmt 1 view .LVU92
+ 334              		.loc 1 66 9 is_stmt 0 view .LVU93
+ 335 0006 0023     		movs	r3, #0
+ 336 0008 0F4A     		ldr	r2, .L31+4
+ 337 000a 1370     		strb	r3, [r2]
+  67:Sensors/crsf.c ****     frame_len = 0;
+ 338              		.loc 1 67 5 is_stmt 1 view .LVU94
+ 339              		.loc 1 67 15 is_stmt 0 view .LVU95
+ 340 000c 0F4A     		ldr	r2, .L31+8
+ 341 000e 1370     		strb	r3, [r2]
+  68:Sensors/crsf.c ****     frame_count = 0;
+ 342              		.loc 1 68 5 is_stmt 1 view .LVU96
+ 343              		.loc 1 68 17 is_stmt 0 view .LVU97
+ 344 0010 0F4A     		ldr	r2, .L31+12
+ 345 0012 1360     		str	r3, [r2]
+  69:Sensors/crsf.c ****     error_count = 0;
+ 346              		.loc 1 69 5 is_stmt 1 view .LVU98
+ 347              		.loc 1 69 17 is_stmt 0 view .LVU99
+ 348 0014 0F4A     		ldr	r2, .L31+16
+ 349 0016 1360     		str	r3, [r2]
+  70:Sensors/crsf.c ****     last_frame_ms = 0;
+ 350              		.loc 1 70 5 is_stmt 1 view .LVU100
+ 351              		.loc 1 70 19 is_stmt 0 view .LVU101
+ 352 0018 0F4A     		ldr	r2, .L31+20
+ 353 001a 1360     		str	r3, [r2]
+  71:Sensors/crsf.c **** 
+  72:Sensors/crsf.c ****     /* Startwerte: alles Mitte, Gas ganz unten.
+  73:Sensors/crsf.c ****      * Falls nie ein Paket kommt, steht damit nichts auf Vollgas. */
+  74:Sensors/crsf.c ****     for (uint8_t i = 0; i < CRSF_CHANNELS; i++)
+ARM GAS  /tmp/cc3LQbOH.s 			page 9
+
+
+ 354              		.loc 1 74 5 is_stmt 1 view .LVU102
+ 355              	.LBB8:
+ 356              		.loc 1 74 10 view .LVU103
+ 357              	.LVL37:
+ 358              		.loc 1 74 5 is_stmt 0 view .LVU104
+ 359 001c 06E0     		b	.L28
+ 360              	.LVL38:
+ 361              	.L29:
+  75:Sensors/crsf.c ****         ch_us[i] = 1500;
+ 362              		.loc 1 75 9 is_stmt 1 view .LVU105
+ 363              		.loc 1 75 18 is_stmt 0 view .LVU106
+ 364 001e 0F4A     		ldr	r2, .L31+24
+ 365 0020 40F2DC51 		movw	r1, #1500
+ 366 0024 22F81310 		strh	r1, [r2, r3, lsl #1]	@ movhi
+  74:Sensors/crsf.c ****         ch_us[i] = 1500;
+ 367              		.loc 1 74 45 is_stmt 1 discriminator 3 view .LVU107
+ 368 0028 0133     		adds	r3, r3, #1
+ 369              	.LVL39:
+  74:Sensors/crsf.c ****         ch_us[i] = 1500;
+ 370              		.loc 1 74 45 is_stmt 0 discriminator 3 view .LVU108
+ 371 002a DBB2     		uxtb	r3, r3
+ 372              	.LVL40:
+ 373              	.L28:
+  74:Sensors/crsf.c ****         ch_us[i] = 1500;
+ 374              		.loc 1 74 27 is_stmt 1 discriminator 1 view .LVU109
+ 375 002c 0F2B     		cmp	r3, #15
+ 376 002e F6D9     		bls	.L29
+ 377              	.LBE8:
+  76:Sensors/crsf.c ****     ch_us[2] = 988;
+ 378              		.loc 1 76 5 view .LVU110
+ 379              		.loc 1 76 14 is_stmt 0 view .LVU111
+ 380 0030 0A4B     		ldr	r3, .L31+24
+ 381              	.LVL41:
+ 382              		.loc 1 76 14 view .LVU112
+ 383 0032 4FF47772 		mov	r2, #988
+ 384 0036 9A80     		strh	r2, [r3, #4]	@ movhi
+  77:Sensors/crsf.c **** 
+  78:Sensors/crsf.c ****     HAL_UART_Receive_IT(crsf_uart, &rx_byte, 1);
+ 385              		.loc 1 78 5 is_stmt 1 view .LVU113
+ 386 0038 0122     		movs	r2, #1
+ 387 003a 0949     		ldr	r1, .L31+28
+ 388 003c FFF7FEFF 		bl	HAL_UART_Receive_IT
+ 389              	.LVL42:
+  79:Sensors/crsf.c **** }
+ 390              		.loc 1 79 1 is_stmt 0 view .LVU114
+ 391 0040 08BD     		pop	{r3, pc}
+ 392              	.L32:
+ 393 0042 00BF     		.align	2
+ 394              	.L31:
+ 395 0044 00000000 		.word	crsf_uart
+ 396 0048 00000000 		.word	pos
+ 397 004c 00000000 		.word	frame_len
+ 398 0050 00000000 		.word	frame_count
+ 399 0054 00000000 		.word	error_count
+ 400 0058 00000000 		.word	last_frame_ms
+ 401 005c 00000000 		.word	ch_us
+ 402 0060 00000000 		.word	rx_byte
+ARM GAS  /tmp/cc3LQbOH.s 			page 10
+
+
+ 403              		.cfi_endproc
+ 404              	.LFE242:
+ 406              		.section	.text.CRSF_RxByte,"ax",%progbits
+ 407              		.align	1
+ 408              		.global	CRSF_RxByte
+ 409              		.syntax unified
+ 410              		.thumb
+ 411              		.thumb_func
+ 413              	CRSF_RxByte:
+ 414              	.LFB243:
+  80:Sensors/crsf.c **** 
+  81:Sensors/crsf.c **** void CRSF_RxByte(void)
+  82:Sensors/crsf.c **** {
+ 415              		.loc 1 82 1 is_stmt 1 view -0
+ 416              		.cfi_startproc
+ 417              		@ args = 0, pretend = 0, frame = 0
+ 418              		@ frame_needed = 0, uses_anonymous_args = 0
+ 419 0000 38B5     		push	{r3, r4, r5, lr}
+ 420              	.LCFI3:
+ 421              		.cfi_def_cfa_offset 16
+ 422              		.cfi_offset 3, -16
+ 423              		.cfi_offset 4, -12
+ 424              		.cfi_offset 5, -8
+ 425              		.cfi_offset 14, -4
+  83:Sensors/crsf.c ****     uint8_t c = rx_byte;
+ 426              		.loc 1 83 5 view .LVU116
+ 427              		.loc 1 83 13 is_stmt 0 view .LVU117
+ 428 0002 2D4B     		ldr	r3, .L44
+ 429 0004 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+ 430              	.LVL43:
+  84:Sensors/crsf.c **** 
+  85:Sensors/crsf.c ****     if (pos == 0)
+ 431              		.loc 1 85 5 is_stmt 1 view .LVU118
+ 432              		.loc 1 85 13 is_stmt 0 view .LVU119
+ 433 0006 2D4B     		ldr	r3, .L44+4
+ 434 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 435              		.loc 1 85 8 view .LVU120
+ 436 000a 7BB9     		cbnz	r3, .L34
+  86:Sensors/crsf.c ****     {
+  87:Sensors/crsf.c ****         /* Erstes Byte ist die Adresse. 0xC8 ist der Flight Controller,
+  88:Sensors/crsf.c ****          * 0xEE kommt von manchen Empfaengern. Alles andere verwerfen. */
+  89:Sensors/crsf.c ****         if (c == 0xC8 || c == 0xEE)
+ 437              		.loc 1 89 9 is_stmt 1 view .LVU121
+ 438              		.loc 1 89 12 is_stmt 0 view .LVU122
+ 439 000c C82A     		cmp	r2, #200
+ 440 000e 01D0     		beq	.L35
+ 441              		.loc 1 89 23 discriminator 1 view .LVU123
+ 442 0010 EE2A     		cmp	r2, #238
+ 443 0012 04D1     		bne	.L36
+ 444              	.L35:
+  90:Sensors/crsf.c ****             buf[pos++] = c;
+ 445              		.loc 1 90 13 is_stmt 1 view .LVU124
+ 446              		.loc 1 90 20 is_stmt 0 view .LVU125
+ 447 0014 581C     		adds	r0, r3, #1
+ 448 0016 2949     		ldr	r1, .L44+4
+ 449 0018 0870     		strb	r0, [r1]
+ 450              		.loc 1 90 24 view .LVU126
+ARM GAS  /tmp/cc3LQbOH.s 			page 11
+
+
+ 451 001a 2949     		ldr	r1, .L44+8
+ 452 001c CA54     		strb	r2, [r1, r3]
+ 453              	.LVL44:
+ 454              	.L36:
+  91:Sensors/crsf.c ****     }
+  92:Sensors/crsf.c ****     else if (pos == 1)
+  93:Sensors/crsf.c ****     {
+  94:Sensors/crsf.c ****         /* Laengenbyte pruefen, bevor wir darauf vertrauen */
+  95:Sensors/crsf.c ****         if (c >= 2 && c <= (CRSF_FRAME_MAX - 2))
+  96:Sensors/crsf.c ****         {
+  97:Sensors/crsf.c ****             buf[pos++] = c;
+  98:Sensors/crsf.c ****             frame_len = c;
+  99:Sensors/crsf.c ****         }
+ 100:Sensors/crsf.c ****         else
+ 101:Sensors/crsf.c ****         {
+ 102:Sensors/crsf.c ****             pos = 0;
+ 103:Sensors/crsf.c ****             error_count++;
+ 104:Sensors/crsf.c ****         }
+ 105:Sensors/crsf.c ****     }
+ 106:Sensors/crsf.c ****     else
+ 107:Sensors/crsf.c ****     {
+ 108:Sensors/crsf.c ****         buf[pos++] = c;
+ 109:Sensors/crsf.c **** 
+ 110:Sensors/crsf.c ****         if (pos >= (uint8_t)(frame_len + 2))
+ 111:Sensors/crsf.c ****         {
+ 112:Sensors/crsf.c ****             /* Paket vollstaendig. CRC laeuft ueber Typ und Daten,
+ 113:Sensors/crsf.c ****              * also ab Index 2 bis vor das letzte Byte. */
+ 114:Sensors/crsf.c ****             uint8_t calc = crc8(&buf[2], (uint8_t)(frame_len - 1));
+ 115:Sensors/crsf.c ****             uint8_t recv = buf[frame_len + 1];
+ 116:Sensors/crsf.c **** 
+ 117:Sensors/crsf.c ****             if (calc == recv)
+ 118:Sensors/crsf.c ****             {
+ 119:Sensors/crsf.c ****                 if (buf[2] == CRSF_TYPE_RC_CHANNELS && frame_len == 24)
+ 120:Sensors/crsf.c ****                 {
+ 121:Sensors/crsf.c ****                     unpack_channels(&buf[3]);
+ 122:Sensors/crsf.c ****                     last_frame_ms = HAL_GetTick();
+ 123:Sensors/crsf.c ****                     frame_count++;
+ 124:Sensors/crsf.c ****                 }
+ 125:Sensors/crsf.c ****                 /* andere Pakettypen ignorieren wir */
+ 126:Sensors/crsf.c ****             }
+ 127:Sensors/crsf.c ****             else
+ 128:Sensors/crsf.c ****             {
+ 129:Sensors/crsf.c ****                 error_count++;
+ 130:Sensors/crsf.c ****             }
+ 131:Sensors/crsf.c ****             pos = 0;
+ 132:Sensors/crsf.c ****         }
+ 133:Sensors/crsf.c ****     }
+ 134:Sensors/crsf.c **** 
+ 135:Sensors/crsf.c ****     HAL_UART_Receive_IT(crsf_uart, &rx_byte, 1);
+ 455              		.loc 1 135 5 is_stmt 1 view .LVU127
+ 456 001e 0122     		movs	r2, #1
+ 457 0020 2549     		ldr	r1, .L44
+ 458 0022 284B     		ldr	r3, .L44+12
+ 459 0024 1868     		ldr	r0, [r3]
+ 460 0026 FFF7FEFF 		bl	HAL_UART_Receive_IT
+ 461              	.LVL45:
+ 136:Sensors/crsf.c **** }
+ARM GAS  /tmp/cc3LQbOH.s 			page 12
+
+
+ 462              		.loc 1 136 1 is_stmt 0 view .LVU128
+ 463 002a 38BD     		pop	{r3, r4, r5, pc}
+ 464              	.LVL46:
+ 465              	.L34:
+  92:Sensors/crsf.c ****     {
+ 466              		.loc 1 92 10 is_stmt 1 view .LVU129
+  92:Sensors/crsf.c ****     {
+ 467              		.loc 1 92 13 is_stmt 0 view .LVU130
+ 468 002c 012B     		cmp	r3, #1
+ 469 002e 1ED0     		beq	.L42
+ 108:Sensors/crsf.c **** 
+ 470              		.loc 1 108 9 is_stmt 1 view .LVU131
+ 108:Sensors/crsf.c **** 
+ 471              		.loc 1 108 16 is_stmt 0 view .LVU132
+ 472 0030 591C     		adds	r1, r3, #1
+ 473 0032 C9B2     		uxtb	r1, r1
+ 474 0034 2148     		ldr	r0, .L44+4
+ 475 0036 0170     		strb	r1, [r0]
+ 108:Sensors/crsf.c **** 
+ 476              		.loc 1 108 20 view .LVU133
+ 477 0038 2148     		ldr	r0, .L44+8
+ 478 003a C254     		strb	r2, [r0, r3]
+ 110:Sensors/crsf.c ****         {
+ 479              		.loc 1 110 9 is_stmt 1 view .LVU134
+ 110:Sensors/crsf.c ****         {
+ 480              		.loc 1 110 20 is_stmt 0 view .LVU135
+ 481 003c 224B     		ldr	r3, .L44+16
+ 482 003e 1C78     		ldrb	r4, [r3]	@ zero_extendqisi2
+ 483 0040 A31C     		adds	r3, r4, #2
+ 484 0042 DBB2     		uxtb	r3, r3
+ 110:Sensors/crsf.c ****         {
+ 485              		.loc 1 110 12 view .LVU136
+ 486 0044 9942     		cmp	r1, r3
+ 487 0046 EAD3     		bcc	.L36
+ 488              	.LBB9:
+ 114:Sensors/crsf.c ****             uint8_t recv = buf[frame_len + 1];
+ 489              		.loc 1 114 13 is_stmt 1 view .LVU137
+ 114:Sensors/crsf.c ****             uint8_t recv = buf[frame_len + 1];
+ 490              		.loc 1 114 28 is_stmt 0 view .LVU138
+ 491 0048 611E     		subs	r1, r4, #1
+ 492 004a 851C     		adds	r5, r0, #2
+ 493 004c C9B2     		uxtb	r1, r1
+ 494 004e 2846     		mov	r0, r5
+ 495 0050 FFF7FEFF 		bl	crc8
+ 496              	.LVL47:
+ 115:Sensors/crsf.c **** 
+ 497              		.loc 1 115 13 is_stmt 1 view .LVU139
+ 115:Sensors/crsf.c **** 
+ 498              		.loc 1 115 42 is_stmt 0 view .LVU140
+ 499 0054 631C     		adds	r3, r4, #1
+ 115:Sensors/crsf.c **** 
+ 500              		.loc 1 115 21 view .LVU141
+ 501 0056 023D     		subs	r5, r5, #2
+ 502 0058 EB5C     		ldrb	r3, [r5, r3]	@ zero_extendqisi2
+ 503              	.LVL48:
+ 117:Sensors/crsf.c ****             {
+ 504              		.loc 1 117 13 is_stmt 1 view .LVU142
+ARM GAS  /tmp/cc3LQbOH.s 			page 13
+
+
+ 117:Sensors/crsf.c ****             {
+ 505              		.loc 1 117 16 is_stmt 0 view .LVU143
+ 506 005a 9842     		cmp	r0, r3
+ 507 005c 1BD0     		beq	.L43
+ 129:Sensors/crsf.c ****             }
+ 508              		.loc 1 129 17 is_stmt 1 view .LVU144
+ 129:Sensors/crsf.c ****             }
+ 509              		.loc 1 129 28 is_stmt 0 view .LVU145
+ 510 005e 1B4A     		ldr	r2, .L44+20
+ 511 0060 1368     		ldr	r3, [r2]
+ 512 0062 0133     		adds	r3, r3, #1
+ 513 0064 1360     		str	r3, [r2]
+ 514              	.LVL49:
+ 515              	.L40:
+ 131:Sensors/crsf.c ****         }
+ 516              		.loc 1 131 13 is_stmt 1 view .LVU146
+ 131:Sensors/crsf.c ****         }
+ 517              		.loc 1 131 17 is_stmt 0 view .LVU147
+ 518 0066 154B     		ldr	r3, .L44+4
+ 519 0068 0022     		movs	r2, #0
+ 520 006a 1A70     		strb	r2, [r3]
+ 521 006c D7E7     		b	.L36
+ 522              	.LVL50:
+ 523              	.L42:
+ 131:Sensors/crsf.c ****         }
+ 524              		.loc 1 131 17 view .LVU148
+ 525              	.LBE9:
+  95:Sensors/crsf.c ****         {
+ 526              		.loc 1 95 9 is_stmt 1 view .LVU149
+  95:Sensors/crsf.c ****         {
+ 527              		.loc 1 95 20 is_stmt 0 view .LVU150
+ 528 006e 911E     		subs	r1, r2, #2
+ 529 0070 C9B2     		uxtb	r1, r1
+  95:Sensors/crsf.c ****         {
+ 530              		.loc 1 95 12 view .LVU151
+ 531 0072 3C29     		cmp	r1, #60
+ 532 0074 07D8     		bhi	.L38
+  97:Sensors/crsf.c ****             frame_len = c;
+ 533              		.loc 1 97 13 is_stmt 1 view .LVU152
+  97:Sensors/crsf.c ****             frame_len = c;
+ 534              		.loc 1 97 20 is_stmt 0 view .LVU153
+ 535 0076 581C     		adds	r0, r3, #1
+ 536 0078 1049     		ldr	r1, .L44+4
+ 537 007a 0870     		strb	r0, [r1]
+  97:Sensors/crsf.c ****             frame_len = c;
+ 538              		.loc 1 97 24 view .LVU154
+ 539 007c 1049     		ldr	r1, .L44+8
+ 540 007e CA54     		strb	r2, [r1, r3]
+  98:Sensors/crsf.c ****         }
+ 541              		.loc 1 98 13 is_stmt 1 view .LVU155
+  98:Sensors/crsf.c ****         }
+ 542              		.loc 1 98 23 is_stmt 0 view .LVU156
+ 543 0080 114B     		ldr	r3, .L44+16
+ 544 0082 1A70     		strb	r2, [r3]
+ 545 0084 CBE7     		b	.L36
+ 546              	.L38:
+ 102:Sensors/crsf.c ****             error_count++;
+ARM GAS  /tmp/cc3LQbOH.s 			page 14
+
+
+ 547              		.loc 1 102 13 is_stmt 1 view .LVU157
+ 102:Sensors/crsf.c ****             error_count++;
+ 548              		.loc 1 102 17 is_stmt 0 view .LVU158
+ 549 0086 0D4B     		ldr	r3, .L44+4
+ 550 0088 0022     		movs	r2, #0
+ 551              	.LVL51:
+ 102:Sensors/crsf.c ****             error_count++;
+ 552              		.loc 1 102 17 view .LVU159
+ 553 008a 1A70     		strb	r2, [r3]
+ 103:Sensors/crsf.c ****         }
+ 554              		.loc 1 103 13 is_stmt 1 view .LVU160
+ 103:Sensors/crsf.c ****         }
+ 555              		.loc 1 103 24 is_stmt 0 view .LVU161
+ 556 008c 0F4A     		ldr	r2, .L44+20
+ 557 008e 1368     		ldr	r3, [r2]
+ 558 0090 0133     		adds	r3, r3, #1
+ 559 0092 1360     		str	r3, [r2]
+ 560 0094 C3E7     		b	.L36
+ 561              	.LVL52:
+ 562              	.L43:
+ 563              	.LBB10:
+ 119:Sensors/crsf.c ****                 {
+ 564              		.loc 1 119 17 is_stmt 1 view .LVU162
+ 119:Sensors/crsf.c ****                 {
+ 565              		.loc 1 119 24 is_stmt 0 view .LVU163
+ 566 0096 AB78     		ldrb	r3, [r5, #2]	@ zero_extendqisi2
+ 119:Sensors/crsf.c ****                 {
+ 567              		.loc 1 119 20 view .LVU164
+ 568 0098 162B     		cmp	r3, #22
+ 569 009a E4D1     		bne	.L40
+ 119:Sensors/crsf.c ****                 {
+ 570              		.loc 1 119 53 discriminator 1 view .LVU165
+ 571 009c 182C     		cmp	r4, #24
+ 572 009e E2D1     		bne	.L40
+ 121:Sensors/crsf.c ****                     last_frame_ms = HAL_GetTick();
+ 573              		.loc 1 121 21 is_stmt 1 view .LVU166
+ 574 00a0 E81C     		adds	r0, r5, #3
+ 575              	.LVL53:
+ 121:Sensors/crsf.c ****                     last_frame_ms = HAL_GetTick();
+ 576              		.loc 1 121 21 is_stmt 0 view .LVU167
+ 577 00a2 FFF7FEFF 		bl	unpack_channels
+ 578              	.LVL54:
+ 122:Sensors/crsf.c ****                     frame_count++;
+ 579              		.loc 1 122 21 is_stmt 1 view .LVU168
+ 122:Sensors/crsf.c ****                     frame_count++;
+ 580              		.loc 1 122 37 is_stmt 0 view .LVU169
+ 581 00a6 FFF7FEFF 		bl	HAL_GetTick
+ 582              	.LVL55:
+ 122:Sensors/crsf.c ****                     frame_count++;
+ 583              		.loc 1 122 35 discriminator 1 view .LVU170
+ 584 00aa 094B     		ldr	r3, .L44+24
+ 585 00ac 1860     		str	r0, [r3]
+ 123:Sensors/crsf.c ****                 }
+ 586              		.loc 1 123 21 is_stmt 1 view .LVU171
+ 123:Sensors/crsf.c ****                 }
+ 587              		.loc 1 123 32 is_stmt 0 view .LVU172
+ 588 00ae 094A     		ldr	r2, .L44+28
+ARM GAS  /tmp/cc3LQbOH.s 			page 15
+
+
+ 589 00b0 1368     		ldr	r3, [r2]
+ 590 00b2 0133     		adds	r3, r3, #1
+ 591 00b4 1360     		str	r3, [r2]
+ 592 00b6 D6E7     		b	.L40
+ 593              	.L45:
+ 594              		.align	2
+ 595              	.L44:
+ 596 00b8 00000000 		.word	rx_byte
+ 597 00bc 00000000 		.word	pos
+ 598 00c0 00000000 		.word	buf
+ 599 00c4 00000000 		.word	crsf_uart
+ 600 00c8 00000000 		.word	frame_len
+ 601 00cc 00000000 		.word	error_count
+ 602 00d0 00000000 		.word	last_frame_ms
+ 603 00d4 00000000 		.word	frame_count
+ 604              	.LBE10:
+ 605              		.cfi_endproc
+ 606              	.LFE243:
+ 608              		.section	.text.CRSF_Channel,"ax",%progbits
+ 609              		.align	1
+ 610              		.global	CRSF_Channel
+ 611              		.syntax unified
+ 612              		.thumb
+ 613              		.thumb_func
+ 615              	CRSF_Channel:
+ 616              	.LVL56:
+ 617              	.LFB244:
+ 137:Sensors/crsf.c **** 
+ 138:Sensors/crsf.c **** uint16_t CRSF_Channel(uint8_t ch)
+ 139:Sensors/crsf.c **** {
+ 618              		.loc 1 139 1 is_stmt 1 view -0
+ 619              		.cfi_startproc
+ 620              		@ args = 0, pretend = 0, frame = 0
+ 621              		@ frame_needed = 0, uses_anonymous_args = 0
+ 622              		@ link register save eliminated.
+ 140:Sensors/crsf.c ****     if (ch < 1 || ch > CRSF_CHANNELS)
+ 623              		.loc 1 140 5 view .LVU174
+ 624              		.loc 1 140 16 is_stmt 0 view .LVU175
+ 625 0000 431E     		subs	r3, r0, #1
+ 626 0002 DBB2     		uxtb	r3, r3
+ 627              		.loc 1 140 8 view .LVU176
+ 628 0004 0F2B     		cmp	r3, #15
+ 629 0006 05D8     		bhi	.L48
+ 141:Sensors/crsf.c ****         return 1500;
+ 142:Sensors/crsf.c ****     return ch_us[ch - 1];
+ 630              		.loc 1 142 5 is_stmt 1 view .LVU177
+ 631              		.loc 1 142 21 is_stmt 0 view .LVU178
+ 632 0008 0138     		subs	r0, r0, #1
+ 633              	.LVL57:
+ 634              		.loc 1 142 17 view .LVU179
+ 635 000a 044B     		ldr	r3, .L49
+ 636 000c 33F81000 		ldrh	r0, [r3, r0, lsl #1]
+ 637              	.LVL58:
+ 638              		.loc 1 142 17 view .LVU180
+ 639 0010 80B2     		uxth	r0, r0
+ 640 0012 7047     		bx	lr
+ 641              	.LVL59:
+ARM GAS  /tmp/cc3LQbOH.s 			page 16
+
+
+ 642              	.L48:
+ 141:Sensors/crsf.c ****         return 1500;
+ 643              		.loc 1 141 16 view .LVU181
+ 644 0014 40F2DC50 		movw	r0, #1500
+ 645              	.LVL60:
+ 143:Sensors/crsf.c **** }
+ 646              		.loc 1 143 1 view .LVU182
+ 647 0018 7047     		bx	lr
+ 648              	.L50:
+ 649 001a 00BF     		.align	2
+ 650              	.L49:
+ 651 001c 00000000 		.word	ch_us
+ 652              		.cfi_endproc
+ 653              	.LFE244:
+ 655              		.section	.text.CRSF_AgeMs,"ax",%progbits
+ 656              		.align	1
+ 657              		.global	CRSF_AgeMs
+ 658              		.syntax unified
+ 659              		.thumb
+ 660              		.thumb_func
+ 662              	CRSF_AgeMs:
+ 663              	.LFB245:
+ 144:Sensors/crsf.c **** 
+ 145:Sensors/crsf.c **** uint32_t CRSF_AgeMs(void)
+ 146:Sensors/crsf.c **** {
+ 664              		.loc 1 146 1 is_stmt 1 view -0
+ 665              		.cfi_startproc
+ 666              		@ args = 0, pretend = 0, frame = 0
+ 667              		@ frame_needed = 0, uses_anonymous_args = 0
+ 668 0000 08B5     		push	{r3, lr}
+ 669              	.LCFI4:
+ 670              		.cfi_def_cfa_offset 8
+ 671              		.cfi_offset 3, -8
+ 672              		.cfi_offset 14, -4
+ 147:Sensors/crsf.c ****     if (last_frame_ms == 0)
+ 673              		.loc 1 147 5 view .LVU184
+ 674              		.loc 1 147 23 is_stmt 0 view .LVU185
+ 675 0002 064B     		ldr	r3, .L55
+ 676 0004 1B68     		ldr	r3, [r3]
+ 677              		.loc 1 147 8 view .LVU186
+ 678 0006 2BB1     		cbz	r3, .L53
+ 148:Sensors/crsf.c ****         return 0xFFFFFFFF;
+ 149:Sensors/crsf.c ****     return HAL_GetTick() - last_frame_ms;
+ 679              		.loc 1 149 5 is_stmt 1 view .LVU187
+ 680              		.loc 1 149 12 is_stmt 0 view .LVU188
+ 681 0008 FFF7FEFF 		bl	HAL_GetTick
+ 682              	.LVL61:
+ 683              		.loc 1 149 26 discriminator 1 view .LVU189
+ 684 000c 034B     		ldr	r3, .L55
+ 685 000e 1B68     		ldr	r3, [r3]
+ 686 0010 C01A     		subs	r0, r0, r3
+ 687              	.L51:
+ 150:Sensors/crsf.c **** }
+ 688              		.loc 1 150 1 view .LVU190
+ 689 0012 08BD     		pop	{r3, pc}
+ 690              	.L53:
+ 148:Sensors/crsf.c ****         return 0xFFFFFFFF;
+ARM GAS  /tmp/cc3LQbOH.s 			page 17
+
+
+ 691              		.loc 1 148 16 view .LVU191
+ 692 0014 4FF0FF30 		mov	r0, #-1
+ 693 0018 FBE7     		b	.L51
+ 694              	.L56:
+ 695 001a 00BF     		.align	2
+ 696              	.L55:
+ 697 001c 00000000 		.word	last_frame_ms
+ 698              		.cfi_endproc
+ 699              	.LFE245:
+ 701              		.section	.text.CRSF_LinkUp,"ax",%progbits
+ 702              		.align	1
+ 703              		.global	CRSF_LinkUp
+ 704              		.syntax unified
+ 705              		.thumb
+ 706              		.thumb_func
+ 708              	CRSF_LinkUp:
+ 709              	.LFB246:
+ 151:Sensors/crsf.c **** 
+ 152:Sensors/crsf.c **** uint8_t CRSF_LinkUp(void)
+ 153:Sensors/crsf.c **** {
+ 710              		.loc 1 153 1 is_stmt 1 view -0
+ 711              		.cfi_startproc
+ 712              		@ args = 0, pretend = 0, frame = 0
+ 713              		@ frame_needed = 0, uses_anonymous_args = 0
+ 714 0000 08B5     		push	{r3, lr}
+ 715              	.LCFI5:
+ 716              		.cfi_def_cfa_offset 8
+ 717              		.cfi_offset 3, -8
+ 718              		.cfi_offset 14, -4
+ 154:Sensors/crsf.c ****     return (CRSF_AgeMs() < CRSF_TIMEOUT_MS) ? 1 : 0;
+ 719              		.loc 1 154 5 view .LVU193
+ 720              		.loc 1 154 13 is_stmt 0 view .LVU194
+ 721 0002 FFF7FEFF 		bl	CRSF_AgeMs
+ 722              	.LVL62:
+ 155:Sensors/crsf.c **** }
+ 723              		.loc 1 155 1 view .LVU195
+ 724 0006 B0F5FA7F 		cmp	r0, #500
+ 725 000a 2CBF     		ite	cs
+ 726 000c 0020     		movcs	r0, #0
+ 727 000e 0120     		movcc	r0, #1
+ 728 0010 08BD     		pop	{r3, pc}
+ 729              		.cfi_endproc
+ 730              	.LFE246:
+ 732              		.section	.text.CRSF_FrameCount,"ax",%progbits
+ 733              		.align	1
+ 734              		.global	CRSF_FrameCount
+ 735              		.syntax unified
+ 736              		.thumb
+ 737              		.thumb_func
+ 739              	CRSF_FrameCount:
+ 740              	.LFB247:
+ 156:Sensors/crsf.c **** 
+ 157:Sensors/crsf.c **** uint32_t CRSF_FrameCount(void) { return frame_count; }
+ 741              		.loc 1 157 32 is_stmt 1 view -0
+ 742              		.cfi_startproc
+ 743              		@ args = 0, pretend = 0, frame = 0
+ 744              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  /tmp/cc3LQbOH.s 			page 18
+
+
+ 745              		@ link register save eliminated.
+ 746              		.loc 1 157 34 view .LVU197
+ 747              		.loc 1 157 41 is_stmt 0 view .LVU198
+ 748 0000 014B     		ldr	r3, .L60
+ 749 0002 1868     		ldr	r0, [r3]
+ 750              		.loc 1 157 54 view .LVU199
+ 751 0004 7047     		bx	lr
+ 752              	.L61:
+ 753 0006 00BF     		.align	2
+ 754              	.L60:
+ 755 0008 00000000 		.word	frame_count
+ 756              		.cfi_endproc
+ 757              	.LFE247:
+ 759              		.section	.text.CRSF_ErrorCount,"ax",%progbits
+ 760              		.align	1
+ 761              		.global	CRSF_ErrorCount
+ 762              		.syntax unified
+ 763              		.thumb
+ 764              		.thumb_func
+ 766              	CRSF_ErrorCount:
+ 767              	.LFB248:
+ 158:Sensors/crsf.c **** uint32_t CRSF_ErrorCount(void) { return error_count; }
+ 768              		.loc 1 158 32 is_stmt 1 view -0
+ 769              		.cfi_startproc
+ 770              		@ args = 0, pretend = 0, frame = 0
+ 771              		@ frame_needed = 0, uses_anonymous_args = 0
+ 772              		@ link register save eliminated.
+ 773              		.loc 1 158 34 view .LVU201
+ 774              		.loc 1 158 41 is_stmt 0 view .LVU202
+ 775 0000 014B     		ldr	r3, .L63
+ 776 0002 1868     		ldr	r0, [r3]
+ 777              		.loc 1 158 54 view .LVU203
+ 778 0004 7047     		bx	lr
+ 779              	.L64:
+ 780 0006 00BF     		.align	2
+ 781              	.L63:
+ 782 0008 00000000 		.word	error_count
+ 783              		.cfi_endproc
+ 784              	.LFE248:
+ 786              		.section	.text.HAL_UART_ErrorCallback,"ax",%progbits
+ 787              		.align	1
+ 788              		.global	HAL_UART_ErrorCallback
+ 789              		.syntax unified
+ 790              		.thumb
+ 791              		.thumb_func
+ 793              	HAL_UART_ErrorCallback:
+ 794              	.LVL63:
+ 795              	.LFB249:
+ 159:Sensors/crsf.c **** 
+ 160:Sensors/crsf.c **** /* Bei Rahmenfehlern bleibt der Interrupt sonst stehen. */
+ 161:Sensors/crsf.c **** void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+ 162:Sensors/crsf.c **** {
+ 796              		.loc 1 162 1 is_stmt 1 view -0
+ 797              		.cfi_startproc
+ 798              		@ args = 0, pretend = 0, frame = 16
+ 799              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163:Sensors/crsf.c ****     if (crsf_uart && huart->Instance == crsf_uart->Instance)
+ARM GAS  /tmp/cc3LQbOH.s 			page 19
+
+
+ 800              		.loc 1 163 5 view .LVU205
+ 801              		.loc 1 163 9 is_stmt 0 view .LVU206
+ 802 0000 154B     		ldr	r3, .L72
+ 803 0002 1B68     		ldr	r3, [r3]
+ 804              		.loc 1 163 8 view .LVU207
+ 805 0004 1BB1     		cbz	r3, .L68
+ 806              		.loc 1 163 27 discriminator 1 view .LVU208
+ 807 0006 0268     		ldr	r2, [r0]
+ 808              		.loc 1 163 50 discriminator 1 view .LVU209
+ 809 0008 1968     		ldr	r1, [r3]
+ 810              		.loc 1 163 19 discriminator 1 view .LVU210
+ 811 000a 8A42     		cmp	r2, r1
+ 812 000c 00D0     		beq	.L71
+ 813              	.L68:
+ 814 000e 7047     		bx	lr
+ 815              	.L71:
+ 162:Sensors/crsf.c ****     if (crsf_uart && huart->Instance == crsf_uart->Instance)
+ 816              		.loc 1 162 1 view .LVU211
+ 817 0010 00B5     		push	{lr}
+ 818              	.LCFI6:
+ 819              		.cfi_def_cfa_offset 4
+ 820              		.cfi_offset 14, -4
+ 821 0012 85B0     		sub	sp, sp, #20
+ 822              	.LCFI7:
+ 823              		.cfi_def_cfa_offset 24
+ 164:Sensors/crsf.c ****     {
+ 165:Sensors/crsf.c ****         error_count++;
+ 824              		.loc 1 165 9 is_stmt 1 view .LVU212
+ 825              		.loc 1 165 20 is_stmt 0 view .LVU213
+ 826 0014 1148     		ldr	r0, .L72+4
+ 827              	.LVL64:
+ 828              		.loc 1 165 20 view .LVU214
+ 829 0016 0168     		ldr	r1, [r0]
+ 830 0018 0131     		adds	r1, r1, #1
+ 831 001a 0160     		str	r1, [r0]
+ 166:Sensors/crsf.c ****         pos = 0;
+ 832              		.loc 1 166 9 is_stmt 1 view .LVU215
+ 833              		.loc 1 166 13 is_stmt 0 view .LVU216
+ 834 001c 0021     		movs	r1, #0
+ 835 001e 1048     		ldr	r0, .L72+8
+ 836 0020 0170     		strb	r1, [r0]
+ 167:Sensors/crsf.c ****         __HAL_UART_CLEAR_OREFLAG(huart);
+ 837              		.loc 1 167 9 is_stmt 1 view .LVU217
+ 838              	.LBB11:
+ 839              		.loc 1 167 9 view .LVU218
+ 840 0022 0191     		str	r1, [sp, #4]
+ 841              		.loc 1 167 9 view .LVU219
+ 842 0024 1068     		ldr	r0, [r2]
+ 843 0026 0190     		str	r0, [sp, #4]
+ 844              		.loc 1 167 9 view .LVU220
+ 845 0028 5068     		ldr	r0, [r2, #4]
+ 846 002a 0190     		str	r0, [sp, #4]
+ 847              		.loc 1 167 9 view .LVU221
+ 848 002c 0198     		ldr	r0, [sp, #4]
+ 849              	.LBE11:
+ 850              		.loc 1 167 9 view .LVU222
+ 168:Sensors/crsf.c ****         __HAL_UART_CLEAR_NEFLAG(huart);
+ARM GAS  /tmp/cc3LQbOH.s 			page 20
+
+
+ 851              		.loc 1 168 9 view .LVU223
+ 852              	.LBB12:
+ 853              		.loc 1 168 9 view .LVU224
+ 854 002e 0291     		str	r1, [sp, #8]
+ 855              		.loc 1 168 9 view .LVU225
+ 856 0030 1068     		ldr	r0, [r2]
+ 857 0032 0290     		str	r0, [sp, #8]
+ 858              		.loc 1 168 9 view .LVU226
+ 859 0034 5068     		ldr	r0, [r2, #4]
+ 860 0036 0290     		str	r0, [sp, #8]
+ 861              		.loc 1 168 9 view .LVU227
+ 862 0038 0298     		ldr	r0, [sp, #8]
+ 863              	.LBE12:
+ 864              		.loc 1 168 9 view .LVU228
+ 169:Sensors/crsf.c ****         __HAL_UART_CLEAR_FEFLAG(huart);
+ 865              		.loc 1 169 9 view .LVU229
+ 866              	.LBB13:
+ 867              		.loc 1 169 9 view .LVU230
+ 868 003a 0391     		str	r1, [sp, #12]
+ 869              		.loc 1 169 9 view .LVU231
+ 870 003c 1168     		ldr	r1, [r2]
+ 871 003e 0391     		str	r1, [sp, #12]
+ 872              		.loc 1 169 9 view .LVU232
+ 873 0040 5268     		ldr	r2, [r2, #4]
+ 874 0042 0392     		str	r2, [sp, #12]
+ 875              		.loc 1 169 9 view .LVU233
+ 876 0044 039A     		ldr	r2, [sp, #12]
+ 877              	.LBE13:
+ 878              		.loc 1 169 9 view .LVU234
+ 170:Sensors/crsf.c ****         HAL_UART_Receive_IT(crsf_uart, &rx_byte, 1);
+ 879              		.loc 1 170 9 view .LVU235
+ 880 0046 0122     		movs	r2, #1
+ 881 0048 0649     		ldr	r1, .L72+12
+ 882 004a 1846     		mov	r0, r3
+ 883 004c FFF7FEFF 		bl	HAL_UART_Receive_IT
+ 884              	.LVL65:
+ 171:Sensors/crsf.c ****     }
+ 172:Sensors/crsf.c **** }...
+ 885              		.loc 1 172 1 is_stmt 0 view .LVU236
+ 886 0050 05B0     		add	sp, sp, #20
+ 887              	.LCFI8:
+ 888              		.cfi_def_cfa_offset 4
+ 889              		@ sp needed
+ 890 0052 5DF804FB 		ldr	pc, [sp], #4
+ 891              	.L73:
+ 892 0056 00BF     		.align	2
+ 893              	.L72:
+ 894 0058 00000000 		.word	crsf_uart
+ 895 005c 00000000 		.word	error_count
+ 896 0060 00000000 		.word	pos
+ 897 0064 00000000 		.word	rx_byte
+ 898              		.cfi_endproc
+ 899              	.LFE249:
+ 901              		.section	.bss.error_count,"aw",%nobits
+ 902              		.align	2
+ 905              	error_count:
+ 906 0000 00000000 		.space	4
+ARM GAS  /tmp/cc3LQbOH.s 			page 21
+
+
+ 907              		.section	.bss.frame_count,"aw",%nobits
+ 908              		.align	2
+ 911              	frame_count:
+ 912 0000 00000000 		.space	4
+ 913              		.section	.bss.last_frame_ms,"aw",%nobits
+ 914              		.align	2
+ 917              	last_frame_ms:
+ 918 0000 00000000 		.space	4
+ 919              		.section	.bss.ch_us,"aw",%nobits
+ 920              		.align	2
+ 923              	ch_us:
+ 924 0000 00000000 		.space	32
+ 924      00000000 
+ 924      00000000 
+ 924      00000000 
+ 924      00000000 
+ 925              		.section	.bss.frame_len,"aw",%nobits
+ 928              	frame_len:
+ 929 0000 00       		.space	1
+ 930              		.section	.bss.pos,"aw",%nobits
+ 933              	pos:
+ 934 0000 00       		.space	1
+ 935              		.section	.bss.buf,"aw",%nobits
+ 936              		.align	2
+ 939              	buf:
+ 940 0000 00000000 		.space	64
+ 940      00000000 
+ 940      00000000 
+ 940      00000000 
+ 940      00000000 
+ 941              		.section	.bss.rx_byte,"aw",%nobits
+ 944              	rx_byte:
+ 945 0000 00       		.space	1
+ 946              		.section	.bss.crsf_uart,"aw",%nobits
+ 947              		.align	2
+ 950              	crsf_uart:
+ 951 0000 00000000 		.space	4
+ 952              		.text
+ 953              	.Letext0:
+ 954              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 955              		.file 3 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/stm32f405xx.h"
+ 956              		.file 4 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h"
+ 957              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
+ 958              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
+ 959              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
+ARM GAS  /tmp/cc3LQbOH.s 			page 22
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 crsf.c
+     /tmp/cc3LQbOH.s:21     .text.crc8:00000000 $t
+     /tmp/cc3LQbOH.s:26     .text.crc8:00000000 crc8
+     /tmp/cc3LQbOH.s:126    .text.to_us:00000000 $t
+     /tmp/cc3LQbOH.s:131    .text.to_us:00000000 to_us
+     /tmp/cc3LQbOH.s:179    .text.to_us:0000002c $d
+     /tmp/cc3LQbOH.s:184    .text.unpack_channels:00000000 $t
+     /tmp/cc3LQbOH.s:189    .text.unpack_channels:00000000 unpack_channels
+     /tmp/cc3LQbOH.s:305    .text.unpack_channels:00000058 $d
+     /tmp/cc3LQbOH.s:923    .bss.ch_us:00000000 ch_us
+     /tmp/cc3LQbOH.s:310    .text.CRSF_Init:00000000 $t
+     /tmp/cc3LQbOH.s:316    .text.CRSF_Init:00000000 CRSF_Init
+     /tmp/cc3LQbOH.s:395    .text.CRSF_Init:00000044 $d
+     /tmp/cc3LQbOH.s:950    .bss.crsf_uart:00000000 crsf_uart
+     /tmp/cc3LQbOH.s:933    .bss.pos:00000000 pos
+     /tmp/cc3LQbOH.s:928    .bss.frame_len:00000000 frame_len
+     /tmp/cc3LQbOH.s:911    .bss.frame_count:00000000 frame_count
+     /tmp/cc3LQbOH.s:905    .bss.error_count:00000000 error_count
+     /tmp/cc3LQbOH.s:917    .bss.last_frame_ms:00000000 last_frame_ms
+     /tmp/cc3LQbOH.s:944    .bss.rx_byte:00000000 rx_byte
+     /tmp/cc3LQbOH.s:407    .text.CRSF_RxByte:00000000 $t
+     /tmp/cc3LQbOH.s:413    .text.CRSF_RxByte:00000000 CRSF_RxByte
+     /tmp/cc3LQbOH.s:596    .text.CRSF_RxByte:000000b8 $d
+     /tmp/cc3LQbOH.s:939    .bss.buf:00000000 buf
+     /tmp/cc3LQbOH.s:609    .text.CRSF_Channel:00000000 $t
+     /tmp/cc3LQbOH.s:615    .text.CRSF_Channel:00000000 CRSF_Channel
+     /tmp/cc3LQbOH.s:651    .text.CRSF_Channel:0000001c $d
+     /tmp/cc3LQbOH.s:656    .text.CRSF_AgeMs:00000000 $t
+     /tmp/cc3LQbOH.s:662    .text.CRSF_AgeMs:00000000 CRSF_AgeMs
+     /tmp/cc3LQbOH.s:697    .text.CRSF_AgeMs:0000001c $d
+     /tmp/cc3LQbOH.s:702    .text.CRSF_LinkUp:00000000 $t
+     /tmp/cc3LQbOH.s:708    .text.CRSF_LinkUp:00000000 CRSF_LinkUp
+     /tmp/cc3LQbOH.s:733    .text.CRSF_FrameCount:00000000 $t
+     /tmp/cc3LQbOH.s:739    .text.CRSF_FrameCount:00000000 CRSF_FrameCount
+     /tmp/cc3LQbOH.s:755    .text.CRSF_FrameCount:00000008 $d
+     /tmp/cc3LQbOH.s:760    .text.CRSF_ErrorCount:00000000 $t
+     /tmp/cc3LQbOH.s:766    .text.CRSF_ErrorCount:00000000 CRSF_ErrorCount
+     /tmp/cc3LQbOH.s:782    .text.CRSF_ErrorCount:00000008 $d
+     /tmp/cc3LQbOH.s:787    .text.HAL_UART_ErrorCallback:00000000 $t
+     /tmp/cc3LQbOH.s:793    .text.HAL_UART_ErrorCallback:00000000 HAL_UART_ErrorCallback
+     /tmp/cc3LQbOH.s:894    .text.HAL_UART_ErrorCallback:00000058 $d
+     /tmp/cc3LQbOH.s:902    .bss.error_count:00000000 $d
+     /tmp/cc3LQbOH.s:908    .bss.frame_count:00000000 $d
+     /tmp/cc3LQbOH.s:914    .bss.last_frame_ms:00000000 $d
+     /tmp/cc3LQbOH.s:920    .bss.ch_us:00000000 $d
+     /tmp/cc3LQbOH.s:929    .bss.frame_len:00000000 $d
+     /tmp/cc3LQbOH.s:934    .bss.pos:00000000 $d
+     /tmp/cc3LQbOH.s:936    .bss.buf:00000000 $d
+     /tmp/cc3LQbOH.s:945    .bss.rx_byte:00000000 $d
+     /tmp/cc3LQbOH.s:947    .bss.crsf_uart:00000000 $d
+
+UNDEFINED SYMBOLS
+HAL_UART_Receive_IT
+HAL_GetTick

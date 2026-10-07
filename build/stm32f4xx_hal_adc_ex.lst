@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccosFS6D.s 			page 1
+ARM GAS  /tmp/ccdeqYbF.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
   28:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****              (+++) Enable the clock for the ADC GPIOs using the following function:
   29:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****                    __HAL_RCC_GPIOx_CLK_ENABLE()
   30:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****              (+++) Configure these ADC pins in analog mode using HAL_GPIO_Init()
-ARM GAS  /tmp/ccosFS6D.s 			page 2
+ARM GAS  /tmp/ccdeqYbF.s 			page 2
 
 
   31:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****        (##) In case of using interrupts (e.g. HAL_ADC_Start_IT())
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
   85:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** /* Includes ------------------------------------------------------------------*/
   86:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** #include "stm32f4xx_hal.h"
   87:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
-ARM GAS  /tmp/ccosFS6D.s 			page 3
+ARM GAS  /tmp/ccdeqYbF.s 			page 3
 
 
   88:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** /** @addtogroup STM32F4xx_HAL_Driver
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  142:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   * @param  hadc pointer to a ADC_HandleTypeDef structure that contains
  143:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   *         the configuration information for the specified ADC.
  144:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   * @retval HAL status
-ARM GAS  /tmp/ccosFS6D.s 			page 4
+ARM GAS  /tmp/ccdeqYbF.s 			page 4
 
 
  145:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   */
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  199:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* (To ensure of no unknown state from potential previous ADC operations) */
  200:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_JEOC);
  201:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
-ARM GAS  /tmp/ccosFS6D.s 			page 5
+ARM GAS  /tmp/ccdeqYbF.s 			page 5
 
 
  202:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* Pointer to the common control register to which is belonging hadc    */
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  256:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   __HAL_LOCK(hadc);
  257:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  258:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* Enable the ADC peripheral */
-ARM GAS  /tmp/ccosFS6D.s 			page 6
+ARM GAS  /tmp/ccdeqYbF.s 			page 6
 
 
  259:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  313:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* Check if Multimode enabled */
  314:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     if (HAL_IS_BIT_CLR(tmpADC_Common->CCR, ADC_CCR_MULTI))
  315:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     {
-ARM GAS  /tmp/ccosFS6D.s 			page 7
+ARM GAS  /tmp/ccdeqYbF.s 			page 7
 
 
  316:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       tmp1 = HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_JEXTEN);
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  370:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* Stop potential conversion and disable ADC peripheral                     */
  371:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* Conditioned to:                                                          */
  372:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* - No conversion on the other group (regular group) is intended to        */
-ARM GAS  /tmp/ccosFS6D.s 			page 8
+ARM GAS  /tmp/ccdeqYbF.s 			page 8
 
 
  373:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /*   continue (injected and regular groups stop conversion and ADC disable  */
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  427:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       if ((Timeout == 0U) || ((HAL_GetTick() - tickstart) > Timeout))
  428:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       {
  429:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****         /* New check to avoid false timeout detection in case of preemption */
-ARM GAS  /tmp/ccosFS6D.s 			page 9
+ARM GAS  /tmp/ccdeqYbF.s 			page 9
 
 
  430:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****         if (!(__HAL_ADC_GET_FLAG(hadc, ADC_FLAG_JEOC)))
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  484:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   */
  485:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef *hadc)
  486:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** {
-ARM GAS  /tmp/ccosFS6D.s 			page 10
+ARM GAS  /tmp/ccdeqYbF.s 			page 10
 
 
  487:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   HAL_StatusTypeDef tmp_hal_status = HAL_OK;
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  541:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   *            @arg ADC_INJECTED_RANK_1: Injected Channel1 selected
  542:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   *            @arg ADC_INJECTED_RANK_2: Injected Channel2 selected
  543:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   *            @arg ADC_INJECTED_RANK_3: Injected Channel3 selected
-ARM GAS  /tmp/ccosFS6D.s 			page 11
+ARM GAS  /tmp/ccdeqYbF.s 			page 11
 
 
  544:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   *            @arg ADC_INJECTED_RANK_4: Injected Channel4 selected
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  598:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef *hadc, uint32_t *pData, uint32_t L
  599:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** {
  600:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   __IO uint32_t counter = 0U;
-ARM GAS  /tmp/ccosFS6D.s 			page 12
+ARM GAS  /tmp/ccdeqYbF.s 			page 12
 
 
  601:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   ADC_Common_TypeDef *tmpADC_Common;
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  655:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  656:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* Process unlocked */
  657:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* Unlock before starting ADC conversions: in case of potential           */
-ARM GAS  /tmp/ccosFS6D.s 			page 13
+ARM GAS  /tmp/ccdeqYbF.s 			page 13
 
 
  658:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* interruption, to let the process to ADC IRQ Handler.                   */
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  712:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
  713:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   }
  714:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
-ARM GAS  /tmp/ccosFS6D.s 			page 14
+ARM GAS  /tmp/ccdeqYbF.s 			page 14
 
 
  715:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* Return function status */
@@ -838,7 +838,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  769:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** }
  770:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  771:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** /**
-ARM GAS  /tmp/ccosFS6D.s 			page 15
+ARM GAS  /tmp/ccdeqYbF.s 			page 15
 
 
  772:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   * @brief  Returns the last ADC1, ADC2 and ADC3 regular conversions results
@@ -898,7 +898,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  826:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  827:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* Check the parameters */
  828:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   assert_param(IS_ADC_CHANNEL(sConfigInjected->InjectedChannel));
-ARM GAS  /tmp/ccosFS6D.s 			page 16
+ARM GAS  /tmp/ccdeqYbF.s 			page 16
 
 
  829:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   assert_param(IS_ADC_INJECTED_RANK(sConfigInjected->InjectedRank));
@@ -958,7 +958,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  883:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /*       software start.                                                  */
  884:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   if (sConfigInjected->ExternalTrigInjecConv != ADC_INJECTED_SOFTWARE_START)
  885:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
-ARM GAS  /tmp/ccosFS6D.s 			page 17
+ARM GAS  /tmp/ccdeqYbF.s 			page 17
 
 
  886:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     /* Select external trigger to start conversion */
@@ -1018,7 +1018,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  940:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     default:
  941:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       /* Set injected channel 4 offset */
  942:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       hadc->Instance->JOFR4 &= ~(ADC_JOFR4_JOFFSET4);
-ARM GAS  /tmp/ccosFS6D.s 			page 18
+ARM GAS  /tmp/ccdeqYbF.s 			page 18
 
 
  943:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       hadc->Instance->JOFR4 |= sConfigInjected->InjectedOffset;
@@ -1078,7 +1078,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  997:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   tmpADC_Common = ADC_COMMON_REGISTER(hadc);
  998:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  999:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   /* Set ADC mode */
-ARM GAS  /tmp/ccosFS6D.s 			page 19
+ARM GAS  /tmp/ccdeqYbF.s 			page 19
 
 
 1000:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   tmpADC_Common->CCR &= ~(ADC_CCR_MULTI);
@@ -1138,7 +1138,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
 1054:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       __HAL_ADC_DISABLE_IT(hadc, ADC_IT_EOC);
 1055:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
 1056:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       /* Set ADC state */
-ARM GAS  /tmp/ccosFS6D.s 			page 20
+ARM GAS  /tmp/ccdeqYbF.s 			page 20
 
 
 1057:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       CLEAR_BIT(hadc->State, HAL_ADC_STATE_REG_BUSY);
@@ -1198,7 +1198,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
 1097:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   hadc->State = HAL_ADC_STATE_ERROR_DMA;
   43              		.loc 1 1097 3 is_stmt 1 view .LVU4
   44              		.loc 1 1097 15 is_stmt 0 view .LVU5
-ARM GAS  /tmp/ccosFS6D.s 			page 21
+ARM GAS  /tmp/ccdeqYbF.s 			page 21
 
 
   45 0004 4023     		movs	r3, #64
@@ -1258,7 +1258,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
   91              	.LFE252:
   93              		.section	.text.ADC_MultiModeDMAConvCplt,"ax",%progbits
   94              		.align	1
-ARM GAS  /tmp/ccosFS6D.s 			page 22
+ARM GAS  /tmp/ccdeqYbF.s 			page 22
 
 
   95              		.syntax unified
@@ -1318,7 +1318,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
 1047:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****          HAL_IS_BIT_CLR(hadc->Instance->CR2, ADC_CR2_EOCS)))
  137              		.loc 1 1047 10 view .LVU30
  138 0022 D16A     		ldr	r1, [r2, #44]
-ARM GAS  /tmp/ccosFS6D.s 			page 23
+ARM GAS  /tmp/ccdeqYbF.s 			page 23
 
 
 1046:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****         (HAL_IS_BIT_CLR(hadc->Instance->SQR1, ADC_SQR1_L) ||
@@ -1378,7 +1378,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  179              		.loc 1 1071 9 is_stmt 0 view .LVU44
  180 005a 9B6B     		ldr	r3, [r3, #56]
  181              	.LVL12:
-ARM GAS  /tmp/ccosFS6D.s 			page 24
+ARM GAS  /tmp/ccdeqYbF.s 			page 24
 
 
 1071:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   }
@@ -1438,7 +1438,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  153:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  226              		.loc 1 153 3 discriminator 2 view .LVU57
  159:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
-ARM GAS  /tmp/ccosFS6D.s 			page 25
+ARM GAS  /tmp/ccdeqYbF.s 			page 25
 
 
  227              		.loc 1 159 3 view .LVU58
@@ -1498,7 +1498,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  266              		.loc 1 174 7 is_stmt 0 view .LVU73
  267 0046 0268     		ldr	r2, [r0]
  268 0048 9368     		ldr	r3, [r2, #8]
-ARM GAS  /tmp/ccosFS6D.s 			page 26
+ARM GAS  /tmp/ccdeqYbF.s 			page 26
 
 
  174:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
@@ -1558,7 +1558,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  307 0082 0268     		ldr	r2, [r0]
  308 0084 9168     		ldr	r1, [r2, #8]
  309              	.LVL17:
-ARM GAS  /tmp/ccosFS6D.s 			page 27
+ARM GAS  /tmp/ccdeqYbF.s 			page 27
 
 
  211:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       if (tmp1 && tmp2)
@@ -1618,7 +1618,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  348 00ae 1448     		ldr	r0, .L27+12
  349              	.LVL24:
  222:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       {
-ARM GAS  /tmp/ccosFS6D.s 			page 28
+ARM GAS  /tmp/ccdeqYbF.s 			page 28
 
 
  350              		.loc 1 222 10 view .LVU106
@@ -1678,7 +1678,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  393              	.L19:
  394              	.LCFI5:
  395              		.cfi_restore_state
-ARM GAS  /tmp/ccosFS6D.s 			page 29
+ARM GAS  /tmp/ccdeqYbF.s 			page 29
 
 
  153:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
@@ -1738,7 +1738,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  444              		.cfi_startproc
  445              		@ args = 0, pretend = 0, frame = 8
  446              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  /tmp/ccosFS6D.s 			page 30
+ARM GAS  /tmp/ccdeqYbF.s 			page 30
 
 
  447              		@ link register save eliminated.
@@ -1798,7 +1798,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  485 002c A2FB0323 		umull	r2, r3, r2, r3
  486 0030 9B0C     		lsrs	r3, r3, #18
  269:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     while (counter != 0U)
-ARM GAS  /tmp/ccosFS6D.s 			page 31
+ARM GAS  /tmp/ccdeqYbF.s 			page 31
 
 
  487              		.loc 1 269 34 view .LVU142
@@ -1858,7 +1858,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  527 006a 4364     		str	r3, [r0, #68]
  528              	.L35:
  299:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
-ARM GAS  /tmp/ccosFS6D.s 			page 32
+ARM GAS  /tmp/ccdeqYbF.s 			page 32
 
 
  529              		.loc 1 299 5 view .LVU157
@@ -1918,7 +1918,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  567              		.loc 1 321 9 is_stmt 1 view .LVU173
  321:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       }
  568              		.loc 1 321 23 is_stmt 0 view .LVU174
-ARM GAS  /tmp/ccosFS6D.s 			page 33
+ARM GAS  /tmp/ccdeqYbF.s 			page 33
 
 
  569 009e 9368     		ldr	r3, [r2, #8]
@@ -1978,7 +1978,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  608              		.loc 1 331 23 is_stmt 0 view .LVU189
  609 00c6 9A68     		ldr	r2, [r3, #8]
  610              	.LVL46:
-ARM GAS  /tmp/ccosFS6D.s 			page 34
+ARM GAS  /tmp/ccdeqYbF.s 			page 34
 
 
  331:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       }
@@ -2038,7 +2038,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  655              	.L39:
  345:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** }
  656              		.loc 1 345 10 view .LVU200
-ARM GAS  /tmp/ccosFS6D.s 			page 35
+ARM GAS  /tmp/ccdeqYbF.s 			page 35
 
 
  657 00f0 0020     		movs	r0, #0
@@ -2098,7 +2098,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  701              		.cfi_def_cfa_offset 8
  702              		.cfi_offset 4, -8
  703              		.cfi_offset 14, -4
-ARM GAS  /tmp/ccosFS6D.s 			page 36
+ARM GAS  /tmp/ccdeqYbF.s 			page 36
 
 
  704 0002 0446     		mov	r4, r0
@@ -2158,7 +2158,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  744 003c 2368     		ldr	r3, [r4]
  745 003e 5A68     		ldr	r2, [r3, #4]
  376:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       HAL_IS_BIT_CLR(hadc->Instance->CR1, ADC_CR1_JAUTO))
-ARM GAS  /tmp/ccosFS6D.s 			page 37
+ARM GAS  /tmp/ccdeqYbF.s 			page 37
 
 
  746              		.loc 1 376 58 discriminator 1 view .LVU219
@@ -2218,7 +2218,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  787              	.L49:
  405:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  788              		.loc 1 405 1 is_stmt 0 view .LVU233
-ARM GAS  /tmp/ccosFS6D.s 			page 38
+ARM GAS  /tmp/ccdeqYbF.s 			page 38
 
 
  789 007c 10BD     		pop	{r4, pc}
@@ -2278,7 +2278,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  837              		.loc 1 419 15 view .LVU241
  838 000a 0646     		mov	r6, r0
  839              	.LVL67:
-ARM GAS  /tmp/ccosFS6D.s 			page 39
+ARM GAS  /tmp/ccdeqYbF.s 			page 39
 
 
  422:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
@@ -2338,7 +2338,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  876 0034 31E0     		b	.L62
  877              	.L72:
  427:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       {
-ARM GAS  /tmp/ccosFS6D.s 			page 40
+ARM GAS  /tmp/ccdeqYbF.s 			page 40
 
 
  878              		.loc 1 427 32 discriminator 1 view .LVU260
@@ -2398,7 +2398,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  918              		.loc 1 457 9 view .LVU274
  919 0072 9B68     		ldr	r3, [r3, #8]
  456:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****        (ADC_IS_SOFTWARE_START_REGULAR(hadc)       &&
-ARM GAS  /tmp/ccosFS6D.s 			page 41
+ARM GAS  /tmp/ccdeqYbF.s 			page 41
 
 
  920              		.loc 1 456 59 view .LVU275
@@ -2458,7 +2458,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  963              		.cfi_endproc
  964              	.LFE242:
  966              		.section	.text.HAL_ADCEx_InjectedStop_IT,"ax",%progbits
-ARM GAS  /tmp/ccosFS6D.s 			page 42
+ARM GAS  /tmp/ccdeqYbF.s 			page 42
 
 
  967              		.align	1
@@ -2518,7 +2518,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1012 0026 94F83C30 		ldrb	r3, [r4, #60]	@ zero_extendqisi2
  1013 002a 012B     		cmp	r3, #1
  1014 002c 2DD0     		beq	.L78
-ARM GAS  /tmp/ccosFS6D.s 			page 43
+ARM GAS  /tmp/ccdeqYbF.s 			page 43
 
 
  493:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
@@ -2578,7 +2578,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1055              	.L76:
  523:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  1056              		.loc 1 523 5 is_stmt 1 view .LVU311
-ARM GAS  /tmp/ccosFS6D.s 			page 44
+ARM GAS  /tmp/ccdeqYbF.s 			page 44
 
 
  1057 0074 236C     		ldr	r3, [r4, #64]
@@ -2638,7 +2638,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1103              		.loc 1 548 1 is_stmt 1 view -0
  1104              		.cfi_startproc
  1105              		@ args = 0, pretend = 0, frame = 8
-ARM GAS  /tmp/ccosFS6D.s 			page 45
+ARM GAS  /tmp/ccdeqYbF.s 			page 45
 
 
  1106              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -2698,7 +2698,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1151              		.loc 1 552 3 discriminator 1 view .LVU330
  1152 002c 0A48     		ldr	r0, .L94
  1153              	.LVL83:
-ARM GAS  /tmp/ccosFS6D.s 			page 46
+ARM GAS  /tmp/ccdeqYbF.s 			page 46
 
 
  552:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
@@ -2758,7 +2758,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1193              		.loc 1 573 7 view .LVU345
  573:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     }
  1194              		.loc 1 573 18 is_stmt 0 view .LVU346
-ARM GAS  /tmp/ccosFS6D.s 			page 47
+ARM GAS  /tmp/ccdeqYbF.s 			page 47
 
 
  1195 0048 2B68     		ldr	r3, [r5]
@@ -2818,7 +2818,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1241 0002 82B0     		sub	sp, sp, #8
  1242              	.LCFI17:
  1243              		.cfi_def_cfa_offset 24
-ARM GAS  /tmp/ccosFS6D.s 			page 48
+ARM GAS  /tmp/ccdeqYbF.s 			page 48
 
 
  1244 0004 0446     		mov	r4, r0
@@ -2878,7 +2878,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1285 003e 84F83C30 		strb	r3, [r4, #60]
  609:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  1286              		.loc 1 609 3 discriminator 2 view .LVU370
-ARM GAS  /tmp/ccosFS6D.s 			page 49
+ARM GAS  /tmp/ccdeqYbF.s 			page 49
 
 
  613:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
@@ -2938,7 +2938,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1326              	.L113:
  605:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   assert_param(IS_FUNCTIONAL_STATE(hadc->Init.DMAContinuousRequests));
  1327              		.loc 1 605 3 discriminator 4 view .LVU386
-ARM GAS  /tmp/ccosFS6D.s 			page 50
+ARM GAS  /tmp/ccdeqYbF.s 			page 50
 
 
  1328 0074 40F25D21 		movw	r1, #605
@@ -2998,7 +2998,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  641:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     }
  1371              		.loc 1 641 7 is_stmt 1 view .LVU398
  1372 00ba 236C     		ldr	r3, [r4, #64]
-ARM GAS  /tmp/ccosFS6D.s 			page 51
+ARM GAS  /tmp/ccdeqYbF.s 			page 51
 
 
  1373 00bc 23F44053 		bic	r3, r3, #12288
@@ -3058,7 +3058,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  675:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  1411              		.loc 1 675 5 is_stmt 1 view .LVU415
  1412 00ee 2368     		ldr	r3, [r4]
-ARM GAS  /tmp/ccosFS6D.s 			page 52
+ARM GAS  /tmp/ccdeqYbF.s 			page 52
 
 
  1413 00f0 6FF00202 		mvn	r2, #2
@@ -3118,7 +3118,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  703:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     }
  1452              		.loc 1 703 21 is_stmt 0 view .LVU431
  1453 0126 9A68     		ldr	r2, [r3, #8]
-ARM GAS  /tmp/ccosFS6D.s 			page 53
+ARM GAS  /tmp/ccdeqYbF.s 			page 53
 
 
  703:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****     }
@@ -3178,7 +3178,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  609:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  1499              		.loc 1 609 3 discriminator 1 view .LVU441
  1500 0158 0220     		movs	r0, #2
-ARM GAS  /tmp/ccosFS6D.s 			page 54
+ARM GAS  /tmp/ccdeqYbF.s 			page 54
 
 
  1501 015a FBE7     		b	.L100
@@ -3238,7 +3238,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1550 0014 02F58072 		add	r2, r2, #256
  1551 0018 9342     		cmp	r3, r2
  1552 001a 04D0     		beq	.L118
-ARM GAS  /tmp/ccosFS6D.s 			page 55
+ARM GAS  /tmp/ccdeqYbF.s 			page 55
 
 
  731:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
@@ -3298,7 +3298,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1592              		.loc 1 765 3 view .LVU463
  768:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** }
  1593              		.loc 1 768 3 view .LVU464
-ARM GAS  /tmp/ccosFS6D.s 			page 56
+ARM GAS  /tmp/ccdeqYbF.s 			page 56
 
 
  1594              	.LVL109:
@@ -3358,7 +3358,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1640              		.global	HAL_ADCEx_MultiModeGetValue
  1641              		.syntax unified
  1642              		.thumb
-ARM GAS  /tmp/ccosFS6D.s 			page 57
+ARM GAS  /tmp/ccdeqYbF.s 			page 57
 
 
  1643              		.thumb_func
@@ -3418,7 +3418,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1691              		.section	.text.HAL_ADCEx_InjectedConfigChannel,"ax",%progbits
  1692              		.align	1
  1693              		.global	HAL_ADCEx_InjectedConfigChannel
-ARM GAS  /tmp/ccosFS6D.s 			page 58
+ARM GAS  /tmp/ccdeqYbF.s 			page 58
 
 
  1694              		.syntax unified
@@ -3478,7 +3478,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1740 0028 2DD0     		beq	.L135
  831:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   assert_param(IS_ADC_INJECTED_LENGTH(sConfigInjected->InjectedNbrOfConversion));
  1741              		.loc 1 831 3 discriminator 2 view .LVU493
-ARM GAS  /tmp/ccosFS6D.s 			page 59
+ARM GAS  /tmp/ccdeqYbF.s 			page 59
 
 
  1742 002a B3F5003F 		cmp	r3, #131072
@@ -3538,7 +3538,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  831:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   assert_param(IS_ADC_INJECTED_LENGTH(sConfigInjected->InjectedNbrOfConversion));
  1783              		.loc 1 831 3 discriminator 16 view .LVU507
  1784 007e A44A     		ldr	r2, .L174
-ARM GAS  /tmp/ccosFS6D.s 			page 60
+ARM GAS  /tmp/ccdeqYbF.s 			page 60
 
 
  1785 0080 9342     		cmp	r3, r2
@@ -3598,7 +3598,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1828 00c2 B3F1407F 		cmp	r3, #50331648
  1829 00c6 02D1     		bne	.L143
  838:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** #endif /* USE_FULL_ASSERT  */
-ARM GAS  /tmp/ccosFS6D.s 			page 61
+ARM GAS  /tmp/ccdeqYbF.s 			page 61
 
 
  1830              		.loc 1 838 3 discriminator 11 view .LVU519
@@ -3658,7 +3658,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1871              		.loc 1 847 3 discriminator 2 view .LVU532
  850:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
  1872              		.loc 1 850 3 view .LVU533
-ARM GAS  /tmp/ccosFS6D.s 			page 62
+ARM GAS  /tmp/ccdeqYbF.s 			page 62
 
 
  850:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   {
@@ -3718,7 +3718,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  868:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   hadc->Instance->JSQR |=  ADC_SQR1(sConfigInjected->InjectedNbrOfConversion);
  1912              		.loc 1 868 24 view .LVU549
  1913 0140 23F44013 		bic	r3, r3, #3145728
-ARM GAS  /tmp/ccosFS6D.s 			page 63
+ARM GAS  /tmp/ccdeqYbF.s 			page 63
 
 
  1914 0144 9363     		str	r3, [r2, #56]
@@ -3778,7 +3778,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1954 0180 0333     		adds	r3, r3, #3
  1955 0182 DBB2     		uxtb	r3, r3
  1956 0184 03EB8303 		add	r3, r3, r3, lsl #2
-ARM GAS  /tmp/ccosFS6D.s 			page 64
+ARM GAS  /tmp/ccdeqYbF.s 			page 64
 
 
  1957 0188 2188     		ldrh	r1, [r4]
@@ -3838,7 +3838,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  1994 01b8 9360     		str	r3, [r2, #8]
  892:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   }
  1995              		.loc 1 892 5 is_stmt 1 view .LVU581
-ARM GAS  /tmp/ccosFS6D.s 			page 65
+ARM GAS  /tmp/ccdeqYbF.s 			page 65
 
 
  892:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   }
@@ -3898,7 +3898,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2032              		.loc 1 915 25 view .LVU599
  2033 01e2 43F48053 		orr	r3, r3, #4096
  2034 01e6 5360     		str	r3, [r2, #4]
-ARM GAS  /tmp/ccosFS6D.s 			page 66
+ARM GAS  /tmp/ccdeqYbF.s 			page 66
 
 
  2035              	.L153:
@@ -3958,7 +3958,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2072 0212 414B     		ldr	r3, .L174+8
  2073 0214 9A42     		cmp	r2, r3
  2074 0216 00F09780 		beq	.L172
-ARM GAS  /tmp/ccosFS6D.s 			page 67
+ARM GAS  /tmp/ccdeqYbF.s 			page 67
 
 
  2075              	.L158:
@@ -4018,7 +4018,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2116 0248 3248     		ldr	r0, .L174+4
  2117 024a FFF7FEFF 		bl	assert_failed
  2118              	.LVL130:
-ARM GAS  /tmp/ccosFS6D.s 			page 68
+ARM GAS  /tmp/ccdeqYbF.s 			page 68
 
 
  2119 024e E7E6     		b	.L134
@@ -4078,7 +4078,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2166 029c FFF7FEFF 		bl	assert_failed
  2167              	.LVL137:
  2168 02a0 2AE7     		b	.L144
-ARM GAS  /tmp/ccosFS6D.s 			page 69
+ARM GAS  /tmp/ccdeqYbF.s 			page 69
 
 
  2169              	.L146:
@@ -4138,7 +4138,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2207              		.loc 1 898 9 is_stmt 0 view .LVU652
  2208 02d6 2A68     		ldr	r2, [r5]
  898:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   }
-ARM GAS  /tmp/ccosFS6D.s 			page 70
+ARM GAS  /tmp/ccdeqYbF.s 			page 70
 
 
  2209              		.loc 1 898 19 view .LVU653
@@ -4198,7 +4198,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2247              		.loc 1 933 21 view .LVU669
  2248 0306 9369     		ldr	r3, [r2, #24]
  933:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       break;
-ARM GAS  /tmp/ccosFS6D.s 			page 71
+ARM GAS  /tmp/ccdeqYbF.s 			page 71
 
 
  2249              		.loc 1 933 47 view .LVU670
@@ -4258,7 +4258,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2288 0334 136A     		ldr	r3, [r2, #32]
  942:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****       hadc->Instance->JOFR4 |= sConfigInjected->InjectedOffset;
  2289              		.loc 1 942 29 view .LVU686
-ARM GAS  /tmp/ccosFS6D.s 			page 72
+ARM GAS  /tmp/ccdeqYbF.s 			page 72
 
 
  2290 0336 6FF30B03 		bfc	r3, #0, #12
@@ -4318,7 +4318,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2328              		.loc 1 963 18 is_stmt 0 view .LVU702
  2329 0366 044A     		ldr	r2, .L176
  2330 0368 5368     		ldr	r3, [r2, #4]
-ARM GAS  /tmp/ccosFS6D.s 			page 73
+ARM GAS  /tmp/ccdeqYbF.s 			page 73
 
 
  963:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   }
@@ -4378,7 +4378,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2381              	.L180:
  988:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c ****   assert_param(IS_ADC_SAMPLING_DELAY(multimode->TwoSamplingDelay));
  2382              		.loc 1 988 3 view .LVU709
-ARM GAS  /tmp/ccosFS6D.s 			page 74
+ARM GAS  /tmp/ccdeqYbF.s 			page 74
 
 
  2383 0016 6368     		ldr	r3, [r4, #4]
@@ -4438,7 +4438,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2424 0064 11D0     		beq	.L182
  989:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  2425              		.loc 1 989 3 discriminator 10 view .LVU723
-ARM GAS  /tmp/ccosFS6D.s 			page 75
+ARM GAS  /tmp/ccdeqYbF.s 			page 75
 
 
  2426 0066 B3F5206F 		cmp	r3, #2560
@@ -4498,7 +4498,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
 1001:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
  2465              		.loc 1 1001 34 view .LVU739
  2466 00a4 2168     		ldr	r1, [r4]
-ARM GAS  /tmp/ccosFS6D.s 			page 76
+ARM GAS  /tmp/ccdeqYbF.s 			page 76
 
 
 1001:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** 
@@ -4558,7 +4558,7 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
 1015:Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c **** }
  2503              		.loc 1 1015 3 view .LVU758
  2504              	.LVL143:
-ARM GAS  /tmp/ccosFS6D.s 			page 77
+ARM GAS  /tmp/ccdeqYbF.s 			page 77
 
 
  2505              	.L183:
@@ -4618,62 +4618,62 @@ ARM GAS  /tmp/ccosFS6D.s 			page 1
  2553              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
  2554              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc.h"
  2555              		.file 8 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc_ex.h"
-ARM GAS  /tmp/ccosFS6D.s 			page 78
+ARM GAS  /tmp/ccdeqYbF.s 			page 78
 
 
  2556              		.file 9 "Core/Inc/stm32f4xx_hal_conf.h"
  2557              		.file 10 "Drivers/STM32F4/Drivers/CMSIS/Device/ST/STM32F4xx/Include/system_stm32f4xx.h"
  2558              		.file 11 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
-ARM GAS  /tmp/ccosFS6D.s 			page 79
+ARM GAS  /tmp/ccdeqYbF.s 			page 79
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 stm32f4xx_hal_adc_ex.c
-     /tmp/ccosFS6D.s:21     .text.ADC_MultiModeDMAError:00000000 $t
-     /tmp/ccosFS6D.s:26     .text.ADC_MultiModeDMAError:00000000 ADC_MultiModeDMAError
-     /tmp/ccosFS6D.s:62     .text.ADC_MultiModeDMAHalfConvCplt:00000000 $t
-     /tmp/ccosFS6D.s:67     .text.ADC_MultiModeDMAHalfConvCplt:00000000 ADC_MultiModeDMAHalfConvCplt
-     /tmp/ccosFS6D.s:94     .text.ADC_MultiModeDMAConvCplt:00000000 $t
-     /tmp/ccosFS6D.s:99     .text.ADC_MultiModeDMAConvCplt:00000000 ADC_MultiModeDMAConvCplt
-     /tmp/ccosFS6D.s:193    .text.HAL_ADCEx_InjectedStart:00000000 $t
-     /tmp/ccosFS6D.s:199    .text.HAL_ADCEx_InjectedStart:00000000 HAL_ADCEx_InjectedStart
-     /tmp/ccosFS6D.s:426    .text.HAL_ADCEx_InjectedStart:000000f4 $d
-     /tmp/ccosFS6D.s:434    .text.HAL_ADCEx_InjectedStart_IT:00000000 $t
-     /tmp/ccosFS6D.s:440    .text.HAL_ADCEx_InjectedStart_IT:00000000 HAL_ADCEx_InjectedStart_IT
-     /tmp/ccosFS6D.s:672    .text.HAL_ADCEx_InjectedStart_IT:000000fc $d
-     /tmp/ccosFS6D.s:680    .rodata.HAL_ADCEx_InjectedStop.str1.4:00000000 $d
-     /tmp/ccosFS6D.s:685    .text.HAL_ADCEx_InjectedStop:00000000 $t
-     /tmp/ccosFS6D.s:691    .text.HAL_ADCEx_InjectedStop:00000000 HAL_ADCEx_InjectedStop
-     /tmp/ccosFS6D.s:802    .text.HAL_ADCEx_InjectedStop:00000088 $d
-     /tmp/ccosFS6D.s:808    .text.HAL_ADCEx_InjectedPollForConversion:00000000 $t
-     /tmp/ccosFS6D.s:814    .text.HAL_ADCEx_InjectedPollForConversion:00000000 HAL_ADCEx_InjectedPollForConversion
-     /tmp/ccosFS6D.s:967    .text.HAL_ADCEx_InjectedStop_IT:00000000 $t
-     /tmp/ccosFS6D.s:973    .text.HAL_ADCEx_InjectedStop_IT:00000000 HAL_ADCEx_InjectedStop_IT
-     /tmp/ccosFS6D.s:1088   .text.HAL_ADCEx_InjectedStop_IT:00000090 $d
-     /tmp/ccosFS6D.s:1094   .text.HAL_ADCEx_InjectedGetValue:00000000 $t
-     /tmp/ccosFS6D.s:1100   .text.HAL_ADCEx_InjectedGetValue:00000000 HAL_ADCEx_InjectedGetValue
-     /tmp/ccosFS6D.s:1141   .text.HAL_ADCEx_InjectedGetValue:00000024 $d
-     /tmp/ccosFS6D.s:1146   .text.HAL_ADCEx_InjectedGetValue:00000028 $t
-     /tmp/ccosFS6D.s:1215   .text.HAL_ADCEx_InjectedGetValue:00000058 $d
-     /tmp/ccosFS6D.s:1220   .text.HAL_ADCEx_MultiModeStart_DMA:00000000 $t
-     /tmp/ccosFS6D.s:1226   .text.HAL_ADCEx_MultiModeStart_DMA:00000000 HAL_ADCEx_MultiModeStart_DMA
-     /tmp/ccosFS6D.s:1505   .text.HAL_ADCEx_MultiModeStart_DMA:0000015c $d
-     /tmp/ccosFS6D.s:1517   .text.HAL_ADCEx_MultiModeStop_DMA:00000000 $t
-     /tmp/ccosFS6D.s:1523   .text.HAL_ADCEx_MultiModeStop_DMA:00000000 HAL_ADCEx_MultiModeStop_DMA
-     /tmp/ccosFS6D.s:1632   .text.HAL_ADCEx_MultiModeStop_DMA:00000084 $d
-     /tmp/ccosFS6D.s:1639   .text.HAL_ADCEx_MultiModeGetValue:00000000 $t
-     /tmp/ccosFS6D.s:1645   .text.HAL_ADCEx_MultiModeGetValue:00000000 HAL_ADCEx_MultiModeGetValue
-     /tmp/ccosFS6D.s:1666   .text.HAL_ADCEx_MultiModeGetValue:00000008 $d
-     /tmp/ccosFS6D.s:1671   .text.HAL_ADCEx_InjectedConvCpltCallback:00000000 $t
-     /tmp/ccosFS6D.s:1677   .text.HAL_ADCEx_InjectedConvCpltCallback:00000000 HAL_ADCEx_InjectedConvCpltCallback
-     /tmp/ccosFS6D.s:1692   .text.HAL_ADCEx_InjectedConfigChannel:00000000 $t
-     /tmp/ccosFS6D.s:1698   .text.HAL_ADCEx_InjectedConfigChannel:00000000 HAL_ADCEx_InjectedConfigChannel
-     /tmp/ccosFS6D.s:2259   .text.HAL_ADCEx_InjectedConfigChannel:00000310 $d
-     /tmp/ccosFS6D.s:2265   .text.HAL_ADCEx_InjectedConfigChannel:0000031c $t
-     /tmp/ccosFS6D.s:2343   .text.HAL_ADCEx_InjectedConfigChannel:00000378 $d
-     /tmp/ccosFS6D.s:2348   .text.HAL_ADCEx_MultiModeConfigChannel:00000000 $t
-     /tmp/ccosFS6D.s:2354   .text.HAL_ADCEx_MultiModeConfigChannel:00000000 HAL_ADCEx_MultiModeConfigChannel
-     /tmp/ccosFS6D.s:2541   .text.HAL_ADCEx_MultiModeConfigChannel:000000fc $d
+     /tmp/ccdeqYbF.s:21     .text.ADC_MultiModeDMAError:00000000 $t
+     /tmp/ccdeqYbF.s:26     .text.ADC_MultiModeDMAError:00000000 ADC_MultiModeDMAError
+     /tmp/ccdeqYbF.s:62     .text.ADC_MultiModeDMAHalfConvCplt:00000000 $t
+     /tmp/ccdeqYbF.s:67     .text.ADC_MultiModeDMAHalfConvCplt:00000000 ADC_MultiModeDMAHalfConvCplt
+     /tmp/ccdeqYbF.s:94     .text.ADC_MultiModeDMAConvCplt:00000000 $t
+     /tmp/ccdeqYbF.s:99     .text.ADC_MultiModeDMAConvCplt:00000000 ADC_MultiModeDMAConvCplt
+     /tmp/ccdeqYbF.s:193    .text.HAL_ADCEx_InjectedStart:00000000 $t
+     /tmp/ccdeqYbF.s:199    .text.HAL_ADCEx_InjectedStart:00000000 HAL_ADCEx_InjectedStart
+     /tmp/ccdeqYbF.s:426    .text.HAL_ADCEx_InjectedStart:000000f4 $d
+     /tmp/ccdeqYbF.s:434    .text.HAL_ADCEx_InjectedStart_IT:00000000 $t
+     /tmp/ccdeqYbF.s:440    .text.HAL_ADCEx_InjectedStart_IT:00000000 HAL_ADCEx_InjectedStart_IT
+     /tmp/ccdeqYbF.s:672    .text.HAL_ADCEx_InjectedStart_IT:000000fc $d
+     /tmp/ccdeqYbF.s:680    .rodata.HAL_ADCEx_InjectedStop.str1.4:00000000 $d
+     /tmp/ccdeqYbF.s:685    .text.HAL_ADCEx_InjectedStop:00000000 $t
+     /tmp/ccdeqYbF.s:691    .text.HAL_ADCEx_InjectedStop:00000000 HAL_ADCEx_InjectedStop
+     /tmp/ccdeqYbF.s:802    .text.HAL_ADCEx_InjectedStop:00000088 $d
+     /tmp/ccdeqYbF.s:808    .text.HAL_ADCEx_InjectedPollForConversion:00000000 $t
+     /tmp/ccdeqYbF.s:814    .text.HAL_ADCEx_InjectedPollForConversion:00000000 HAL_ADCEx_InjectedPollForConversion
+     /tmp/ccdeqYbF.s:967    .text.HAL_ADCEx_InjectedStop_IT:00000000 $t
+     /tmp/ccdeqYbF.s:973    .text.HAL_ADCEx_InjectedStop_IT:00000000 HAL_ADCEx_InjectedStop_IT
+     /tmp/ccdeqYbF.s:1088   .text.HAL_ADCEx_InjectedStop_IT:00000090 $d
+     /tmp/ccdeqYbF.s:1094   .text.HAL_ADCEx_InjectedGetValue:00000000 $t
+     /tmp/ccdeqYbF.s:1100   .text.HAL_ADCEx_InjectedGetValue:00000000 HAL_ADCEx_InjectedGetValue
+     /tmp/ccdeqYbF.s:1141   .text.HAL_ADCEx_InjectedGetValue:00000024 $d
+     /tmp/ccdeqYbF.s:1146   .text.HAL_ADCEx_InjectedGetValue:00000028 $t
+     /tmp/ccdeqYbF.s:1215   .text.HAL_ADCEx_InjectedGetValue:00000058 $d
+     /tmp/ccdeqYbF.s:1220   .text.HAL_ADCEx_MultiModeStart_DMA:00000000 $t
+     /tmp/ccdeqYbF.s:1226   .text.HAL_ADCEx_MultiModeStart_DMA:00000000 HAL_ADCEx_MultiModeStart_DMA
+     /tmp/ccdeqYbF.s:1505   .text.HAL_ADCEx_MultiModeStart_DMA:0000015c $d
+     /tmp/ccdeqYbF.s:1517   .text.HAL_ADCEx_MultiModeStop_DMA:00000000 $t
+     /tmp/ccdeqYbF.s:1523   .text.HAL_ADCEx_MultiModeStop_DMA:00000000 HAL_ADCEx_MultiModeStop_DMA
+     /tmp/ccdeqYbF.s:1632   .text.HAL_ADCEx_MultiModeStop_DMA:00000084 $d
+     /tmp/ccdeqYbF.s:1639   .text.HAL_ADCEx_MultiModeGetValue:00000000 $t
+     /tmp/ccdeqYbF.s:1645   .text.HAL_ADCEx_MultiModeGetValue:00000000 HAL_ADCEx_MultiModeGetValue
+     /tmp/ccdeqYbF.s:1666   .text.HAL_ADCEx_MultiModeGetValue:00000008 $d
+     /tmp/ccdeqYbF.s:1671   .text.HAL_ADCEx_InjectedConvCpltCallback:00000000 $t
+     /tmp/ccdeqYbF.s:1677   .text.HAL_ADCEx_InjectedConvCpltCallback:00000000 HAL_ADCEx_InjectedConvCpltCallback
+     /tmp/ccdeqYbF.s:1692   .text.HAL_ADCEx_InjectedConfigChannel:00000000 $t
+     /tmp/ccdeqYbF.s:1698   .text.HAL_ADCEx_InjectedConfigChannel:00000000 HAL_ADCEx_InjectedConfigChannel
+     /tmp/ccdeqYbF.s:2259   .text.HAL_ADCEx_InjectedConfigChannel:00000310 $d
+     /tmp/ccdeqYbF.s:2265   .text.HAL_ADCEx_InjectedConfigChannel:0000031c $t
+     /tmp/ccdeqYbF.s:2343   .text.HAL_ADCEx_InjectedConfigChannel:00000378 $d
+     /tmp/ccdeqYbF.s:2348   .text.HAL_ADCEx_MultiModeConfigChannel:00000000 $t
+     /tmp/ccdeqYbF.s:2354   .text.HAL_ADCEx_MultiModeConfigChannel:00000000 HAL_ADCEx_MultiModeConfigChannel
+     /tmp/ccdeqYbF.s:2541   .text.HAL_ADCEx_MultiModeConfigChannel:000000fc $d
 
 UNDEFINED SYMBOLS
 HAL_ADC_ErrorCallback
@@ -4684,6 +4684,6 @@ assert_failed
 HAL_GetTick
 HAL_DMA_Start_IT
 HAL_DMA_Abort
-ARM GAS  /tmp/ccosFS6D.s 			page 80
+ARM GAS  /tmp/ccdeqYbF.s 			page 80
 
 

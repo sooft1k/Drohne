@@ -32,7 +32,9 @@ Sensors/command.c \
 Sensors/pid.c \
 Sensors/control.c \
 Sensors/mixer.c \
-Sensors/battery.c
+Sensors/battery.c \
+Sensors/crsf.c \
+Sensors/rc.c
 
 ASM_SOURCES = Core/Src/startup_stm32f405xx.s
 

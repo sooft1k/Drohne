@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccgFEGFb.s 			page 1
+ARM GAS  /tmp/ccYusgpU.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   29:Sensors/battery.c ****     HAL_GPIO_Init(GPIOC, &g);
   30:Sensors/battery.c **** 
   31:Sensors/battery.c ****     hadc1.Instance = ADC1;
-ARM GAS  /tmp/ccgFEGFb.s 			page 2
+ARM GAS  /tmp/ccYusgpU.s 			page 2
 
 
   32:Sensors/battery.c ****     hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   49 000e 0221     		movs	r1, #2
   50 0010 2046     		mov	r0, r4
   51 0012 FFF7FEFF 		bl	HAL_ADC_PollForConversion
-ARM GAS  /tmp/ccgFEGFb.s 			page 3
+ARM GAS  /tmp/ccYusgpU.s 			page 3
 
 
   52              	.LVL1:
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   95              		.cfi_remember_state
   96              		.cfi_restore 80
   97              		.cfi_restore 81
-ARM GAS  /tmp/ccgFEGFb.s 			page 4
+ARM GAS  /tmp/ccYusgpU.s 			page 4
 
 
   98              		.cfi_def_cfa_offset 8
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   22:Sensors/battery.c ****     __HAL_RCC_GPIOC_CLK_ENABLE();
  148              		.loc 1 22 5 view .LVU24
  149 0008 2D4B     		ldr	r3, .L14
-ARM GAS  /tmp/ccgFEGFb.s 			page 5
+ARM GAS  /tmp/ccYusgpU.s 			page 5
 
 
  150 000a 5A6C     		ldr	r2, [r3, #68]
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  189              		.loc 1 27 12 is_stmt 0 view .LVU39
  190 003e 0323     		movs	r3, #3
  191 0040 0893     		str	r3, [sp, #32]
-ARM GAS  /tmp/ccgFEGFb.s 			page 6
+ARM GAS  /tmp/ccYusgpU.s 			page 6
 
 
   28:Sensors/battery.c ****     HAL_GPIO_Init(GPIOC, &g);
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   39:Sensors/battery.c ****     hadc1.Init.NbrOfConversion = 1;
  227              		.loc 1 39 26 is_stmt 0 view .LVU59
  228 0066 C460     		str	r4, [r0, #12]
-ARM GAS  /tmp/ccgFEGFb.s 			page 7
+ARM GAS  /tmp/ccYusgpU.s 			page 7
 
 
   40:Sensors/battery.c ****     hadc1.Init.DMAContinuousRequests = DISABLE;
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   50:Sensors/battery.c ****         Error_Handler();
  265              		.loc 1 50 9 is_stmt 0 view .LVU78
  266 008c 03A9     		add	r1, sp, #12
-ARM GAS  /tmp/ccgFEGFb.s 			page 8
+ARM GAS  /tmp/ccYusgpU.s 			page 8
 
 
  267 008e 0E48     		ldr	r0, .L14+8
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  308              	.LVL14:
  309 00b8 DDE7     		b	.L9
  310              	.L13:
-ARM GAS  /tmp/ccgFEGFb.s 			page 9
+ARM GAS  /tmp/ccYusgpU.s 			page 9
 
 
   51:Sensors/battery.c **** 
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   80:Sensors/battery.c ****     if (timer < (1.0f / BAT_RATE_HZ))
  362              		.loc 1 80 5 is_stmt 1 view .LVU97
  363              		.loc 1 80 8 is_stmt 0 view .LVU98
-ARM GAS  /tmp/ccgFEGFb.s 			page 10
+ARM GAS  /tmp/ccYusgpU.s 			page 10
 
 
  364 0014 DFED417A 		vldr.32	s15, .L44+4
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  129:Sensors/battery.c ****     else if (cv < BAT_WARN_V)
  130:Sensors/battery.c ****         state = BAT_WARN;
  131:Sensors/battery.c ****     else
-ARM GAS  /tmp/ccgFEGFb.s 			page 11
+ARM GAS  /tmp/ccYusgpU.s 			page 11
 
 
  132:Sensors/battery.c ****         state = BAT_OK;
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  409              		.loc 1 91 15 view .LVU112
  410 0050 20EE070A 		vmul.f32	s0, s0, s14
   91:Sensors/battery.c **** 
-ARM GAS  /tmp/ccgFEGFb.s 			page 12
+ARM GAS  /tmp/ccYusgpU.s 			page 12
 
 
  411              		.loc 1 91 10 view .LVU113
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
   98:Sensors/battery.c ****         return;
  451              		.loc 1 98 9 is_stmt 1 view .LVU128
   98:Sensors/battery.c ****         return;
-ARM GAS  /tmp/ccgFEGFb.s 			page 13
+ARM GAS  /tmp/ccYusgpU.s 			page 13
 
 
  452              		.loc 1 98 16 is_stmt 0 view .LVU129
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  493 00b8 DFED1E6A 		vldr.32	s13, .L44+28
  494 00bc B4EEE67A 		vcmpe.f32	s14, s13
  495 00c0 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
-ARM GAS  /tmp/ccgFEGFb.s 			page 14
+ARM GAS  /tmp/ccYusgpU.s 			page 14
 
 
  496 00c4 E7D8     		bhi	.L22
@@ -838,7 +838,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  535 00f0 0E4B     		ldr	r3, .L44+20
  536 00f2 0222     		movs	r2, #2
  537 00f4 1A70     		strb	r2, [r3]
-ARM GAS  /tmp/ccgFEGFb.s 			page 15
+ARM GAS  /tmp/ccYusgpU.s 			page 15
 
 
  538 00f6 94E7     		b	.L16
@@ -898,7 +898,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  586              		@ link register save eliminated.
  587              		.loc 1 135 28 view .LVU165
  588              		.loc 1 135 41 is_stmt 0 view .LVU166
-ARM GAS  /tmp/ccgFEGFb.s 			page 16
+ARM GAS  /tmp/ccYusgpU.s 			page 16
 
 
  589 0000 014B     		ldr	r3, .L47
@@ -958,7 +958,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  645              		.loc 1 137 59 discriminator 1 view .LVU174
  646 0006 074A     		ldr	r2, .L55+4
  647 0008 92ED007A 		vldr.32	s14, [r2]
-ARM GAS  /tmp/ccgFEGFb.s 			page 17
+ARM GAS  /tmp/ccYusgpU.s 			page 17
 
 
  648 000c 07EE903A 		vmov	s15, r3	@ int
@@ -1018,7 +1018,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  700 0015 000000   		.align	2
  701              	.LC2:
  702 0018 4B524954 		.ascii	"KRITISCH - sofort landen\000"
-ARM GAS  /tmp/ccgFEGFb.s 			page 18
+ARM GAS  /tmp/ccYusgpU.s 			page 18
 
 
  702      49534348 
@@ -1078,7 +1078,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  739              		.loc 1 151 16 view .LVU185
  740 001a 0548     		ldr	r0, .L65+16
  152:Sensors/battery.c ****     }
-ARM GAS  /tmp/ccgFEGFb.s 			page 19
+ARM GAS  /tmp/ccYusgpU.s 			page 19
 
 
  153:Sensors/battery.c **** }
@@ -1138,7 +1138,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  789 002c 67EE877A 		vmul.f32	s15, s15, s14
  790 0030 C3ED007A 		vstr.32	s15, [r3]
  161:Sensors/battery.c ****     volt = real_volt;
-ARM GAS  /tmp/ccgFEGFb.s 			page 20
+ARM GAS  /tmp/ccYusgpU.s 			page 20
 
 
  791              		.loc 1 161 5 is_stmt 1 view .LVU195
@@ -1198,7 +1198,7 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  853              		.section	.data.scale,"aw"
  854              		.align	2
  857              	scale:
-ARM GAS  /tmp/ccgFEGFb.s 			page 21
+ARM GAS  /tmp/ccYusgpU.s 			page 21
 
 
  858 0000 0000803F 		.word	1065353216
@@ -1225,55 +1225,55 @@ ARM GAS  /tmp/ccgFEGFb.s 			page 1
  879              		.file 8 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_adc.h"
  880              		.file 9 "Sensors/battery.h"
  881              		.file 10 "Core/Inc/main.h"
-ARM GAS  /tmp/ccgFEGFb.s 			page 22
+ARM GAS  /tmp/ccYusgpU.s 			page 22
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 battery.c
-     /tmp/ccgFEGFb.s:21     .text.measure_once:00000000 $t
-     /tmp/ccgFEGFb.s:26     .text.measure_once:00000000 measure_once
-     /tmp/ccgFEGFb.s:114    .text.measure_once:00000064 $d
-     /tmp/ccgFEGFb.s:869    .bss.hadc1:00000000 hadc1
-     /tmp/ccgFEGFb.s:857    .data.scale:00000000 scale
-     /tmp/ccgFEGFb.s:122    .text.Battery_Init:00000000 $t
-     /tmp/ccgFEGFb.s:128    .text.Battery_Init:00000000 Battery_Init
-     /tmp/ccgFEGFb.s:318    .text.Battery_Init:000000c0 $d
-     /tmp/ccgFEGFb.s:863    .bss.volt:00000000 volt
-     /tmp/ccgFEGFb.s:851    .bss.cells:00000000 cells
-     /tmp/ccgFEGFb.s:846    .data.state:00000000 state
-     /tmp/ccgFEGFb.s:835    .bss.settle:00000000 settle
-     /tmp/ccgFEGFb.s:841    .bss.timer:00000000 timer
-     /tmp/ccgFEGFb.s:332    .text.Battery_Update:00000000 $t
-     /tmp/ccgFEGFb.s:338    .text.Battery_Update:00000000 Battery_Update
-     /tmp/ccgFEGFb.s:562    .text.Battery_Update:00000118 $d
-     /tmp/ccgFEGFb.s:574    .text.Battery_Volt:00000000 $t
-     /tmp/ccgFEGFb.s:580    .text.Battery_Volt:00000000 Battery_Volt
-     /tmp/ccgFEGFb.s:595    .text.Battery_Volt:00000008 $d
-     /tmp/ccgFEGFb.s:600    .text.Battery_Cells:00000000 $t
-     /tmp/ccgFEGFb.s:606    .text.Battery_Cells:00000000 Battery_Cells
-     /tmp/ccgFEGFb.s:621    .text.Battery_Cells:00000008 $d
-     /tmp/ccgFEGFb.s:626    .text.Battery_CellVolt:00000000 $t
-     /tmp/ccgFEGFb.s:632    .text.Battery_CellVolt:00000000 Battery_CellVolt
-     /tmp/ccgFEGFb.s:661    .text.Battery_CellVolt:00000020 $d
-     /tmp/ccgFEGFb.s:668    .text.Battery_State:00000000 $t
-     /tmp/ccgFEGFb.s:674    .text.Battery_State:00000000 Battery_State
-     /tmp/ccgFEGFb.s:689    .text.Battery_State:00000008 $d
-     /tmp/ccgFEGFb.s:694    .rodata.Battery_StateText.str1.4:00000000 $d
-     /tmp/ccgFEGFb.s:707    .text.Battery_StateText:00000000 $t
-     /tmp/ccgFEGFb.s:713    .text.Battery_StateText:00000000 Battery_StateText
-     /tmp/ccgFEGFb.s:746    .text.Battery_StateText:00000020 $d
-     /tmp/ccgFEGFb.s:755    .text.Battery_Calibrate:00000000 $t
-     /tmp/ccgFEGFb.s:761    .text.Battery_Calibrate:00000000 Battery_Calibrate
-     /tmp/ccgFEGFb.s:801    .text.Battery_Calibrate:0000003c $d
-     /tmp/ccgFEGFb.s:807    .text.Battery_GetScale:00000000 $t
-     /tmp/ccgFEGFb.s:813    .text.Battery_GetScale:00000000 Battery_GetScale
-     /tmp/ccgFEGFb.s:828    .text.Battery_GetScale:00000008 $d
-     /tmp/ccgFEGFb.s:836    .bss.settle:00000000 $d
-     /tmp/ccgFEGFb.s:838    .bss.timer:00000000 $d
-     /tmp/ccgFEGFb.s:852    .bss.cells:00000000 $d
-     /tmp/ccgFEGFb.s:854    .data.scale:00000000 $d
-     /tmp/ccgFEGFb.s:860    .bss.volt:00000000 $d
-     /tmp/ccgFEGFb.s:866    .bss.hadc1:00000000 $d
+     /tmp/ccYusgpU.s:21     .text.measure_once:00000000 $t
+     /tmp/ccYusgpU.s:26     .text.measure_once:00000000 measure_once
+     /tmp/ccYusgpU.s:114    .text.measure_once:00000064 $d
+     /tmp/ccYusgpU.s:869    .bss.hadc1:00000000 hadc1
+     /tmp/ccYusgpU.s:857    .data.scale:00000000 scale
+     /tmp/ccYusgpU.s:122    .text.Battery_Init:00000000 $t
+     /tmp/ccYusgpU.s:128    .text.Battery_Init:00000000 Battery_Init
+     /tmp/ccYusgpU.s:318    .text.Battery_Init:000000c0 $d
+     /tmp/ccYusgpU.s:863    .bss.volt:00000000 volt
+     /tmp/ccYusgpU.s:851    .bss.cells:00000000 cells
+     /tmp/ccYusgpU.s:846    .data.state:00000000 state
+     /tmp/ccYusgpU.s:835    .bss.settle:00000000 settle
+     /tmp/ccYusgpU.s:841    .bss.timer:00000000 timer
+     /tmp/ccYusgpU.s:332    .text.Battery_Update:00000000 $t
+     /tmp/ccYusgpU.s:338    .text.Battery_Update:00000000 Battery_Update
+     /tmp/ccYusgpU.s:562    .text.Battery_Update:00000118 $d
+     /tmp/ccYusgpU.s:574    .text.Battery_Volt:00000000 $t
+     /tmp/ccYusgpU.s:580    .text.Battery_Volt:00000000 Battery_Volt
+     /tmp/ccYusgpU.s:595    .text.Battery_Volt:00000008 $d
+     /tmp/ccYusgpU.s:600    .text.Battery_Cells:00000000 $t
+     /tmp/ccYusgpU.s:606    .text.Battery_Cells:00000000 Battery_Cells
+     /tmp/ccYusgpU.s:621    .text.Battery_Cells:00000008 $d
+     /tmp/ccYusgpU.s:626    .text.Battery_CellVolt:00000000 $t
+     /tmp/ccYusgpU.s:632    .text.Battery_CellVolt:00000000 Battery_CellVolt
+     /tmp/ccYusgpU.s:661    .text.Battery_CellVolt:00000020 $d
+     /tmp/ccYusgpU.s:668    .text.Battery_State:00000000 $t
+     /tmp/ccYusgpU.s:674    .text.Battery_State:00000000 Battery_State
+     /tmp/ccYusgpU.s:689    .text.Battery_State:00000008 $d
+     /tmp/ccYusgpU.s:694    .rodata.Battery_StateText.str1.4:00000000 $d
+     /tmp/ccYusgpU.s:707    .text.Battery_StateText:00000000 $t
+     /tmp/ccYusgpU.s:713    .text.Battery_StateText:00000000 Battery_StateText
+     /tmp/ccYusgpU.s:746    .text.Battery_StateText:00000020 $d
+     /tmp/ccYusgpU.s:755    .text.Battery_Calibrate:00000000 $t
+     /tmp/ccYusgpU.s:761    .text.Battery_Calibrate:00000000 Battery_Calibrate
+     /tmp/ccYusgpU.s:801    .text.Battery_Calibrate:0000003c $d
+     /tmp/ccYusgpU.s:807    .text.Battery_GetScale:00000000 $t
+     /tmp/ccYusgpU.s:813    .text.Battery_GetScale:00000000 Battery_GetScale
+     /tmp/ccYusgpU.s:828    .text.Battery_GetScale:00000008 $d
+     /tmp/ccYusgpU.s:836    .bss.settle:00000000 $d
+     /tmp/ccYusgpU.s:838    .bss.timer:00000000 $d
+     /tmp/ccYusgpU.s:852    .bss.cells:00000000 $d
+     /tmp/ccYusgpU.s:854    .data.scale:00000000 $d
+     /tmp/ccYusgpU.s:860    .bss.volt:00000000 $d
+     /tmp/ccYusgpU.s:866    .bss.hadc1:00000000 $d
 
 UNDEFINED SYMBOLS
 HAL_ADC_Start

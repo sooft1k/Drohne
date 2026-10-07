@@ -5,13 +5,16 @@
 #include "control.h"
 #include "mixer.h"
 #include "battery.h"
+#include "crsf.h"
+#include "rc.h"
 #include <stdio.h>
 #include <string.h>
 
 I2C_HandleTypeDef hi2c1;
-UART_HandleTypeDef huart2;
-TIM_HandleTypeDef htim2; /* Regeltakt 1 kHz */
-TIM_HandleTypeDef htim3; /* Motorsignal */
+UART_HandleTypeDef huart1; /* ELRS-Empfaenger, CRSF */
+UART_HandleTypeDef huart2; /* Debug-Monitor */
+TIM_HandleTypeDef htim2;   /* Regeltakt 1 kHz */
+TIM_HandleTypeDef htim3;   /* Motorsignal */
 
 uint8_t who = 0;
 uint8_t mpu_ok = 0;
@@ -26,6 +29,7 @@ uint32_t loop_hz = 0;              /* gemessene Ist-Frequenz, von command.c gele
 static void SystemClock_Config(void);
 static void GPIO_Init(void);
 static void I2C1_Init(void);
+static void USART1_Init(void);
 static void USART2_Init(void);
 static void TIM2_Loop_Init(void);
 
@@ -63,14 +67,18 @@ int main(void)
     Command_Init(&huart2);
     Control_Init();
     Battery_Init();
+    USART1_Init();
+    CRSF_Init(&huart1);
+    RC_Init();
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
     printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Start %u us (disarmed)\r\n",
            Motor_UpdateRateHz(), MOTOR_US_IDLE);
     printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Modus: ANGLE\r\n");
-    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | angle | rate |\r\n");
-    printf("         stream on/off | t <gas> | 0-100 | m1..m4 <wert> | rrp/arp <wert>\r\n");
+    printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
+    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
+    printf("         angle | rate | stream on/off | t <gas> | m1..m4 <wert>\r\n");
 
     who = 0;
     if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
@@ -130,6 +138,9 @@ int main(void)
             MPU6050_Convert(&sensor, DT);
             MPU6050_UpdateAngles(&sensor, DT);
         }
+
+        /* Funkempfang auswerten: Sollwerte, Failsafe, Arming */
+        RC_Update(DT);
 
         float out_roll, out_pitch, out_yaw;
         Control_Update(&sensor, DT, &out_roll, &out_pitch, &out_yaw);
@@ -237,6 +248,36 @@ static void I2C1_Init(void)
     hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
     if (HAL_I2C_Init(&hi2c1) != HAL_OK)
         Error_Handler();
+}
+
+/* USART1 fuer den ELRS-Empfaenger: PA9 = TX, PA10 = RX, 420000 Baud */
+static void USART1_Init(void)
+{
+    __HAL_RCC_USART1_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    GPIO_InitTypeDef g = {0};
+    g.Pin = GPIO_PIN_9 | GPIO_PIN_10;
+    g.Mode = GPIO_MODE_AF_PP;
+    g.Pull = GPIO_PULLUP;
+    g.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    g.Alternate = GPIO_AF7_USART1;
+    HAL_GPIO_Init(GPIOA, &g);
+
+    huart1.Instance = USART1;
+    huart1.Init.BaudRate = CRSF_BAUD;
+    huart1.Init.WordLength = UART_WORDLENGTH_8B;
+    huart1.Init.StopBits = UART_STOPBITS_1;
+    huart1.Init.Parity = UART_PARITY_NONE;
+    huart1.Init.Mode = UART_MODE_TX_RX;
+    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&huart1) != HAL_OK)
+        Error_Handler();
+
+    /* Prioritaet zwischen Regeltakt (4) und Debug-UART (6) */
+    HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(USART1_IRQn);
 }
 
 static void USART2_Init(void)

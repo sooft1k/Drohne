@@ -1,0 +1,992 @@
+ARM GAS  /tmp/ccyuYa7e.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"rc.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Sensors/rc.c"
+  20              		.section	.text.stick_norm,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	stick_norm:
+  27              	.LVL0:
+  28              	.LFB243:
+   1:Sensors/rc.c  **** #include "rc.h"
+   2:Sensors/rc.c  **** #include "crsf.h"
+   3:Sensors/rc.c  **** #include "control.h"
+   4:Sensors/rc.c  **** #include "motor.h"
+   5:Sensors/rc.c  **** #include <stdio.h>
+   6:Sensors/rc.c  **** 
+   7:Sensors/rc.c  **** static uint8_t failsafe = 1;
+   8:Sensors/rc.c  **** static uint8_t arm_latch = 0; /* verhindert Armen, solange der Schalter
+   9:Sensors/rc.c  ****                                * beim Einschalten schon oben steht */
+  10:Sensors/rc.c  **** 
+  11:Sensors/rc.c  **** void RC_Init(void)
+  12:Sensors/rc.c  **** {
+  13:Sensors/rc.c  ****     failsafe = 1;
+  14:Sensors/rc.c  ****     arm_latch = 0;
+  15:Sensors/rc.c  **** }
+  16:Sensors/rc.c  **** 
+  17:Sensors/rc.c  **** /* Knueppelwert in -1.0 bis +1.0 umrechnen, mit Totzone um die Mitte */
+  18:Sensors/rc.c  **** static float stick_norm(uint8_t ch)
+  19:Sensors/rc.c  **** {
+  29              		.loc 1 19 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		.loc 1 19 1 is_stmt 0 view .LVU1
+  34 0000 08B5     		push	{r3, lr}
+  35              	.LCFI0:
+  36              		.cfi_def_cfa_offset 8
+  37              		.cfi_offset 3, -8
+  38              		.cfi_offset 14, -4
+  20:Sensors/rc.c  ****     int32_t us = (int32_t)CRSF_Channel(ch) - 1500;
+ARM GAS  /tmp/ccyuYa7e.s 			page 2
+
+
+  39              		.loc 1 20 5 is_stmt 1 view .LVU2
+  40              		.loc 1 20 27 is_stmt 0 view .LVU3
+  41 0002 FFF7FEFF 		bl	CRSF_Channel
+  42              	.LVL1:
+  21:Sensors/rc.c  **** 
+  22:Sensors/rc.c  ****     if (us > -RC_DEADBAND_US && us < RC_DEADBAND_US)
+  43              		.loc 1 22 5 is_stmt 1 view .LVU4
+  44              		.loc 1 22 30 is_stmt 0 view .LVU5
+  45 0006 A0F2C953 		subw	r3, r0, #1481
+  46              		.loc 1 22 8 view .LVU6
+  47 000a 262B     		cmp	r3, #38
+  48 000c 26D9     		bls	.L5
+  49 000e A0F2DC52 		subw	r2, r0, #1500
+  50              	.LVL2:
+  23:Sensors/rc.c  ****         return 0.0f;
+  24:Sensors/rc.c  **** 
+  25:Sensors/rc.c  ****     /* Totzone herausrechnen, damit es direkt hinter der Zone
+  26:Sensors/rc.c  ****      * bei null anfaengt und nicht springt. */
+  27:Sensors/rc.c  ****     if (us > 0)
+  51              		.loc 1 27 5 is_stmt 1 view .LVU7
+  52              		.loc 1 27 8 is_stmt 0 view .LVU8
+  53 0012 002A     		cmp	r2, #0
+  54 0014 13DD     		ble	.L3
+  28:Sensors/rc.c  ****         us -= RC_DEADBAND_US;
+  55              		.loc 1 28 9 is_stmt 1 view .LVU9
+  56              		.loc 1 28 12 is_stmt 0 view .LVU10
+  57 0016 A0F5BE63 		sub	r3, r0, #1520
+  58 001a 07EE903A 		vmov	s15, r3	@ int
+  59              	.LVL3:
+  60              	.L4:
+  29:Sensors/rc.c  ****     else
+  30:Sensors/rc.c  ****         us += RC_DEADBAND_US;
+  31:Sensors/rc.c  **** 
+  32:Sensors/rc.c  ****     float f = (float)us / (500.0f - RC_DEADBAND_US);
+  61              		.loc 1 32 5 is_stmt 1 view .LVU11
+  62              		.loc 1 32 15 is_stmt 0 view .LVU12
+  63 001e F8EEE77A 		vcvt.f32.s32	s15, s15
+  64              		.loc 1 32 11 view .LVU13
+  65 0022 9FED107A 		vldr.32	s14, .L10
+  66 0026 87EE870A 		vdiv.f32	s0, s15, s14
+  67              	.LVL4:
+  33:Sensors/rc.c  ****     if (f > 1.0f)
+  68              		.loc 1 33 5 is_stmt 1 view .LVU14
+  69              		.loc 1 33 8 is_stmt 0 view .LVU15
+  70 002a F7EE007A 		vmov.f32	s15, #1.0e+0
+  71 002e B4EEE70A 		vcmpe.f32	s0, s15
+  72 0032 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+  73 0036 07DD     		ble	.L9
+  34:Sensors/rc.c  ****         f = 1.0f;
+  74              		.loc 1 34 11 view .LVU16
+  75 0038 B7EE000A 		vmov.f32	s0, #1.0e+0
+  76              	.LVL5:
+  77              	.L1:
+  35:Sensors/rc.c  ****     if (f < -1.0f)
+  36:Sensors/rc.c  ****         f = -1.0f;
+  37:Sensors/rc.c  ****     return f;
+  38:Sensors/rc.c  **** }
+ARM GAS  /tmp/ccyuYa7e.s 			page 3
+
+
+  78              		.loc 1 38 1 view .LVU17
+  79 003c 08BD     		pop	{r3, pc}
+  80              	.LVL6:
+  81              	.L3:
+  30:Sensors/rc.c  **** 
+  82              		.loc 1 30 9 is_stmt 1 view .LVU18
+  30:Sensors/rc.c  **** 
+  83              		.loc 1 30 12 is_stmt 0 view .LVU19
+  84 003e A0F5B963 		sub	r3, r0, #1480
+  85 0042 07EE903A 		vmov	s15, r3	@ int
+  86              	.LVL7:
+  30:Sensors/rc.c  **** 
+  87              		.loc 1 30 12 view .LVU20
+  88 0046 EAE7     		b	.L4
+  89              	.LVL8:
+  90              	.L9:
+  35:Sensors/rc.c  ****     if (f < -1.0f)
+  91              		.loc 1 35 5 is_stmt 1 view .LVU21
+  35:Sensors/rc.c  ****     if (f < -1.0f)
+  92              		.loc 1 35 8 is_stmt 0 view .LVU22
+  93 0048 FFEE007A 		vmov.f32	s15, #-1.0e+0
+  94 004c B4EEE70A 		vcmpe.f32	s0, s15
+  95 0050 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+  96 0054 F2D5     		bpl	.L1
+  36:Sensors/rc.c  ****     return f;
+  97              		.loc 1 36 11 view .LVU23
+  98 0056 BFEE000A 		vmov.f32	s0, #-1.0e+0
+  99              	.LVL9:
+  36:Sensors/rc.c  ****     return f;
+ 100              		.loc 1 36 11 view .LVU24
+ 101 005a EFE7     		b	.L1
+ 102              	.LVL10:
+ 103              	.L5:
+  23:Sensors/rc.c  **** 
+ 104              		.loc 1 23 16 view .LVU25
+ 105 005c 9FED020A 		vldr.32	s0, .L10+4
+ 106 0060 ECE7     		b	.L1
+ 107              	.L11:
+ 108 0062 00BF     		.align	2
+ 109              	.L10:
+ 110 0064 0000F043 		.word	1139802112
+ 111 0068 00000000 		.word	0
+ 112              		.cfi_endproc
+ 113              	.LFE243:
+ 115              		.section	.text.RC_Init,"ax",%progbits
+ 116              		.align	1
+ 117              		.global	RC_Init
+ 118              		.syntax unified
+ 119              		.thumb
+ 120              		.thumb_func
+ 122              	RC_Init:
+ 123              	.LFB242:
+  12:Sensors/rc.c  ****     failsafe = 1;
+ 124              		.loc 1 12 1 is_stmt 1 view -0
+ 125              		.cfi_startproc
+ 126              		@ args = 0, pretend = 0, frame = 0
+ 127              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  /tmp/ccyuYa7e.s 			page 4
+
+
+ 128              		@ link register save eliminated.
+  13:Sensors/rc.c  ****     arm_latch = 0;
+ 129              		.loc 1 13 5 view .LVU27
+  13:Sensors/rc.c  ****     arm_latch = 0;
+ 130              		.loc 1 13 14 is_stmt 0 view .LVU28
+ 131 0000 034B     		ldr	r3, .L13
+ 132 0002 0122     		movs	r2, #1
+ 133 0004 1A70     		strb	r2, [r3]
+  14:Sensors/rc.c  **** }
+ 134              		.loc 1 14 5 is_stmt 1 view .LVU29
+  14:Sensors/rc.c  **** }
+ 135              		.loc 1 14 15 is_stmt 0 view .LVU30
+ 136 0006 034B     		ldr	r3, .L13+4
+ 137 0008 0022     		movs	r2, #0
+ 138 000a 1A70     		strb	r2, [r3]
+  15:Sensors/rc.c  **** 
+ 139              		.loc 1 15 1 view .LVU31
+ 140 000c 7047     		bx	lr
+ 141              	.L14:
+ 142 000e 00BF     		.align	2
+ 143              	.L13:
+ 144 0010 00000000 		.word	failsafe
+ 145 0014 00000000 		.word	arm_latch
+ 146              		.cfi_endproc
+ 147              	.LFE242:
+ 149              		.section	.text.RC_Update,"ax",%progbits
+ 150              		.align	1
+ 151              		.global	RC_Update
+ 152              		.syntax unified
+ 153              		.thumb
+ 154              		.thumb_func
+ 156              	RC_Update:
+ 157              	.LVL11:
+ 158              	.LFB244:
+  39:Sensors/rc.c  **** 
+  40:Sensors/rc.c  **** void RC_Update(float dt)
+  41:Sensors/rc.c  **** {
+ 159              		.loc 1 41 1 is_stmt 1 view -0
+ 160              		.cfi_startproc
+ 161              		@ args = 0, pretend = 0, frame = 0
+ 162              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163              		.loc 1 41 1 is_stmt 0 view .LVU33
+ 164 0000 08B5     		push	{r3, lr}
+ 165              	.LCFI1:
+ 166              		.cfi_def_cfa_offset 8
+ 167              		.cfi_offset 3, -8
+ 168              		.cfi_offset 14, -4
+ 169 0002 2DED048B 		vpush.64	{d8, d9}
+ 170              	.LCFI2:
+ 171              		.cfi_def_cfa_offset 24
+ 172              		.cfi_offset 80, -24
+ 173              		.cfi_offset 81, -20
+ 174              		.cfi_offset 82, -16
+ 175              		.cfi_offset 83, -12
+  42:Sensors/rc.c  ****     (void)dt;
+ 176              		.loc 1 42 5 is_stmt 1 view .LVU34
+  43:Sensors/rc.c  **** 
+ARM GAS  /tmp/ccyuYa7e.s 			page 5
+
+
+  44:Sensors/rc.c  ****     /* ---------- Failsafe ---------- */
+  45:Sensors/rc.c  ****     if (!CRSF_LinkUp())
+ 177              		.loc 1 45 5 view .LVU35
+ 178              		.loc 1 45 10 is_stmt 0 view .LVU36
+ 179 0006 FFF7FEFF 		bl	CRSF_LinkUp
+ 180              	.LVL12:
+ 181              		.loc 1 45 8 discriminator 1 view .LVU37
+ 182 000a B0B9     		cbnz	r0, .L16
+  46:Sensors/rc.c  ****     {
+  47:Sensors/rc.c  ****         if (!failsafe)
+ 183              		.loc 1 47 9 is_stmt 1 view .LVU38
+ 184              		.loc 1 47 13 is_stmt 0 view .LVU39
+ 185 000c 554B     		ldr	r3, .L41
+ 186 000e 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 187              		.loc 1 47 12 view .LVU40
+ 188 0010 43B1     		cbz	r3, .L37
+ 189              	.L17:
+  48:Sensors/rc.c  ****         {
+  49:Sensors/rc.c  ****             /* Verbindung gerade verloren - sofort alles aus */
+  50:Sensors/rc.c  ****             Motor_Disarm();
+  51:Sensors/rc.c  ****             setpoint.throttle = 0.0f;
+  52:Sensors/rc.c  ****             setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
+  53:Sensors/rc.c  ****             Control_Reset();
+  54:Sensors/rc.c  ****         }
+  55:Sensors/rc.c  ****         failsafe = 1;
+ 190              		.loc 1 55 9 is_stmt 1 view .LVU41
+ 191              		.loc 1 55 18 is_stmt 0 view .LVU42
+ 192 0012 544B     		ldr	r3, .L41
+ 193 0014 0122     		movs	r2, #1
+ 194 0016 1A70     		strb	r2, [r3]
+  56:Sensors/rc.c  ****         arm_latch = 0; /* nach Failsafe muss der Schalter erst wieder runter */
+ 195              		.loc 1 56 9 is_stmt 1 view .LVU43
+ 196              		.loc 1 56 19 is_stmt 0 view .LVU44
+ 197 0018 534B     		ldr	r3, .L41+4
+ 198 001a 0022     		movs	r2, #0
+ 199 001c 1A70     		strb	r2, [r3]
+  57:Sensors/rc.c  ****         return;
+ 200              		.loc 1 57 9 is_stmt 1 view .LVU45
+ 201              	.L15:
+  58:Sensors/rc.c  ****     }
+  59:Sensors/rc.c  ****     failsafe = 0;
+  60:Sensors/rc.c  **** 
+  61:Sensors/rc.c  ****     /* ---------- Gas ---------- */
+  62:Sensors/rc.c  ****     int32_t thr_us = (int32_t)CRSF_Channel(RC_CH_THROTTLE);
+  63:Sensors/rc.c  ****     float thr = ((float)thr_us - 1000.0f) / 10.0f; /* 1000..2000 -> 0..100 */
+  64:Sensors/rc.c  ****     if (thr < 0.0f)
+  65:Sensors/rc.c  ****         thr = 0.0f;
+  66:Sensors/rc.c  ****     if (thr > 100.0f)
+  67:Sensors/rc.c  ****         thr = 100.0f;
+  68:Sensors/rc.c  **** 
+  69:Sensors/rc.c  ****     /* ---------- Flugmodus ueber Schalter ---------- */
+  70:Sensors/rc.c  ****     if (CRSF_Channel(RC_CH_MODE) > RC_SWITCH_HIGH)
+  71:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
+  72:Sensors/rc.c  ****     else
+  73:Sensors/rc.c  ****         Control_SetMode(MODE_ANGLE);
+  74:Sensors/rc.c  **** 
+  75:Sensors/rc.c  ****     /* ---------- Arming ----------
+ARM GAS  /tmp/ccyuYa7e.s 			page 6
+
+
+  76:Sensors/rc.c  ****      * Bedingungen: Schalter oben UND Gas unter 5 % UND der Schalter
+  77:Sensors/rc.c  ****      * war seit dem Einschalten mindestens einmal unten. */
+  78:Sensors/rc.c  ****     uint8_t sw_on = (CRSF_Channel(RC_CH_ARM) > RC_SWITCH_HIGH) ? 1 : 0;
+  79:Sensors/rc.c  **** 
+  80:Sensors/rc.c  ****     if (!sw_on)
+  81:Sensors/rc.c  ****         arm_latch = 1; /* Schalter war unten, Armen ist jetzt erlaubt */
+  82:Sensors/rc.c  **** 
+  83:Sensors/rc.c  ****     if (sw_on && arm_latch && !Motor_IsArmed())
+  84:Sensors/rc.c  ****     {
+  85:Sensors/rc.c  ****         if (thr < 5.0f)
+  86:Sensors/rc.c  ****         {
+  87:Sensors/rc.c  ****             Control_Reset();
+  88:Sensors/rc.c  ****             Motor_Arm();
+  89:Sensors/rc.c  ****         }
+  90:Sensors/rc.c  ****         else
+  91:Sensors/rc.c  ****         {
+  92:Sensors/rc.c  ****             /* Gas stand nicht unten - sperren bis der Schalter neu kommt */
+  93:Sensors/rc.c  ****             arm_latch = 0;
+  94:Sensors/rc.c  ****         }
+  95:Sensors/rc.c  ****     }
+  96:Sensors/rc.c  ****     else if (!sw_on && Motor_IsArmed())
+  97:Sensors/rc.c  ****     {
+  98:Sensors/rc.c  ****         Motor_Disarm();
+  99:Sensors/rc.c  ****         setpoint.throttle = 0.0f;
+ 100:Sensors/rc.c  ****     }
+ 101:Sensors/rc.c  **** 
+ 102:Sensors/rc.c  ****     /* ---------- Sollwerte ---------- */
+ 103:Sensors/rc.c  ****     float r = stick_norm(RC_CH_ROLL);
+ 104:Sensors/rc.c  ****     float p = stick_norm(RC_CH_PITCH);
+ 105:Sensors/rc.c  ****     float y = stick_norm(RC_CH_YAW);
+ 106:Sensors/rc.c  **** 
+ 107:Sensors/rc.c  ****     if (flight_mode == MODE_ANGLE)
+ 108:Sensors/rc.c  ****     {
+ 109:Sensors/rc.c  ****         setpoint.roll = r * RC_MAX_ANGLE;
+ 110:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_ANGLE;
+ 111:Sensors/rc.c  ****     }
+ 112:Sensors/rc.c  ****     else
+ 113:Sensors/rc.c  ****     {
+ 114:Sensors/rc.c  ****         setpoint.roll = r * RC_MAX_RATE;
+ 115:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_RATE;
+ 116:Sensors/rc.c  ****     }
+ 117:Sensors/rc.c  ****     setpoint.yaw = y * RC_MAX_YAW_RATE;
+ 118:Sensors/rc.c  ****     setpoint.throttle = Motor_IsArmed() ? thr : 0.0f;
+ 119:Sensors/rc.c  **** }
+ 202              		.loc 1 119 1 is_stmt 0 view .LVU46
+ 203 001e BDEC048B 		vldm	sp!, {d8-d9}
+ 204              	.LCFI3:
+ 205              		.cfi_remember_state
+ 206              		.cfi_restore 82
+ 207              		.cfi_restore 83
+ 208              		.cfi_restore 80
+ 209              		.cfi_restore 81
+ 210              		.cfi_def_cfa_offset 8
+ 211 0022 08BD     		pop	{r3, pc}
+ 212              	.L37:
+ 213              	.LCFI4:
+ 214              		.cfi_restore_state
+ARM GAS  /tmp/ccyuYa7e.s 			page 7
+
+
+  50:Sensors/rc.c  ****             setpoint.throttle = 0.0f;
+ 215              		.loc 1 50 13 is_stmt 1 view .LVU47
+ 216 0024 FFF7FEFF 		bl	Motor_Disarm
+ 217              	.LVL13:
+  51:Sensors/rc.c  ****             setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
+ 218              		.loc 1 51 13 view .LVU48
+  51:Sensors/rc.c  ****             setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
+ 219              		.loc 1 51 31 is_stmt 0 view .LVU49
+ 220 0028 504B     		ldr	r3, .L41+8
+ 221 002a 0022     		movs	r2, #0
+ 222 002c DA60     		str	r2, [r3, #12]	@ float
+  52:Sensors/rc.c  ****             Control_Reset();
+ 223              		.loc 1 52 13 is_stmt 1 view .LVU50
+  52:Sensors/rc.c  ****             Control_Reset();
+ 224              		.loc 1 52 59 is_stmt 0 view .LVU51
+ 225 002e 9A60     		str	r2, [r3, #8]	@ float
+  52:Sensors/rc.c  ****             Control_Reset();
+ 226              		.loc 1 52 44 view .LVU52
+ 227 0030 5A60     		str	r2, [r3, #4]	@ float
+  52:Sensors/rc.c  ****             Control_Reset();
+ 228              		.loc 1 52 27 view .LVU53
+ 229 0032 1A60     		str	r2, [r3]	@ float
+  53:Sensors/rc.c  ****         }
+ 230              		.loc 1 53 13 is_stmt 1 view .LVU54
+ 231 0034 FFF7FEFF 		bl	Control_Reset
+ 232              	.LVL14:
+ 233 0038 EBE7     		b	.L17
+ 234              	.L16:
+  59:Sensors/rc.c  **** 
+ 235              		.loc 1 59 5 view .LVU55
+  59:Sensors/rc.c  **** 
+ 236              		.loc 1 59 14 is_stmt 0 view .LVU56
+ 237 003a 4A4B     		ldr	r3, .L41
+ 238 003c 0022     		movs	r2, #0
+ 239 003e 1A70     		strb	r2, [r3]
+  62:Sensors/rc.c  ****     float thr = ((float)thr_us - 1000.0f) / 10.0f; /* 1000..2000 -> 0..100 */
+ 240              		.loc 1 62 5 is_stmt 1 view .LVU57
+  62:Sensors/rc.c  ****     float thr = ((float)thr_us - 1000.0f) / 10.0f; /* 1000..2000 -> 0..100 */
+ 241              		.loc 1 62 31 is_stmt 0 view .LVU58
+ 242 0040 0320     		movs	r0, #3
+ 243 0042 FFF7FEFF 		bl	CRSF_Channel
+ 244              	.LVL15:
+ 245 0046 07EE900A 		vmov	s15, r0	@ int
+ 246              	.LVL16:
+  63:Sensors/rc.c  ****     if (thr < 0.0f)
+ 247              		.loc 1 63 5 is_stmt 1 view .LVU59
+  63:Sensors/rc.c  ****     if (thr < 0.0f)
+ 248              		.loc 1 63 18 is_stmt 0 view .LVU60
+ 249 004a F8EEE77A 		vcvt.f32.s32	s15, s15
+  63:Sensors/rc.c  ****     if (thr < 0.0f)
+ 250              		.loc 1 63 32 view .LVU61
+ 251 004e 9FED487A 		vldr.32	s14, .L41+12
+ 252 0052 77EEC77A 		vsub.f32	s15, s15, s14
+  63:Sensors/rc.c  ****     if (thr < 0.0f)
+ 253              		.loc 1 63 11 view .LVU62
+ 254 0056 B2EE047A 		vmov.f32	s14, #1.0e+1
+ 255 005a 87EE879A 		vdiv.f32	s18, s15, s14
+ARM GAS  /tmp/ccyuYa7e.s 			page 8
+
+
+ 256              	.LVL17:
+  64:Sensors/rc.c  ****         thr = 0.0f;
+ 257              		.loc 1 64 5 is_stmt 1 view .LVU63
+  64:Sensors/rc.c  ****         thr = 0.0f;
+ 258              		.loc 1 64 8 is_stmt 0 view .LVU64
+ 259 005e B5EEC09A 		vcmpe.f32	s18, #0
+ 260 0062 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 261 0066 09D4     		bmi	.L31
+  66:Sensors/rc.c  ****         thr = 100.0f;
+ 262              		.loc 1 66 5 is_stmt 1 view .LVU65
+  66:Sensors/rc.c  ****         thr = 100.0f;
+ 263              		.loc 1 66 8 is_stmt 0 view .LVU66
+ 264 0068 DFED427A 		vldr.32	s15, .L41+16
+ 265 006c B4EEE79A 		vcmpe.f32	s18, s15
+ 266 0070 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 267 0074 04DD     		ble	.L19
+  67:Sensors/rc.c  **** 
+ 268              		.loc 1 67 13 view .LVU67
+ 269 0076 9FED3F9A 		vldr.32	s18, .L41+16
+ 270              	.LVL18:
+  67:Sensors/rc.c  **** 
+ 271              		.loc 1 67 13 view .LVU68
+ 272 007a 01E0     		b	.L19
+ 273              	.LVL19:
+ 274              	.L31:
+  65:Sensors/rc.c  ****     if (thr > 100.0f)
+ 275              		.loc 1 65 13 view .LVU69
+ 276 007c 9FED3E9A 		vldr.32	s18, .L41+20
+ 277              	.LVL20:
+ 278              	.L19:
+  70:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
+ 279              		.loc 1 70 5 is_stmt 1 view .LVU70
+  70:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
+ 280              		.loc 1 70 9 is_stmt 0 view .LVU71
+ 281 0080 0620     		movs	r0, #6
+ 282              	.LVL21:
+  70:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
+ 283              		.loc 1 70 9 view .LVU72
+ 284 0082 FFF7FEFF 		bl	CRSF_Channel
+ 285              	.LVL22:
+  70:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
+ 286              		.loc 1 70 8 discriminator 1 view .LVU73
+ 287 0086 40F2A463 		movw	r3, #1700
+ 288 008a 9842     		cmp	r0, r3
+ 289 008c 39D9     		bls	.L20
+  71:Sensors/rc.c  ****     else
+ 290              		.loc 1 71 9 is_stmt 1 view .LVU74
+ 291 008e 0020     		movs	r0, #0
+ 292 0090 FFF7FEFF 		bl	Control_SetMode
+ 293              	.LVL23:
+ 294              	.L21:
+  78:Sensors/rc.c  **** 
+ 295              		.loc 1 78 5 view .LVU75
+  78:Sensors/rc.c  **** 
+ 296              		.loc 1 78 22 is_stmt 0 view .LVU76
+ 297 0094 0520     		movs	r0, #5
+ 298 0096 FFF7FEFF 		bl	CRSF_Channel
+ARM GAS  /tmp/ccyuYa7e.s 			page 9
+
+
+ 299              	.LVL24:
+  80:Sensors/rc.c  ****         arm_latch = 1; /* Schalter war unten, Armen ist jetzt erlaubt */
+ 300              		.loc 1 80 5 is_stmt 1 view .LVU77
+  80:Sensors/rc.c  ****         arm_latch = 1; /* Schalter war unten, Armen ist jetzt erlaubt */
+ 301              		.loc 1 80 8 is_stmt 0 view .LVU78
+ 302 009a 40F2A463 		movw	r3, #1700
+ 303 009e 9842     		cmp	r0, r3
+ 304 00a0 33D9     		bls	.L22
+  83:Sensors/rc.c  ****     {
+ 305              		.loc 1 83 5 is_stmt 1 view .LVU79
+  83:Sensors/rc.c  ****     {
+ 306              		.loc 1 83 15 is_stmt 0 discriminator 1 view .LVU80
+ 307 00a2 314B     		ldr	r3, .L41+4
+ 308 00a4 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 309 00a6 002B     		cmp	r3, #0
+ 310 00a8 3CD1     		bne	.L38
+ 311              	.LVL25:
+ 312              	.L24:
+ 103:Sensors/rc.c  ****     float p = stick_norm(RC_CH_PITCH);
+ 313              		.loc 1 103 5 is_stmt 1 view .LVU81
+ 103:Sensors/rc.c  ****     float p = stick_norm(RC_CH_PITCH);
+ 314              		.loc 1 103 15 is_stmt 0 view .LVU82
+ 315 00aa 0120     		movs	r0, #1
+ 316 00ac FFF7FEFF 		bl	stick_norm
+ 317              	.LVL26:
+ 318 00b0 F0EE408A 		vmov.f32	s17, s0
+ 319              	.LVL27:
+ 104:Sensors/rc.c  ****     float y = stick_norm(RC_CH_YAW);
+ 320              		.loc 1 104 5 is_stmt 1 view .LVU83
+ 104:Sensors/rc.c  ****     float y = stick_norm(RC_CH_YAW);
+ 321              		.loc 1 104 15 is_stmt 0 view .LVU84
+ 322 00b4 0220     		movs	r0, #2
+ 323 00b6 FFF7FEFF 		bl	stick_norm
+ 324              	.LVL28:
+ 104:Sensors/rc.c  ****     float y = stick_norm(RC_CH_YAW);
+ 325              		.loc 1 104 15 view .LVU85
+ 326 00ba B0EE408A 		vmov.f32	s16, s0
+ 327              	.LVL29:
+ 105:Sensors/rc.c  **** 
+ 328              		.loc 1 105 5 is_stmt 1 view .LVU86
+ 105:Sensors/rc.c  **** 
+ 329              		.loc 1 105 15 is_stmt 0 view .LVU87
+ 330 00be 0420     		movs	r0, #4
+ 331 00c0 FFF7FEFF 		bl	stick_norm
+ 332              	.LVL30:
+ 107:Sensors/rc.c  ****     {
+ 333              		.loc 1 107 5 is_stmt 1 view .LVU88
+ 107:Sensors/rc.c  ****     {
+ 334              		.loc 1 107 21 is_stmt 0 view .LVU89
+ 335 00c4 2D4B     		ldr	r3, .L41+24
+ 336 00c6 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 107:Sensors/rc.c  ****     {
+ 337              		.loc 1 107 8 view .LVU90
+ 338 00c8 012B     		cmp	r3, #1
+ 339 00ca 3FD0     		beq	.L39
+ 114:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_RATE;
+ 340              		.loc 1 114 9 is_stmt 1 view .LVU91
+ARM GAS  /tmp/ccyuYa7e.s 			page 10
+
+
+ 114:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_RATE;
+ 341              		.loc 1 114 27 is_stmt 0 view .LVU92
+ 342 00cc DFED2C7A 		vldr.32	s15, .L41+28
+ 343 00d0 68EEA78A 		vmul.f32	s17, s17, s15
+ 344              	.LVL31:
+ 114:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_RATE;
+ 345              		.loc 1 114 23 view .LVU93
+ 346 00d4 254B     		ldr	r3, .L41+8
+ 347 00d6 C3ED008A 		vstr.32	s17, [r3]
+ 115:Sensors/rc.c  ****     }
+ 348              		.loc 1 115 9 is_stmt 1 view .LVU94
+ 115:Sensors/rc.c  ****     }
+ 349              		.loc 1 115 28 is_stmt 0 view .LVU95
+ 350 00da 28EE278A 		vmul.f32	s16, s16, s15
+ 351              	.LVL32:
+ 115:Sensors/rc.c  ****     }
+ 352              		.loc 1 115 24 view .LVU96
+ 353 00de 83ED018A 		vstr.32	s16, [r3, #4]
+ 354              	.L29:
+ 117:Sensors/rc.c  ****     setpoint.throttle = Motor_IsArmed() ? thr : 0.0f;
+ 355              		.loc 1 117 5 is_stmt 1 view .LVU97
+ 117:Sensors/rc.c  ****     setpoint.throttle = Motor_IsArmed() ? thr : 0.0f;
+ 356              		.loc 1 117 22 is_stmt 0 view .LVU98
+ 357 00e2 DFED287A 		vldr.32	s15, .L41+32
+ 358 00e6 20EE270A 		vmul.f32	s0, s0, s15
+ 359              	.LVL33:
+ 117:Sensors/rc.c  ****     setpoint.throttle = Motor_IsArmed() ? thr : 0.0f;
+ 360              		.loc 1 117 18 view .LVU99
+ 361 00ea 204B     		ldr	r3, .L41+8
+ 362 00ec 83ED020A 		vstr.32	s0, [r3, #8]
+ 118:Sensors/rc.c  **** }
+ 363              		.loc 1 118 5 is_stmt 1 view .LVU100
+ 118:Sensors/rc.c  **** }
+ 364              		.loc 1 118 25 is_stmt 0 view .LVU101
+ 365 00f0 FFF7FEFF 		bl	Motor_IsArmed
+ 366              	.LVL34:
+ 118:Sensors/rc.c  **** }
+ 367              		.loc 1 118 47 discriminator 1 view .LVU102
+ 368 00f4 08B9     		cbnz	r0, .L30
+ 118:Sensors/rc.c  **** }
+ 369              		.loc 1 118 47 discriminator 2 view .LVU103
+ 370 00f6 9FED209A 		vldr.32	s18, .L41+20
+ 371              	.LVL35:
+ 372              	.L30:
+ 118:Sensors/rc.c  **** }
+ 373              		.loc 1 118 23 discriminator 4 view .LVU104
+ 374 00fa 1C4B     		ldr	r3, .L41+8
+ 375 00fc 83ED039A 		vstr.32	s18, [r3, #12]
+ 376 0100 8DE7     		b	.L15
+ 377              	.LVL36:
+ 378              	.L20:
+  73:Sensors/rc.c  **** 
+ 379              		.loc 1 73 9 is_stmt 1 view .LVU105
+ 380 0102 0120     		movs	r0, #1
+ 381 0104 FFF7FEFF 		bl	Control_SetMode
+ 382              	.LVL37:
+ 383 0108 C4E7     		b	.L21
+ARM GAS  /tmp/ccyuYa7e.s 			page 11
+
+
+ 384              	.LVL38:
+ 385              	.L22:
+  81:Sensors/rc.c  **** 
+ 386              		.loc 1 81 9 view .LVU106
+  81:Sensors/rc.c  **** 
+ 387              		.loc 1 81 19 is_stmt 0 view .LVU107
+ 388 010a 174B     		ldr	r3, .L41+4
+ 389 010c 0122     		movs	r2, #1
+ 390 010e 1A70     		strb	r2, [r3]
+  83:Sensors/rc.c  ****     {
+ 391              		.loc 1 83 5 is_stmt 1 view .LVU108
+  96:Sensors/rc.c  ****     {
+ 392              		.loc 1 96 10 view .LVU109
+  96:Sensors/rc.c  ****     {
+ 393              		.loc 1 96 24 is_stmt 0 discriminator 1 view .LVU110
+ 394 0110 FFF7FEFF 		bl	Motor_IsArmed
+ 395              	.LVL39:
+  96:Sensors/rc.c  ****     {
+ 396              		.loc 1 96 21 discriminator 1 view .LVU111
+ 397 0114 0028     		cmp	r0, #0
+ 398 0116 C8D0     		beq	.L24
+  98:Sensors/rc.c  ****         setpoint.throttle = 0.0f;
+ 399              		.loc 1 98 9 is_stmt 1 view .LVU112
+ 400 0118 FFF7FEFF 		bl	Motor_Disarm
+ 401              	.LVL40:
+  99:Sensors/rc.c  ****     }
+ 402              		.loc 1 99 9 view .LVU113
+  99:Sensors/rc.c  ****     }
+ 403              		.loc 1 99 27 is_stmt 0 view .LVU114
+ 404 011c 134B     		ldr	r3, .L41+8
+ 405 011e 0022     		movs	r2, #0
+ 406 0120 DA60     		str	r2, [r3, #12]	@ float
+ 407 0122 C2E7     		b	.L24
+ 408              	.LVL41:
+ 409              	.L38:
+  83:Sensors/rc.c  ****     {
+ 410              		.loc 1 83 32 discriminator 2 view .LVU115
+ 411 0124 FFF7FEFF 		bl	Motor_IsArmed
+ 412              	.LVL42:
+  83:Sensors/rc.c  ****     {
+ 413              		.loc 1 83 28 discriminator 1 view .LVU116
+ 414 0128 0028     		cmp	r0, #0
+ 415 012a BED1     		bne	.L24
+  85:Sensors/rc.c  ****         {
+ 416              		.loc 1 85 9 is_stmt 1 view .LVU117
+  85:Sensors/rc.c  ****         {
+ 417              		.loc 1 85 12 is_stmt 0 view .LVU118
+ 418 012c F1EE047A 		vmov.f32	s15, #5.0e+0
+ 419 0130 B4EEE79A 		vcmpe.f32	s18, s15
+ 420 0134 F1EE10FA 		vmrs	APSR_nzcv, FPSCR
+ 421 0138 03D4     		bmi	.L40
+  93:Sensors/rc.c  ****         }
+ 422              		.loc 1 93 13 is_stmt 1 view .LVU119
+  93:Sensors/rc.c  ****         }
+ 423              		.loc 1 93 23 is_stmt 0 view .LVU120
+ 424 013a 0B4B     		ldr	r3, .L41+4
+ 425 013c 0022     		movs	r2, #0
+ARM GAS  /tmp/ccyuYa7e.s 			page 12
+
+
+ 426 013e 1A70     		strb	r2, [r3]
+ 427 0140 B3E7     		b	.L24
+ 428              	.L40:
+  87:Sensors/rc.c  ****             Motor_Arm();
+ 429              		.loc 1 87 13 is_stmt 1 view .LVU121
+ 430 0142 FFF7FEFF 		bl	Control_Reset
+ 431              	.LVL43:
+  88:Sensors/rc.c  ****         }
+ 432              		.loc 1 88 13 view .LVU122
+ 433 0146 FFF7FEFF 		bl	Motor_Arm
+ 434              	.LVL44:
+ 435 014a AEE7     		b	.L24
+ 436              	.LVL45:
+ 437              	.L39:
+ 109:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_ANGLE;
+ 438              		.loc 1 109 9 view .LVU123
+ 109:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_ANGLE;
+ 439              		.loc 1 109 27 is_stmt 0 view .LVU124
+ 440 014c DFED0E7A 		vldr.32	s15, .L41+36
+ 441 0150 68EEA78A 		vmul.f32	s17, s17, s15
+ 442              	.LVL46:
+ 109:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_ANGLE;
+ 443              		.loc 1 109 23 view .LVU125
+ 444 0154 054B     		ldr	r3, .L41+8
+ 445 0156 C3ED008A 		vstr.32	s17, [r3]
+ 110:Sensors/rc.c  ****     }
+ 446              		.loc 1 110 9 is_stmt 1 view .LVU126
+ 110:Sensors/rc.c  ****     }
+ 447              		.loc 1 110 28 is_stmt 0 view .LVU127
+ 448 015a 28EE278A 		vmul.f32	s16, s16, s15
+ 449              	.LVL47:
+ 110:Sensors/rc.c  ****     }
+ 450              		.loc 1 110 24 view .LVU128
+ 451 015e 83ED018A 		vstr.32	s16, [r3, #4]
+ 452 0162 BEE7     		b	.L29
+ 453              	.L42:
+ 454              		.align	2
+ 455              	.L41:
+ 456 0164 00000000 		.word	failsafe
+ 457 0168 00000000 		.word	arm_latch
+ 458 016c 00000000 		.word	setpoint
+ 459 0170 00007A44 		.word	1148846080
+ 460 0174 0000C842 		.word	1120403456
+ 461 0178 00000000 		.word	0
+ 462 017c 00000000 		.word	flight_mode
+ 463 0180 00009643 		.word	1133903872
+ 464 0184 00004843 		.word	1128792064
+ 465 0188 00000C42 		.word	1108082688
+ 466              		.cfi_endproc
+ 467              	.LFE244:
+ 469              		.section	.text.RC_IsFailsafe,"ax",%progbits
+ 470              		.align	1
+ 471              		.global	RC_IsFailsafe
+ 472              		.syntax unified
+ 473              		.thumb
+ 474              		.thumb_func
+ 476              	RC_IsFailsafe:
+ARM GAS  /tmp/ccyuYa7e.s 			page 13
+
+
+ 477              	.LFB245:
+ 120:Sensors/rc.c  **** 
+ 121:Sensors/rc.c  **** uint8_t RC_IsFailsafe(void)
+ 122:Sensors/rc.c  **** {
+ 478              		.loc 1 122 1 is_stmt 1 view -0
+ 479              		.cfi_startproc
+ 480              		@ args = 0, pretend = 0, frame = 0
+ 481              		@ frame_needed = 0, uses_anonymous_args = 0
+ 482              		@ link register save eliminated.
+ 123:Sensors/rc.c  ****     return failsafe;
+ 483              		.loc 1 123 5 view .LVU130
+ 124:Sensors/rc.c  **** }
+ 484              		.loc 1 124 1 is_stmt 0 view .LVU131
+ 485 0000 014B     		ldr	r3, .L44
+ 486 0002 1878     		ldrb	r0, [r3]	@ zero_extendqisi2
+ 487 0004 7047     		bx	lr
+ 488              	.L45:
+ 489 0006 00BF     		.align	2
+ 490              	.L44:
+ 491 0008 00000000 		.word	failsafe
+ 492              		.cfi_endproc
+ 493              	.LFE245:
+ 495              		.section	.rodata.RC_PrintStatus.str1.4,"aMS",%progbits,1
+ 496              		.align	2
+ 497              	.LC0:
+ 498 0000 56455242 		.ascii	"VERBUNDEN\000"
+ 498      554E4445 
+ 498      4E00
+ 499 000a 0000     		.align	2
+ 500              	.LC1:
+ 501 000c 4B45494E 		.ascii	"KEIN SIGNAL\000"
+ 501      20534947 
+ 501      4E414C00 
+ 502              		.align	2
+ 503              	.LC2:
+ 504 0018 3E3E2046 		.ascii	">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes v"
+ 504      756E6B3A 
+ 504      20257320 
+ 504      7C205061 
+ 504      6B657465 
+ 505 004b 6F722025 		.ascii	"or %lu ms\015\012\000"
+ 505      6C75206D 
+ 505      730D0A00 
+ 506 0057 00       		.align	2
+ 507              	.LC3:
+ 508 0058 20202052 		.ascii	"   Roll %4u  Pitch %4u  Gas %4u  Yaw %4u\015\012\000"
+ 508      6F6C6C20 
+ 508      25347520 
+ 508      20506974 
+ 508      63682025 
+ 509 0083 00       		.align	2
+ 510              	.LC4:
+ 511 0084 20202041 		.ascii	"   Arm-Schalter %4u  Modus-Schalter %4u\015\012\000"
+ 511      726D2D53 
+ 511      6368616C 
+ 511      74657220 
+ 511      25347520 
+ARM GAS  /tmp/ccyuYa7e.s 			page 14
+
+
+ 512              		.section	.text.RC_PrintStatus,"ax",%progbits
+ 513              		.align	1
+ 514              		.global	RC_PrintStatus
+ 515              		.syntax unified
+ 516              		.thumb
+ 517              		.thumb_func
+ 519              	RC_PrintStatus:
+ 520              	.LFB246:
+ 125:Sensors/rc.c  **** 
+ 126:Sensors/rc.c  **** void RC_PrintStatus(void)
+ 127:Sensors/rc.c  **** {
+ 521              		.loc 1 127 1 is_stmt 1 view -0
+ 522              		.cfi_startproc
+ 523              		@ args = 0, pretend = 0, frame = 0
+ 524              		@ frame_needed = 0, uses_anonymous_args = 0
+ 525 0000 70B5     		push	{r4, r5, r6, lr}
+ 526              	.LCFI5:
+ 527              		.cfi_def_cfa_offset 16
+ 528              		.cfi_offset 4, -16
+ 529              		.cfi_offset 5, -12
+ 530              		.cfi_offset 6, -8
+ 531              		.cfi_offset 14, -4
+ 532 0002 82B0     		sub	sp, sp, #8
+ 533              	.LCFI6:
+ 534              		.cfi_def_cfa_offset 24
+ 128:Sensors/rc.c  ****     printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+ 535              		.loc 1 128 5 view .LVU133
+ 129:Sensors/rc.c  ****            CRSF_LinkUp() ? "VERBUNDEN" : "KEIN SIGNAL",
+ 536              		.loc 1 129 12 is_stmt 0 view .LVU134
+ 537 0004 FFF7FEFF 		bl	CRSF_LinkUp
+ 538              	.LVL48:
+ 128:Sensors/rc.c  ****     printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+ 539              		.loc 1 128 5 view .LVU135
+ 540 0008 A8B3     		cbz	r0, .L49
+ 128:Sensors/rc.c  ****     printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+ 541              		.loc 1 128 5 discriminator 1 view .LVU136
+ 542 000a 1D4E     		ldr	r6, .L53
+ 543              	.L47:
+ 128:Sensors/rc.c  ****     printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+ 544              		.loc 1 128 5 discriminator 4 view .LVU137
+ 545 000c FFF7FEFF 		bl	CRSF_FrameCount
+ 546              	.LVL49:
+ 547 0010 0446     		mov	r4, r0
+ 128:Sensors/rc.c  ****     printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+ 548              		.loc 1 128 5 discriminator 1 view .LVU138
+ 549 0012 FFF7FEFF 		bl	CRSF_ErrorCount
+ 550              	.LVL50:
+ 551 0016 0546     		mov	r5, r0
+ 130:Sensors/rc.c  ****            CRSF_FrameCount(), CRSF_ErrorCount(),
+ 131:Sensors/rc.c  ****            CRSF_LinkUp() ? CRSF_AgeMs() : 0);
+ 552              		.loc 1 131 12 view .LVU139
+ 553 0018 FFF7FEFF 		bl	CRSF_LinkUp
+ 554              	.LVL51:
+ 128:Sensors/rc.c  ****            CRSF_LinkUp() ? "VERBUNDEN" : "KEIN SIGNAL",
+ 555              		.loc 1 128 5 discriminator 4 view .LVU140
+ 556 001c 68BB     		cbnz	r0, .L52
+ 128:Sensors/rc.c  ****            CRSF_LinkUp() ? "VERBUNDEN" : "KEIN SIGNAL",
+ARM GAS  /tmp/ccyuYa7e.s 			page 15
+
+
+ 557              		.loc 1 128 5 discriminator 5 view .LVU141
+ 558 001e 0020     		movs	r0, #0
+ 559              	.L48:
+ 128:Sensors/rc.c  ****            CRSF_LinkUp() ? "VERBUNDEN" : "KEIN SIGNAL",
+ 560              		.loc 1 128 5 discriminator 6 view .LVU142
+ 561 0020 0090     		str	r0, [sp]
+ 562 0022 2B46     		mov	r3, r5
+ 563 0024 2246     		mov	r2, r4
+ 564 0026 3146     		mov	r1, r6
+ 565 0028 1648     		ldr	r0, .L53+4
+ 566 002a FFF7FEFF 		bl	printf
+ 567              	.LVL52:
+ 132:Sensors/rc.c  ****     printf("   Roll %4u  Pitch %4u  Gas %4u  Yaw %4u\r\n",
+ 568              		.loc 1 132 5 is_stmt 1 view .LVU143
+ 133:Sensors/rc.c  ****            CRSF_Channel(RC_CH_ROLL), CRSF_Channel(RC_CH_PITCH),
+ 569              		.loc 1 133 12 is_stmt 0 view .LVU144
+ 570 002e 0120     		movs	r0, #1
+ 571 0030 FFF7FEFF 		bl	CRSF_Channel
+ 572              	.LVL53:
+ 573 0034 0446     		mov	r4, r0
+ 574              		.loc 1 133 38 view .LVU145
+ 575 0036 0220     		movs	r0, #2
+ 576 0038 FFF7FEFF 		bl	CRSF_Channel
+ 577              	.LVL54:
+ 578 003c 0546     		mov	r5, r0
+ 134:Sensors/rc.c  ****            CRSF_Channel(RC_CH_THROTTLE), CRSF_Channel(RC_CH_YAW));
+ 579              		.loc 1 134 12 view .LVU146
+ 580 003e 0320     		movs	r0, #3
+ 581 0040 FFF7FEFF 		bl	CRSF_Channel
+ 582              	.LVL55:
+ 583 0044 0646     		mov	r6, r0
+ 584              		.loc 1 134 42 view .LVU147
+ 585 0046 0420     		movs	r0, #4
+ 586 0048 FFF7FEFF 		bl	CRSF_Channel
+ 587              	.LVL56:
+ 132:Sensors/rc.c  ****     printf("   Roll %4u  Pitch %4u  Gas %4u  Yaw %4u\r\n",
+ 588              		.loc 1 132 5 view .LVU148
+ 589 004c 0090     		str	r0, [sp]
+ 590 004e 3346     		mov	r3, r6
+ 591 0050 2A46     		mov	r2, r5
+ 592 0052 2146     		mov	r1, r4
+ 593 0054 0C48     		ldr	r0, .L53+8
+ 594 0056 FFF7FEFF 		bl	printf
+ 595              	.LVL57:
+ 135:Sensors/rc.c  ****     printf("   Arm-Schalter %4u  Modus-Schalter %4u\r\n",
+ 596              		.loc 1 135 5 is_stmt 1 view .LVU149
+ 136:Sensors/rc.c  ****            CRSF_Channel(RC_CH_ARM), CRSF_Channel(RC_CH_MODE));
+ 597              		.loc 1 136 12 is_stmt 0 view .LVU150
+ 598 005a 0520     		movs	r0, #5
+ 599 005c FFF7FEFF 		bl	CRSF_Channel
+ 600              	.LVL58:
+ 601 0060 0446     		mov	r4, r0
+ 602              		.loc 1 136 37 view .LVU151
+ 603 0062 0620     		movs	r0, #6
+ 604 0064 FFF7FEFF 		bl	CRSF_Channel
+ 605              	.LVL59:
+ 606 0068 0246     		mov	r2, r0
+ARM GAS  /tmp/ccyuYa7e.s 			page 16
+
+
+ 135:Sensors/rc.c  ****     printf("   Arm-Schalter %4u  Modus-Schalter %4u\r\n",
+ 607              		.loc 1 135 5 view .LVU152
+ 608 006a 2146     		mov	r1, r4
+ 609 006c 0748     		ldr	r0, .L53+12
+ 610 006e FFF7FEFF 		bl	printf
+ 611              	.LVL60:
+ 137:Sensors/rc.c  **** }...
+ 612              		.loc 1 137 1 view .LVU153
+ 613 0072 02B0     		add	sp, sp, #8
+ 614              	.LCFI7:
+ 615              		.cfi_remember_state
+ 616              		.cfi_def_cfa_offset 16
+ 617              		@ sp needed
+ 618 0074 70BD     		pop	{r4, r5, r6, pc}
+ 619              	.L49:
+ 620              	.LCFI8:
+ 621              		.cfi_restore_state
+ 128:Sensors/rc.c  ****     printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+ 622              		.loc 1 128 5 discriminator 2 view .LVU154
+ 623 0076 064E     		ldr	r6, .L53+16
+ 624 0078 C8E7     		b	.L47
+ 625              	.L52:
+ 131:Sensors/rc.c  ****            CRSF_LinkUp() ? CRSF_AgeMs() : 0);
+ 626              		.loc 1 131 28 view .LVU155
+ 627 007a FFF7FEFF 		bl	CRSF_AgeMs
+ 628              	.LVL61:
+ 629 007e CFE7     		b	.L48
+ 630              	.L54:
+ 631              		.align	2
+ 632              	.L53:
+ 633 0080 00000000 		.word	.LC0
+ 634 0084 18000000 		.word	.LC2
+ 635 0088 58000000 		.word	.LC3
+ 636 008c 84000000 		.word	.LC4
+ 637 0090 0C000000 		.word	.LC1
+ 638              		.cfi_endproc
+ 639              	.LFE246:
+ 641              		.section	.bss.arm_latch,"aw",%nobits
+ 644              	arm_latch:
+ 645 0000 00       		.space	1
+ 646              		.section	.data.failsafe,"aw"
+ 649              	failsafe:
+ 650 0000 01       		.byte	1
+ 651              		.text
+ 652              	.Letext0:
+ 653              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 654              		.file 3 "Sensors/control.h"
+ 655              		.file 4 "Sensors/crsf.h"
+ 656              		.file 5 "Sensors/motor.h"
+ 657              		.file 6 "/usr/include/newlib/stdio.h"
+ARM GAS  /tmp/ccyuYa7e.s 			page 17
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 rc.c
+     /tmp/ccyuYa7e.s:21     .text.stick_norm:00000000 $t
+     /tmp/ccyuYa7e.s:26     .text.stick_norm:00000000 stick_norm
+     /tmp/ccyuYa7e.s:110    .text.stick_norm:00000064 $d
+     /tmp/ccyuYa7e.s:116    .text.RC_Init:00000000 $t
+     /tmp/ccyuYa7e.s:122    .text.RC_Init:00000000 RC_Init
+     /tmp/ccyuYa7e.s:144    .text.RC_Init:00000010 $d
+     /tmp/ccyuYa7e.s:649    .data.failsafe:00000000 failsafe
+     /tmp/ccyuYa7e.s:644    .bss.arm_latch:00000000 arm_latch
+     /tmp/ccyuYa7e.s:150    .text.RC_Update:00000000 $t
+     /tmp/ccyuYa7e.s:156    .text.RC_Update:00000000 RC_Update
+     /tmp/ccyuYa7e.s:456    .text.RC_Update:00000164 $d
+     /tmp/ccyuYa7e.s:470    .text.RC_IsFailsafe:00000000 $t
+     /tmp/ccyuYa7e.s:476    .text.RC_IsFailsafe:00000000 RC_IsFailsafe
+     /tmp/ccyuYa7e.s:491    .text.RC_IsFailsafe:00000008 $d
+     /tmp/ccyuYa7e.s:496    .rodata.RC_PrintStatus.str1.4:00000000 $d
+     /tmp/ccyuYa7e.s:513    .text.RC_PrintStatus:00000000 $t
+     /tmp/ccyuYa7e.s:519    .text.RC_PrintStatus:00000000 RC_PrintStatus
+     /tmp/ccyuYa7e.s:633    .text.RC_PrintStatus:00000080 $d
+     /tmp/ccyuYa7e.s:645    .bss.arm_latch:00000000 $d
+
+UNDEFINED SYMBOLS
+CRSF_Channel
+CRSF_LinkUp
+Motor_Disarm
+Control_Reset
+Control_SetMode
+Motor_IsArmed
+Motor_Arm
+setpoint
+flight_mode
+CRSF_FrameCount
+CRSF_ErrorCount
+printf
+CRSF_AgeMs

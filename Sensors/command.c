@@ -4,6 +4,8 @@
 #include "mixer.h"
 #include "mpu6050.h"
 #include "battery.h"
+#include "crsf.h"
+#include "rc.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -76,18 +78,24 @@ void Command_Process(void)
     /* ---------- Status ---------- */
     else if (strcmp(line, "status") == 0)
     {
-        printf(">> Status: %s | Modus: %s | Gas: %.0f%% | Stream: %s | Loop: %lu Hz | Motoren: %lu Hz\r\n",
+        printf(">> Status: %s | Modus: %s | Gas: %.0f%% | Funk: %s\r\n",
                Motor_IsArmed() ? "ARMED" : "DISARMED",
                (flight_mode == MODE_ANGLE) ? "ANGLE" : "RATE",
                setpoint.throttle,
-               stream_on ? "AN" : "AUS",
-               loop_hz,
-               Motor_UpdateRateHz());
+               CRSF_LinkUp() ? "OK" : "KEIN SIGNAL");
+        printf("   Stream: %s | Loop: %lu Hz | Motoren: %lu Hz\r\n",
+               stream_on ? "AN" : "AUS", loop_hz, Motor_UpdateRateHz());
     }
     else if (strcmp(line, "loop") == 0)
     {
         printf(">> Regeltakt: %lu Hz | verpasste Zyklen: %lu\r\n",
                loop_hz, loop_missed);
+    }
+
+    /* ---------- Funkempfang ---------- */
+    else if (strcmp(line, "rc") == 0)
+    {
+        RC_PrintStatus();
     }
 
     /* ---------- Akku ---------- */
@@ -192,7 +200,8 @@ void Command_Process(void)
     }
 
     /* ---------- Gas setzen: t 20 ----------
-     * Speist den Mixer, nicht die Motoren direkt. */
+     * Nur zum Testen ohne Funke. Sobald die Funke verbunden ist,
+     * ueberschreibt RC_Update den Wert im naechsten Zyklus. */
     else if (line[0] == 't' && line[1] == ' ')
     {
         char *end;
@@ -206,6 +215,8 @@ void Command_Process(void)
                 v = 100.0f;
             setpoint.throttle = v;
             printf(">> Gas: %.0f%%\r\n", v);
+            if (CRSF_LinkUp())
+                printf(">> Achtung: Funk ist verbunden, der Knueppel ueberschreibt das sofort.\r\n");
         }
         else
         {
@@ -279,8 +290,8 @@ void Command_Process(void)
         else
         {
             printf(">> Unbekannt: '%s'\r\n", line);
-            printf(">> arm | disarm | status | loop | pid | mix | filt | bat | angle | rate |\r\n");
-            printf(">> stream on/off | t <gas> | 0-100 | m1..m4 <wert> |\r\n");
+            printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
+            printf(">> angle | rate | stream on/off | t <gas> | m1..m4 <wert> |\r\n");
             printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt>\r\n");
         }
     }
@@ -293,4 +304,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART2)
         Command_RxByte();
+    else if (huart->Instance == USART1)
+        CRSF_RxByte();
 }
