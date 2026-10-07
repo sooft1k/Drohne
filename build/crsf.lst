@@ -1,4 +1,4 @@
-ARM GAS  /tmp/cc3LQbOH.s 			page 1
+ARM GAS  /tmp/ccUPWEXy.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
   35              	.LCFI0:
   36              		.cfi_def_cfa_offset 4
   37              		.cfi_offset 14, -4
-ARM GAS  /tmp/cc3LQbOH.s 			page 2
+ARM GAS  /tmp/ccUPWEXy.s 			page 2
 
 
   38 0002 8646     		mov	lr, r0
@@ -118,7 +118,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
   82              		.loc 1 27 17 discriminator 1 view .LVU17
   83 0024 D0B2     		uxtb	r0, r2
   84              	.LVL8:
-ARM GAS  /tmp/cc3LQbOH.s 			page 3
+ARM GAS  /tmp/ccUPWEXy.s 			page 3
 
 
   85              		.loc 1 27 17 discriminator 1 view .LVU18
@@ -178,7 +178,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  126              		.align	1
  127              		.syntax unified
  128              		.thumb
-ARM GAS  /tmp/cc3LQbOH.s 			page 4
+ARM GAS  /tmp/ccUPWEXy.s 			page 4
 
 
  129              		.thumb_func
@@ -238,7 +238,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  172 0026 80B2     		uxth	r0, r0
  173              	.LVL20:
  174              		.loc 1 41 1 view .LVU47
-ARM GAS  /tmp/cc3LQbOH.s 			page 5
+ARM GAS  /tmp/ccUPWEXy.s 			page 5
 
 
  175 0028 7047     		bx	lr
@@ -298,7 +298,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
   47:Sensors/crsf.c ****     uint8_t idx = 0;
  221              		.loc 1 47 13 view .LVU57
  222 000a 3C46     		mov	r4, r7
-ARM GAS  /tmp/cc3LQbOH.s 			page 6
+ARM GAS  /tmp/ccUPWEXy.s 			page 6
 
 
   46:Sensors/crsf.c ****     uint8_t nbits = 0;
@@ -358,7 +358,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  264              		.loc 1 50 57 is_stmt 1 discriminator 2 view .LVU72
  265 0036 0137     		adds	r7, r7, #1
  266              	.LVL30:
-ARM GAS  /tmp/cc3LQbOH.s 			page 7
+ARM GAS  /tmp/ccUPWEXy.s 			page 7
 
 
   50:Sensors/crsf.c ****     {
@@ -418,7 +418,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  305 0058 00000000 		.word	ch_us
  306              		.cfi_endproc
  307              	.LFE241:
-ARM GAS  /tmp/cc3LQbOH.s 			page 8
+ARM GAS  /tmp/ccUPWEXy.s 			page 8
 
 
  309              		.section	.text.CRSF_Init,"ax",%progbits
@@ -478,7 +478,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
   72:Sensors/crsf.c ****     /* Startwerte: alles Mitte, Gas ganz unten.
   73:Sensors/crsf.c ****      * Falls nie ein Paket kommt, steht damit nichts auf Vollgas. */
   74:Sensors/crsf.c ****     for (uint8_t i = 0; i < CRSF_CHANNELS; i++)
-ARM GAS  /tmp/cc3LQbOH.s 			page 9
+ARM GAS  /tmp/ccUPWEXy.s 			page 9
 
 
  354              		.loc 1 74 5 is_stmt 1 view .LVU102
@@ -538,7 +538,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  400 0058 00000000 		.word	last_frame_ms
  401 005c 00000000 		.word	ch_us
  402 0060 00000000 		.word	rx_byte
-ARM GAS  /tmp/cc3LQbOH.s 			page 10
+ARM GAS  /tmp/ccUPWEXy.s 			page 10
 
 
  403              		.cfi_endproc
@@ -598,7 +598,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  448 0016 2949     		ldr	r1, .L44+4
  449 0018 0870     		strb	r0, [r1]
  450              		.loc 1 90 24 view .LVU126
-ARM GAS  /tmp/cc3LQbOH.s 			page 11
+ARM GAS  /tmp/ccUPWEXy.s 			page 11
 
 
  451 001a 2949     		ldr	r1, .L44+8
@@ -658,7 +658,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  460 0026 FFF7FEFF 		bl	HAL_UART_Receive_IT
  461              	.LVL45:
  136:Sensors/crsf.c **** }
-ARM GAS  /tmp/cc3LQbOH.s 			page 12
+ARM GAS  /tmp/ccUPWEXy.s 			page 12
 
 
  462              		.loc 1 136 1 is_stmt 0 view .LVU128
@@ -718,7 +718,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  503              	.LVL48:
  117:Sensors/crsf.c ****             {
  504              		.loc 1 117 13 is_stmt 1 view .LVU142
-ARM GAS  /tmp/cc3LQbOH.s 			page 13
+ARM GAS  /tmp/ccUPWEXy.s 			page 13
 
 
  117:Sensors/crsf.c ****             {
@@ -778,7 +778,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  545 0084 CBE7     		b	.L36
  546              	.L38:
  102:Sensors/crsf.c ****             error_count++;
-ARM GAS  /tmp/cc3LQbOH.s 			page 14
+ARM GAS  /tmp/ccUPWEXy.s 			page 14
 
 
  547              		.loc 1 102 13 is_stmt 1 view .LVU157
@@ -838,7 +838,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  123:Sensors/crsf.c ****                 }
  587              		.loc 1 123 32 is_stmt 0 view .LVU172
  588 00ae 094A     		ldr	r2, .L44+28
-ARM GAS  /tmp/cc3LQbOH.s 			page 15
+ARM GAS  /tmp/ccUPWEXy.s 			page 15
 
 
  589 00b0 1368     		ldr	r3, [r2]
@@ -898,7 +898,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  639 0010 80B2     		uxth	r0, r0
  640 0012 7047     		bx	lr
  641              	.LVL59:
-ARM GAS  /tmp/cc3LQbOH.s 			page 16
+ARM GAS  /tmp/ccUPWEXy.s 			page 16
 
 
  642              	.L48:
@@ -958,7 +958,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  689 0012 08BD     		pop	{r3, pc}
  690              	.L53:
  148:Sensors/crsf.c ****         return 0xFFFFFFFF;
-ARM GAS  /tmp/cc3LQbOH.s 			page 17
+ARM GAS  /tmp/ccUPWEXy.s 			page 17
 
 
  691              		.loc 1 148 16 view .LVU191
@@ -1018,7 +1018,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  742              		.cfi_startproc
  743              		@ args = 0, pretend = 0, frame = 0
  744              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  /tmp/cc3LQbOH.s 			page 18
+ARM GAS  /tmp/ccUPWEXy.s 			page 18
 
 
  745              		@ link register save eliminated.
@@ -1078,7 +1078,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  798              		@ args = 0, pretend = 0, frame = 16
  799              		@ frame_needed = 0, uses_anonymous_args = 0
  163:Sensors/crsf.c ****     if (crsf_uart && huart->Instance == crsf_uart->Instance)
-ARM GAS  /tmp/cc3LQbOH.s 			page 19
+ARM GAS  /tmp/ccUPWEXy.s 			page 19
 
 
  800              		.loc 1 163 5 view .LVU205
@@ -1138,7 +1138,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  849              	.LBE11:
  850              		.loc 1 167 9 view .LVU222
  168:Sensors/crsf.c ****         __HAL_UART_CLEAR_NEFLAG(huart);
-ARM GAS  /tmp/cc3LQbOH.s 			page 20
+ARM GAS  /tmp/ccUPWEXy.s 			page 20
 
 
  851              		.loc 1 168 9 view .LVU223
@@ -1198,7 +1198,7 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  902              		.align	2
  905              	error_count:
  906 0000 00000000 		.space	4
-ARM GAS  /tmp/cc3LQbOH.s 			page 21
+ARM GAS  /tmp/ccUPWEXy.s 			page 21
 
 
  907              		.section	.bss.frame_count,"aw",%nobits
@@ -1246,60 +1246,60 @@ ARM GAS  /tmp/cc3LQbOH.s 			page 1
  957              		.file 5 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_dma.h"
  958              		.file 6 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h"
  959              		.file 7 "Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h"
-ARM GAS  /tmp/cc3LQbOH.s 			page 22
+ARM GAS  /tmp/ccUPWEXy.s 			page 22
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 crsf.c
-     /tmp/cc3LQbOH.s:21     .text.crc8:00000000 $t
-     /tmp/cc3LQbOH.s:26     .text.crc8:00000000 crc8
-     /tmp/cc3LQbOH.s:126    .text.to_us:00000000 $t
-     /tmp/cc3LQbOH.s:131    .text.to_us:00000000 to_us
-     /tmp/cc3LQbOH.s:179    .text.to_us:0000002c $d
-     /tmp/cc3LQbOH.s:184    .text.unpack_channels:00000000 $t
-     /tmp/cc3LQbOH.s:189    .text.unpack_channels:00000000 unpack_channels
-     /tmp/cc3LQbOH.s:305    .text.unpack_channels:00000058 $d
-     /tmp/cc3LQbOH.s:923    .bss.ch_us:00000000 ch_us
-     /tmp/cc3LQbOH.s:310    .text.CRSF_Init:00000000 $t
-     /tmp/cc3LQbOH.s:316    .text.CRSF_Init:00000000 CRSF_Init
-     /tmp/cc3LQbOH.s:395    .text.CRSF_Init:00000044 $d
-     /tmp/cc3LQbOH.s:950    .bss.crsf_uart:00000000 crsf_uart
-     /tmp/cc3LQbOH.s:933    .bss.pos:00000000 pos
-     /tmp/cc3LQbOH.s:928    .bss.frame_len:00000000 frame_len
-     /tmp/cc3LQbOH.s:911    .bss.frame_count:00000000 frame_count
-     /tmp/cc3LQbOH.s:905    .bss.error_count:00000000 error_count
-     /tmp/cc3LQbOH.s:917    .bss.last_frame_ms:00000000 last_frame_ms
-     /tmp/cc3LQbOH.s:944    .bss.rx_byte:00000000 rx_byte
-     /tmp/cc3LQbOH.s:407    .text.CRSF_RxByte:00000000 $t
-     /tmp/cc3LQbOH.s:413    .text.CRSF_RxByte:00000000 CRSF_RxByte
-     /tmp/cc3LQbOH.s:596    .text.CRSF_RxByte:000000b8 $d
-     /tmp/cc3LQbOH.s:939    .bss.buf:00000000 buf
-     /tmp/cc3LQbOH.s:609    .text.CRSF_Channel:00000000 $t
-     /tmp/cc3LQbOH.s:615    .text.CRSF_Channel:00000000 CRSF_Channel
-     /tmp/cc3LQbOH.s:651    .text.CRSF_Channel:0000001c $d
-     /tmp/cc3LQbOH.s:656    .text.CRSF_AgeMs:00000000 $t
-     /tmp/cc3LQbOH.s:662    .text.CRSF_AgeMs:00000000 CRSF_AgeMs
-     /tmp/cc3LQbOH.s:697    .text.CRSF_AgeMs:0000001c $d
-     /tmp/cc3LQbOH.s:702    .text.CRSF_LinkUp:00000000 $t
-     /tmp/cc3LQbOH.s:708    .text.CRSF_LinkUp:00000000 CRSF_LinkUp
-     /tmp/cc3LQbOH.s:733    .text.CRSF_FrameCount:00000000 $t
-     /tmp/cc3LQbOH.s:739    .text.CRSF_FrameCount:00000000 CRSF_FrameCount
-     /tmp/cc3LQbOH.s:755    .text.CRSF_FrameCount:00000008 $d
-     /tmp/cc3LQbOH.s:760    .text.CRSF_ErrorCount:00000000 $t
-     /tmp/cc3LQbOH.s:766    .text.CRSF_ErrorCount:00000000 CRSF_ErrorCount
-     /tmp/cc3LQbOH.s:782    .text.CRSF_ErrorCount:00000008 $d
-     /tmp/cc3LQbOH.s:787    .text.HAL_UART_ErrorCallback:00000000 $t
-     /tmp/cc3LQbOH.s:793    .text.HAL_UART_ErrorCallback:00000000 HAL_UART_ErrorCallback
-     /tmp/cc3LQbOH.s:894    .text.HAL_UART_ErrorCallback:00000058 $d
-     /tmp/cc3LQbOH.s:902    .bss.error_count:00000000 $d
-     /tmp/cc3LQbOH.s:908    .bss.frame_count:00000000 $d
-     /tmp/cc3LQbOH.s:914    .bss.last_frame_ms:00000000 $d
-     /tmp/cc3LQbOH.s:920    .bss.ch_us:00000000 $d
-     /tmp/cc3LQbOH.s:929    .bss.frame_len:00000000 $d
-     /tmp/cc3LQbOH.s:934    .bss.pos:00000000 $d
-     /tmp/cc3LQbOH.s:936    .bss.buf:00000000 $d
-     /tmp/cc3LQbOH.s:945    .bss.rx_byte:00000000 $d
-     /tmp/cc3LQbOH.s:947    .bss.crsf_uart:00000000 $d
+     /tmp/ccUPWEXy.s:21     .text.crc8:00000000 $t
+     /tmp/ccUPWEXy.s:26     .text.crc8:00000000 crc8
+     /tmp/ccUPWEXy.s:126    .text.to_us:00000000 $t
+     /tmp/ccUPWEXy.s:131    .text.to_us:00000000 to_us
+     /tmp/ccUPWEXy.s:179    .text.to_us:0000002c $d
+     /tmp/ccUPWEXy.s:184    .text.unpack_channels:00000000 $t
+     /tmp/ccUPWEXy.s:189    .text.unpack_channels:00000000 unpack_channels
+     /tmp/ccUPWEXy.s:305    .text.unpack_channels:00000058 $d
+     /tmp/ccUPWEXy.s:923    .bss.ch_us:00000000 ch_us
+     /tmp/ccUPWEXy.s:310    .text.CRSF_Init:00000000 $t
+     /tmp/ccUPWEXy.s:316    .text.CRSF_Init:00000000 CRSF_Init
+     /tmp/ccUPWEXy.s:395    .text.CRSF_Init:00000044 $d
+     /tmp/ccUPWEXy.s:950    .bss.crsf_uart:00000000 crsf_uart
+     /tmp/ccUPWEXy.s:933    .bss.pos:00000000 pos
+     /tmp/ccUPWEXy.s:928    .bss.frame_len:00000000 frame_len
+     /tmp/ccUPWEXy.s:911    .bss.frame_count:00000000 frame_count
+     /tmp/ccUPWEXy.s:905    .bss.error_count:00000000 error_count
+     /tmp/ccUPWEXy.s:917    .bss.last_frame_ms:00000000 last_frame_ms
+     /tmp/ccUPWEXy.s:944    .bss.rx_byte:00000000 rx_byte
+     /tmp/ccUPWEXy.s:407    .text.CRSF_RxByte:00000000 $t
+     /tmp/ccUPWEXy.s:413    .text.CRSF_RxByte:00000000 CRSF_RxByte
+     /tmp/ccUPWEXy.s:596    .text.CRSF_RxByte:000000b8 $d
+     /tmp/ccUPWEXy.s:939    .bss.buf:00000000 buf
+     /tmp/ccUPWEXy.s:609    .text.CRSF_Channel:00000000 $t
+     /tmp/ccUPWEXy.s:615    .text.CRSF_Channel:00000000 CRSF_Channel
+     /tmp/ccUPWEXy.s:651    .text.CRSF_Channel:0000001c $d
+     /tmp/ccUPWEXy.s:656    .text.CRSF_AgeMs:00000000 $t
+     /tmp/ccUPWEXy.s:662    .text.CRSF_AgeMs:00000000 CRSF_AgeMs
+     /tmp/ccUPWEXy.s:697    .text.CRSF_AgeMs:0000001c $d
+     /tmp/ccUPWEXy.s:702    .text.CRSF_LinkUp:00000000 $t
+     /tmp/ccUPWEXy.s:708    .text.CRSF_LinkUp:00000000 CRSF_LinkUp
+     /tmp/ccUPWEXy.s:733    .text.CRSF_FrameCount:00000000 $t
+     /tmp/ccUPWEXy.s:739    .text.CRSF_FrameCount:00000000 CRSF_FrameCount
+     /tmp/ccUPWEXy.s:755    .text.CRSF_FrameCount:00000008 $d
+     /tmp/ccUPWEXy.s:760    .text.CRSF_ErrorCount:00000000 $t
+     /tmp/ccUPWEXy.s:766    .text.CRSF_ErrorCount:00000000 CRSF_ErrorCount
+     /tmp/ccUPWEXy.s:782    .text.CRSF_ErrorCount:00000008 $d
+     /tmp/ccUPWEXy.s:787    .text.HAL_UART_ErrorCallback:00000000 $t
+     /tmp/ccUPWEXy.s:793    .text.HAL_UART_ErrorCallback:00000000 HAL_UART_ErrorCallback
+     /tmp/ccUPWEXy.s:894    .text.HAL_UART_ErrorCallback:00000058 $d
+     /tmp/ccUPWEXy.s:902    .bss.error_count:00000000 $d
+     /tmp/ccUPWEXy.s:908    .bss.frame_count:00000000 $d
+     /tmp/ccUPWEXy.s:914    .bss.last_frame_ms:00000000 $d
+     /tmp/ccUPWEXy.s:920    .bss.ch_us:00000000 $d
+     /tmp/ccUPWEXy.s:929    .bss.frame_len:00000000 $d
+     /tmp/ccUPWEXy.s:934    .bss.pos:00000000 $d
+     /tmp/ccUPWEXy.s:936    .bss.buf:00000000 $d
+     /tmp/ccUPWEXy.s:945    .bss.rx_byte:00000000 $d
+     /tmp/ccUPWEXy.s:947    .bss.crsf_uart:00000000 $d
 
 UNDEFINED SYMBOLS
 HAL_UART_Receive_IT

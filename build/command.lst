@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccbfbmkB.s 			page 1
+ARM GAS  /tmp/ccbH4I8j.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
   27:Sensors/command.c **** {
   30              		.loc 1 27 1 view -0
   31              		.cfi_startproc
-ARM GAS  /tmp/ccbfbmkB.s 			page 2
+ARM GAS  /tmp/ccbH4I8j.s 			page 2
 
 
   32              		@ args = 0, pretend = 0, frame = 0
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
   80              		.cfi_startproc
   81              		@ args = 0, pretend = 0, frame = 0
   82              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  /tmp/ccbfbmkB.s 			page 3
+ARM GAS  /tmp/ccbH4I8j.s 			page 3
 
 
   83              		@ link register save eliminated.
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
   48:Sensors/command.c ****             line_ready = 1;
   49:Sensors/command.c ****         }
   50:Sensors/command.c ****     }
-ARM GAS  /tmp/ccbfbmkB.s 			page 4
+ARM GAS  /tmp/ccbH4I8j.s 			page 4
 
 
   51:Sensors/command.c ****     else if (line_len < (CMD_BUF_SIZE - 1))
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  167 0038 064B     		ldr	r3, .L13+16
  168 003a 1868     		ldr	r0, [r3]
  169 003c FFF7FEFF 		bl	HAL_UART_Receive_IT
-ARM GAS  /tmp/ccbfbmkB.s 			page 5
+ARM GAS  /tmp/ccbH4I8j.s 			page 5
 
 
  170              	.LVL4:
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  216              	.LC10:
  217 0048 61726D00 		.ascii	"arm\000"
  218              		.align	2
-ARM GAS  /tmp/ccbfbmkB.s 			page 6
+ARM GAS  /tmp/ccbH4I8j.s 			page 6
 
 
  219              	.LC11:
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  251 013c 726300   		.ascii	"rc\000"
  252 013f 00       		.align	2
  253              	.LC21:
-ARM GAS  /tmp/ccbfbmkB.s 			page 7
+ARM GAS  /tmp/ccbH4I8j.s 			page 7
 
 
  254 0140 62617400 		.ascii	"bat\000"
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  282              	.LC30:
  283 0240 676C7066 		.ascii	"glpf \000"
  283      2000
-ARM GAS  /tmp/ccbfbmkB.s 			page 8
+ARM GAS  /tmp/ccbH4I8j.s 			page 8
 
 
  284 0246 0000     		.align	2
@@ -478,7 +478,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  316 0304 3E3E2053 		.ascii	">> Stream AN (50 Hz Ausgabe)\015\000"
  316      74726561 
  316      6D20414E 
-ARM GAS  /tmp/ccbfbmkB.s 			page 9
+ARM GAS  /tmp/ccbH4I8j.s 			page 9
 
 
  316      20283530 
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  339      00
  340 03fd 000000   		.align	2
  341              	.LC49:
-ARM GAS  /tmp/ccbfbmkB.s 			page 10
+ARM GAS  /tmp/ccbH4I8j.s 			page 10
 
 
  342 0400 6D697800 		.ascii	"mix\000"
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  365      0D00
  366 04f5 000000   		.align	2
  367              	.LC57:
-ARM GAS  /tmp/ccbfbmkB.s 			page 11
+ARM GAS  /tmp/ccbH4I8j.s 			page 11
 
 
  368 04f8 3E3E2061 		.ascii	">> angle | rate | stream on/off | t <gas> | m1..m4 "
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  404              		.cfi_offset 14, -4
  405 000e 2DED028B 		vpush.64	{d8}
  406              	.LCFI3:
-ARM GAS  /tmp/ccbfbmkB.s 			page 12
+ARM GAS  /tmp/ccbH4I8j.s 			page 12
 
 
  407              		.cfi_def_cfa_offset 36
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  447 003e FFF7FEFF 		bl	puts
  448              	.LVL9:
  449              	.L18:
-ARM GAS  /tmp/ccbfbmkB.s 			page 13
+ARM GAS  /tmp/ccbH4I8j.s 			page 13
 
 
   76:Sensors/command.c ****     }
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  130:Sensors/command.c ****     else if (strncmp(line, "glpf ", 5) == 0)
  131:Sensors/command.c ****     {
  132:Sensors/command.c ****         float v = strtof(line + 5, 0);
-ARM GAS  /tmp/ccbfbmkB.s 			page 14
+ARM GAS  /tmp/ccbH4I8j.s 			page 14
 
 
  133:Sensors/command.c ****         MPU6050_SetGyroLPF(v);
@@ -838,7 +838,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  187:Sensors/command.c ****     {
  188:Sensors/command.c ****         char *end;
  189:Sensors/command.c ****         float v = strtof(line + 3, &end);
-ARM GAS  /tmp/ccbfbmkB.s 			page 15
+ARM GAS  /tmp/ccbH4I8j.s 			page 15
 
 
  190:Sensors/command.c **** 
@@ -898,7 +898,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  244:Sensors/command.c **** 
  245:Sensors/command.c ****         if (end != line + 2 && *end == '\0')
  246:Sensors/command.c ****         {
-ARM GAS  /tmp/ccbfbmkB.s 			page 16
+ARM GAS  /tmp/ccbH4I8j.s 			page 16
 
 
  247:Sensors/command.c ****             if (val < 0)
@@ -958,7 +958,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  451              		.loc 1 299 14 is_stmt 0 view .LVU55
  452 0042 0023     		movs	r3, #0
  453 0044 9E4A     		ldr	r2, .L97+28
-ARM GAS  /tmp/ccbfbmkB.s 			page 17
+ARM GAS  /tmp/ccbH4I8j.s 			page 17
 
 
  454 0046 1370     		strb	r3, [r2]
@@ -1018,7 +1018,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  498 0076 8D48     		ldr	r0, .L97+8
  499 0078 FFF7FEFF 		bl	strcmp
  500              	.LVL14:
-ARM GAS  /tmp/ccbfbmkB.s 			page 18
+ARM GAS  /tmp/ccbH4I8j.s 			page 18
 
 
   89:Sensors/command.c ****     {
@@ -1078,7 +1078,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  541              		.loc 1 130 10 is_stmt 1 view .LVU80
  130:Sensors/command.c ****     {
  542              		.loc 1 130 14 is_stmt 0 view .LVU81
-ARM GAS  /tmp/ccbfbmkB.s 			page 19
+ARM GAS  /tmp/ccbH4I8j.s 			page 19
 
 
  543 00bc 0522     		movs	r2, #5
@@ -1138,7 +1138,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  585              	.LVL23:
  156:Sensors/command.c ****     {
  586              		.loc 1 156 13 discriminator 1 view .LVU94
-ARM GAS  /tmp/ccbfbmkB.s 			page 20
+ARM GAS  /tmp/ccbH4I8j.s 			page 20
 
 
  587 0102 0028     		cmp	r0, #0
@@ -1198,7 +1198,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  627              		.loc 1 205 10 is_stmt 1 view .LVU108
  205:Sensors/command.c ****     {
  628              		.loc 1 205 13 is_stmt 0 view .LVU109
-ARM GAS  /tmp/ccbfbmkB.s 			page 21
+ARM GAS  /tmp/ccbH4I8j.s 			page 21
 
 
  629 0142 742C     		cmp	r4, #116
@@ -1258,7 +1258,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  273:Sensors/command.c ****         {
  670              		.loc 1 273 12 view .LVU123
  671 0178 AB42     		cmp	r3, r5
-ARM GAS  /tmp/ccbfbmkB.s 			page 22
+ARM GAS  /tmp/ccbH4I8j.s 			page 22
 
 
  672 017a 00F04B82 		beq	.L56
@@ -1318,7 +1318,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
   81:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
  711              		.loc 1 81 9 discriminator 8 view .LVU139
  712 01a8 434B     		ldr	r3, .L97+20
-ARM GAS  /tmp/ccbfbmkB.s 			page 23
+ARM GAS  /tmp/ccbH4I8j.s 			page 23
 
 
  713 01aa D868     		ldr	r0, [r3, #12]	@ float
@@ -1378,7 +1378,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
   81:Sensors/command.c ****                Motor_IsArmed() ? "ARMED" : "DISARMED",
  757              		.loc 1 81 9 discriminator 2 view .LVU150
  758 01ea 4F4E     		ldr	r6, .L97+132
-ARM GAS  /tmp/ccbfbmkB.s 			page 24
+ARM GAS  /tmp/ccbH4I8j.s 			page 24
 
 
  759 01ec D7E7     		b	.L22
@@ -1438,7 +1438,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  802 0222 0246     		mov	r2, r0
  803 0224 0B46     		mov	r3, r1
  804 0226 4648     		ldr	r0, .L97+156
-ARM GAS  /tmp/ccbfbmkB.s 			page 25
+ARM GAS  /tmp/ccbH4I8j.s 			page 25
 
 
  805 0228 FFF7FEFF 		bl	printf
@@ -1498,7 +1498,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  117:Sensors/command.c ****         Battery_Calibrate(v);
  849              		.loc 1 117 19 is_stmt 0 view .LVU172
  850 026c 0021     		movs	r1, #0
-ARM GAS  /tmp/ccbfbmkB.s 			page 26
+ARM GAS  /tmp/ccbH4I8j.s 			page 26
 
 
  851 026e 3648     		ldr	r0, .L97+164
@@ -1558,7 +1558,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  899 02dc D8010000 		.word	.LC26
  900 02e0 40020000 		.word	.LC30
  901 02e4 68020000 		.word	.LC32
-ARM GAS  /tmp/ccbfbmkB.s 			page 27
+ARM GAS  /tmp/ccbH4I8j.s 			page 27
 
 
  902 02e8 70020000 		.word	.LC33
@@ -1618,7 +1618,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  950              	.LVL62:
  951 0372 0246     		mov	r2, r0
  952 0374 0B46     		mov	r3, r1
-ARM GAS  /tmp/ccbfbmkB.s 			page 28
+ARM GAS  /tmp/ccbH4I8j.s 			page 28
 
 
  953 0376 B048     		ldr	r0, .L99+4
@@ -1678,7 +1678,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  997 03be A149     		ldr	r1, .L99+16
  998              	.L33:
  134:Sensors/command.c ****                (v <= 0.0f) ? " (aus)" : "");
-ARM GAS  /tmp/ccbfbmkB.s 			page 29
+ARM GAS  /tmp/ccbH4I8j.s 			page 29
 
 
  999              		.loc 1 134 9 discriminator 4 view .LVU195
@@ -1738,7 +1738,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  145:Sensors/command.c ****         MPU6050_SetCompTau(v);
  1044              		.loc 1 145 19 is_stmt 0 view .LVU205
  1045 03f2 0021     		movs	r1, #0
-ARM GAS  /tmp/ccbfbmkB.s 			page 30
+ARM GAS  /tmp/ccbH4I8j.s 			page 30
 
 
  1046 03f4 9648     		ldr	r0, .L99+28
@@ -1798,7 +1798,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1091 0434 05E6     		b	.L18
  1092              	.L90:
  171:Sensors/command.c ****         printf(">> Stream AN (50 Hz Ausgabe)\r\n");
-ARM GAS  /tmp/ccbfbmkB.s 			page 31
+ARM GAS  /tmp/ccbH4I8j.s 			page 31
 
 
  1093              		.loc 1 171 9 view .LVU215
@@ -1858,7 +1858,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  189:Sensors/command.c **** 
  1139              		.loc 1 189 9 view .LVU224
  189:Sensors/command.c **** 
-ARM GAS  /tmp/ccbfbmkB.s 			page 32
+ARM GAS  /tmp/ccbH4I8j.s 			page 32
 
 
  1140              		.loc 1 189 19 is_stmt 0 view .LVU225
@@ -1918,7 +1918,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1184              	.LVL98:
  1185              	.LBE8:
  187:Sensors/command.c ****         char *end;
-ARM GAS  /tmp/ccbfbmkB.s 			page 33
+ARM GAS  /tmp/ccbH4I8j.s 			page 33
 
 
  1186              		.loc 1 187 5 is_stmt 0 view .LVU236
@@ -1978,7 +1978,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1227              	.L65:
  213:Sensors/command.c ****             if (v > 100.0f)
  1228              		.loc 1 213 19 view .LVU250
-ARM GAS  /tmp/ccbfbmkB.s 			page 34
+ARM GAS  /tmp/ccbH4I8j.s 			page 34
 
 
  1229 0510 DFED5C7A 		vldr.32	s15, .L99+80
@@ -2038,7 +2038,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1271              		.loc 1 230 9 is_stmt 1 view .LVU262
  231:Sensors/command.c ****         printf(">> M1=%.1f  M2=%.1f  M3=%.1f  M4=%.1f  (Gas %.0f%%)\r\n",
  1272              		.loc 1 231 9 view .LVU263
-ARM GAS  /tmp/ccbfbmkB.s 			page 35
+ARM GAS  /tmp/ccbH4I8j.s 			page 35
 
 
  1273 0546 0BAB     		add	r3, sp, #44
@@ -2098,7 +2098,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1320              		.loc 1 243 9 view .LVU270
  243:Sensors/command.c **** 
  1321              		.loc 1 243 20 is_stmt 0 view .LVU271
-ARM GAS  /tmp/ccbfbmkB.s 			page 36
+ARM GAS  /tmp/ccbH4I8j.s 			page 36
 
 
  1322 0598 384E     		ldr	r6, .L99+72
@@ -2158,7 +2158,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  254:Sensors/command.c ****                 printf(">> Motor %u: %ld%%\r\n", motor, val);
  1362              		.loc 1 254 17 is_stmt 1 view .LVU286
  1363 05c4 07EE905A 		vmov	s15, r5	@ int
-ARM GAS  /tmp/ccbfbmkB.s 			page 37
+ARM GAS  /tmp/ccbH4I8j.s 			page 37
 
 
  1364 05c8 B8EEE70A 		vcvt.f32.s32	s0, s15
@@ -2218,7 +2218,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1408 05fe FFF7FEFF 		bl	Motor_SetAllPercent
  1409              	.LVL131:
  283:Sensors/command.c ****             }
-ARM GAS  /tmp/ccbfbmkB.s 			page 38
+ARM GAS  /tmp/ccbH4I8j.s 			page 38
 
 
  1410              		.loc 1 283 17 view .LVU297
@@ -2278,7 +2278,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1457              		.loc 1 295 13 is_stmt 0 view .LVU304
  1458 0630 7047     		bx	lr
  1459              	.L100:
-ARM GAS  /tmp/ccbfbmkB.s 			page 39
+ARM GAS  /tmp/ccbH4I8j.s 			page 39
 
 
  1460 0632 00BF     		.align	2
@@ -2338,7 +2338,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1513              		@ frame_needed = 0, uses_anonymous_args = 0
  1514              		.loc 1 304 1 is_stmt 0 view .LVU306
  1515 0000 08B5     		push	{r3, lr}
-ARM GAS  /tmp/ccbfbmkB.s 			page 40
+ARM GAS  /tmp/ccbH4I8j.s 			page 40
 
 
  1516              	.LCFI9:
@@ -2398,7 +2398,7 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1567 0000 00       		.space	1
  1568              		.section	.bss.line_len,"aw",%nobits
  1571              	line_len:
-ARM GAS  /tmp/ccbfbmkB.s 			page 41
+ARM GAS  /tmp/ccbH4I8j.s 			page 41
 
 
  1572 0000 00       		.space	1
@@ -2436,41 +2436,41 @@ ARM GAS  /tmp/ccbfbmkB.s 			page 1
  1606              		.file 16 "Sensors/rc.h"
  1607              		.file 17 "/usr/include/newlib/stdio.h"
  1608              		.file 18 "<built-in>"
-ARM GAS  /tmp/ccbfbmkB.s 			page 42
+ARM GAS  /tmp/ccbH4I8j.s 			page 42
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 command.c
-     /tmp/ccbfbmkB.s:21     .text.Command_Init:00000000 $t
-     /tmp/ccbfbmkB.s:27     .text.Command_Init:00000000 Command_Init
-     /tmp/ccbfbmkB.s:63     .text.Command_Init:0000001c $d
-     /tmp/ccbfbmkB.s:1588   .bss.cmd_uart:00000000 cmd_uart
-     /tmp/ccbfbmkB.s:1571   .bss.line_len:00000000 line_len
-     /tmp/ccbfbmkB.s:1566   .bss.line_ready:00000000 line_ready
-     /tmp/ccbfbmkB.s:1582   .bss.rx_char:00000000 rx_char
-     /tmp/ccbfbmkB.s:71     .text.Command_StreamOn:00000000 $t
-     /tmp/ccbfbmkB.s:77     .text.Command_StreamOn:00000000 Command_StreamOn
-     /tmp/ccbfbmkB.s:93     .text.Command_StreamOn:00000008 $d
-     /tmp/ccbfbmkB.s:1561   .bss.stream_on:00000000 stream_on
-     /tmp/ccbfbmkB.s:98     .text.Command_RxByte:00000000 $t
-     /tmp/ccbfbmkB.s:104    .text.Command_RxByte:00000000 Command_RxByte
-     /tmp/ccbfbmkB.s:176    .text.Command_RxByte:00000044 $d
-     /tmp/ccbfbmkB.s:1577   .bss.line:00000000 line
-     /tmp/ccbfbmkB.s:185    .rodata.Command_Process.str1.4:00000000 $d
-     /tmp/ccbfbmkB.s:375    .text.Command_Process:00000000 $t
-     /tmp/ccbfbmkB.s:381    .text.Command_Process:00000000 Command_Process
-     /tmp/ccbfbmkB.s:885    .text.Command_Process:000002a4 $d
-     /tmp/ccbfbmkB.s:932    .text.Command_Process:00000350 $t
-     /tmp/ccbfbmkB.s:1462   .text.Command_Process:00000634 $d
-     /tmp/ccbfbmkB.s:1501   .text.HAL_UART_RxCpltCallback:00000000 $t
-     /tmp/ccbfbmkB.s:1507   .text.HAL_UART_RxCpltCallback:00000000 HAL_UART_RxCpltCallback
-     /tmp/ccbfbmkB.s:1553   .text.HAL_UART_RxCpltCallback:00000020 $d
-     /tmp/ccbfbmkB.s:1562   .bss.stream_on:00000000 $d
-     /tmp/ccbfbmkB.s:1567   .bss.line_ready:00000000 $d
-     /tmp/ccbfbmkB.s:1572   .bss.line_len:00000000 $d
-     /tmp/ccbfbmkB.s:1574   .bss.line:00000000 $d
-     /tmp/ccbfbmkB.s:1583   .bss.rx_char:00000000 $d
-     /tmp/ccbfbmkB.s:1585   .bss.cmd_uart:00000000 $d
+     /tmp/ccbH4I8j.s:21     .text.Command_Init:00000000 $t
+     /tmp/ccbH4I8j.s:27     .text.Command_Init:00000000 Command_Init
+     /tmp/ccbH4I8j.s:63     .text.Command_Init:0000001c $d
+     /tmp/ccbH4I8j.s:1588   .bss.cmd_uart:00000000 cmd_uart
+     /tmp/ccbH4I8j.s:1571   .bss.line_len:00000000 line_len
+     /tmp/ccbH4I8j.s:1566   .bss.line_ready:00000000 line_ready
+     /tmp/ccbH4I8j.s:1582   .bss.rx_char:00000000 rx_char
+     /tmp/ccbH4I8j.s:71     .text.Command_StreamOn:00000000 $t
+     /tmp/ccbH4I8j.s:77     .text.Command_StreamOn:00000000 Command_StreamOn
+     /tmp/ccbH4I8j.s:93     .text.Command_StreamOn:00000008 $d
+     /tmp/ccbH4I8j.s:1561   .bss.stream_on:00000000 stream_on
+     /tmp/ccbH4I8j.s:98     .text.Command_RxByte:00000000 $t
+     /tmp/ccbH4I8j.s:104    .text.Command_RxByte:00000000 Command_RxByte
+     /tmp/ccbH4I8j.s:176    .text.Command_RxByte:00000044 $d
+     /tmp/ccbH4I8j.s:1577   .bss.line:00000000 line
+     /tmp/ccbH4I8j.s:185    .rodata.Command_Process.str1.4:00000000 $d
+     /tmp/ccbH4I8j.s:375    .text.Command_Process:00000000 $t
+     /tmp/ccbH4I8j.s:381    .text.Command_Process:00000000 Command_Process
+     /tmp/ccbH4I8j.s:885    .text.Command_Process:000002a4 $d
+     /tmp/ccbH4I8j.s:932    .text.Command_Process:00000350 $t
+     /tmp/ccbH4I8j.s:1462   .text.Command_Process:00000634 $d
+     /tmp/ccbH4I8j.s:1501   .text.HAL_UART_RxCpltCallback:00000000 $t
+     /tmp/ccbH4I8j.s:1507   .text.HAL_UART_RxCpltCallback:00000000 HAL_UART_RxCpltCallback
+     /tmp/ccbH4I8j.s:1553   .text.HAL_UART_RxCpltCallback:00000020 $d
+     /tmp/ccbH4I8j.s:1562   .bss.stream_on:00000000 $d
+     /tmp/ccbH4I8j.s:1567   .bss.line_ready:00000000 $d
+     /tmp/ccbH4I8j.s:1572   .bss.line_len:00000000 $d
+     /tmp/ccbH4I8j.s:1574   .bss.line:00000000 $d
+     /tmp/ccbH4I8j.s:1583   .bss.rx_char:00000000 $d
+     /tmp/ccbH4I8j.s:1585   .bss.cmd_uart:00000000 $d
 
 UNDEFINED SYMBOLS
 HAL_UART_Receive_IT
@@ -2496,7 +2496,7 @@ Battery_Calibrate
 Battery_GetScale
 setpoint
 flight_mode
-ARM GAS  /tmp/ccbfbmkB.s 			page 43
+ARM GAS  /tmp/ccbH4I8j.s 			page 43
 
 
 loop_hz
