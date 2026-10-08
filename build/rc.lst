@@ -1,4 +1,4 @@
-ARM GAS  /tmp/ccOGwQsJ.s 			page 1
+ARM GAS  /tmp/ccanajdO.s 			page 1
 
 
    1              		.cpu cortex-m4
@@ -58,7 +58,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
   37              		.cfi_offset 3, -8
   38              		.cfi_offset 14, -4
   20:Sensors/rc.c  ****     int32_t us = (int32_t)CRSF_Channel(ch) - 1500;
-ARM GAS  /tmp/ccOGwQsJ.s 			page 2
+ARM GAS  /tmp/ccanajdO.s 			page 2
 
 
   39              		.loc 1 20 5 is_stmt 1 view .LVU2
@@ -118,7 +118,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
   36:Sensors/rc.c  ****         f = -1.0f;
   37:Sensors/rc.c  ****     return f;
   38:Sensors/rc.c  **** }
-ARM GAS  /tmp/ccOGwQsJ.s 			page 3
+ARM GAS  /tmp/ccanajdO.s 			page 3
 
 
   78              		.loc 1 38 1 view .LVU17
@@ -178,7 +178,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  125              		.cfi_startproc
  126              		@ args = 0, pretend = 0, frame = 0
  127              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  /tmp/ccOGwQsJ.s 			page 4
+ARM GAS  /tmp/ccanajdO.s 			page 4
 
 
  128              		@ link register save eliminated.
@@ -238,7 +238,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
   42:Sensors/rc.c  ****     (void)dt;
  176              		.loc 1 42 5 is_stmt 1 view .LVU34
   43:Sensors/rc.c  **** 
-ARM GAS  /tmp/ccOGwQsJ.s 			page 5
+ARM GAS  /tmp/ccanajdO.s 			page 5
 
 
   44:Sensors/rc.c  ****     /* ---------- Failsafe ---------- */
@@ -298,7 +298,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
   73:Sensors/rc.c  ****         Control_SetMode(MODE_ANGLE);
   74:Sensors/rc.c  **** 
   75:Sensors/rc.c  ****     /* ---------- Arming ----------
-ARM GAS  /tmp/ccOGwQsJ.s 			page 6
+ARM GAS  /tmp/ccanajdO.s 			page 6
 
 
   76:Sensors/rc.c  ****      * Bedingungen: Schalter oben UND Gas unter 5 % UND der Schalter
@@ -358,7 +358,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  212              	.L37:
  213              	.LCFI4:
  214              		.cfi_restore_state
-ARM GAS  /tmp/ccOGwQsJ.s 			page 7
+ARM GAS  /tmp/ccanajdO.s 			page 7
 
 
   50:Sensors/rc.c  ****             setpoint.throttle = 0.0f;
@@ -418,7 +418,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  253              		.loc 1 63 11 view .LVU62
  254 0056 B2EE047A 		vmov.f32	s14, #1.0e+1
  255 005a 87EE879A 		vdiv.f32	s18, s15, s14
-ARM GAS  /tmp/ccOGwQsJ.s 			page 8
+ARM GAS  /tmp/ccanajdO.s 			page 8
 
 
  256              	.LVL17:
@@ -455,7 +455,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  279              		.loc 1 70 5 is_stmt 1 view .LVU70
   70:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
  280              		.loc 1 70 9 is_stmt 0 view .LVU71
- 281 0080 0620     		movs	r0, #6
+ 281 0080 0720     		movs	r0, #7
  282              	.LVL21:
   70:Sensors/rc.c  ****         Control_SetMode(MODE_RATE);
  283              		.loc 1 70 9 view .LVU72
@@ -476,9 +476,9 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  295              		.loc 1 78 5 view .LVU75
   78:Sensors/rc.c  **** 
  296              		.loc 1 78 22 is_stmt 0 view .LVU76
- 297 0094 0520     		movs	r0, #5
+ 297 0094 0820     		movs	r0, #8
  298 0096 FFF7FEFF 		bl	CRSF_Channel
-ARM GAS  /tmp/ccOGwQsJ.s 			page 9
+ARM GAS  /tmp/ccanajdO.s 			page 9
 
 
  299              	.LVL24:
@@ -538,7 +538,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  339 00ca 3FD0     		beq	.L39
  114:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_RATE;
  340              		.loc 1 114 9 is_stmt 1 view .LVU91
-ARM GAS  /tmp/ccOGwQsJ.s 			page 10
+ARM GAS  /tmp/ccanajdO.s 			page 10
 
 
  114:Sensors/rc.c  ****         setpoint.pitch = p * RC_MAX_RATE;
@@ -598,7 +598,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  381 0104 FFF7FEFF 		bl	Control_SetMode
  382              	.LVL37:
  383 0108 C4E7     		b	.L21
-ARM GAS  /tmp/ccOGwQsJ.s 			page 11
+ARM GAS  /tmp/ccanajdO.s 			page 11
 
 
  384              	.LVL38:
@@ -658,7 +658,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  423              		.loc 1 93 23 is_stmt 0 view .LVU120
  424 013a 0B4B     		ldr	r3, .L41+4
  425 013c 0022     		movs	r2, #0
-ARM GAS  /tmp/ccOGwQsJ.s 			page 12
+ARM GAS  /tmp/ccanajdO.s 			page 12
 
 
  426 013e 1A70     		strb	r2, [r3]
@@ -718,7 +718,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  473              		.thumb
  474              		.thumb_func
  476              	RC_IsFailsafe:
-ARM GAS  /tmp/ccOGwQsJ.s 			page 13
+ARM GAS  /tmp/ccanajdO.s 			page 13
 
 
  477              	.LFB245:
@@ -778,7 +778,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  511      6368616C 
  511      74657220 
  511      25347520 
-ARM GAS  /tmp/ccOGwQsJ.s 			page 14
+ARM GAS  /tmp/ccanajdO.s 			page 14
 
 
  512              		.section	.text.RC_PrintStatus,"ax",%progbits
@@ -838,7 +838,7 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  555              		.loc 1 128 5 discriminator 4 view .LVU140
  556 001c 68BB     		cbnz	r0, .L52
  128:Sensors/rc.c  ****            CRSF_LinkUp() ? "VERBUNDEN" : "KEIN SIGNAL",
-ARM GAS  /tmp/ccOGwQsJ.s 			page 15
+ARM GAS  /tmp/ccanajdO.s 			page 15
 
 
  557              		.loc 1 128 5 discriminator 5 view .LVU141
@@ -889,16 +889,16 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  596              		.loc 1 135 5 is_stmt 1 view .LVU149
  136:Sensors/rc.c  ****            CRSF_Channel(RC_CH_ARM), CRSF_Channel(RC_CH_MODE));
  597              		.loc 1 136 12 is_stmt 0 view .LVU150
- 598 005a 0520     		movs	r0, #5
+ 598 005a 0820     		movs	r0, #8
  599 005c FFF7FEFF 		bl	CRSF_Channel
  600              	.LVL58:
  601 0060 0446     		mov	r4, r0
  602              		.loc 1 136 37 view .LVU151
- 603 0062 0620     		movs	r0, #6
+ 603 0062 0720     		movs	r0, #7
  604 0064 FFF7FEFF 		bl	CRSF_Channel
  605              	.LVL59:
  606 0068 0246     		mov	r2, r0
-ARM GAS  /tmp/ccOGwQsJ.s 			page 16
+ARM GAS  /tmp/ccanajdO.s 			page 16
 
 
  135:Sensors/rc.c  ****     printf("   Arm-Schalter %4u  Modus-Schalter %4u\r\n",
@@ -951,30 +951,30 @@ ARM GAS  /tmp/ccOGwQsJ.s 			page 1
  655              		.file 4 "Sensors/crsf.h"
  656              		.file 5 "Sensors/motor.h"
  657              		.file 6 "/usr/include/newlib/stdio.h"
-ARM GAS  /tmp/ccOGwQsJ.s 			page 17
+ARM GAS  /tmp/ccanajdO.s 			page 17
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 rc.c
-     /tmp/ccOGwQsJ.s:21     .text.stick_norm:00000000 $t
-     /tmp/ccOGwQsJ.s:26     .text.stick_norm:00000000 stick_norm
-     /tmp/ccOGwQsJ.s:110    .text.stick_norm:00000064 $d
-     /tmp/ccOGwQsJ.s:116    .text.RC_Init:00000000 $t
-     /tmp/ccOGwQsJ.s:122    .text.RC_Init:00000000 RC_Init
-     /tmp/ccOGwQsJ.s:144    .text.RC_Init:00000010 $d
-     /tmp/ccOGwQsJ.s:649    .data.failsafe:00000000 failsafe
-     /tmp/ccOGwQsJ.s:644    .bss.arm_latch:00000000 arm_latch
-     /tmp/ccOGwQsJ.s:150    .text.RC_Update:00000000 $t
-     /tmp/ccOGwQsJ.s:156    .text.RC_Update:00000000 RC_Update
-     /tmp/ccOGwQsJ.s:456    .text.RC_Update:00000164 $d
-     /tmp/ccOGwQsJ.s:470    .text.RC_IsFailsafe:00000000 $t
-     /tmp/ccOGwQsJ.s:476    .text.RC_IsFailsafe:00000000 RC_IsFailsafe
-     /tmp/ccOGwQsJ.s:491    .text.RC_IsFailsafe:00000008 $d
-     /tmp/ccOGwQsJ.s:496    .rodata.RC_PrintStatus.str1.4:00000000 $d
-     /tmp/ccOGwQsJ.s:513    .text.RC_PrintStatus:00000000 $t
-     /tmp/ccOGwQsJ.s:519    .text.RC_PrintStatus:00000000 RC_PrintStatus
-     /tmp/ccOGwQsJ.s:633    .text.RC_PrintStatus:00000080 $d
-     /tmp/ccOGwQsJ.s:645    .bss.arm_latch:00000000 $d
+     /tmp/ccanajdO.s:21     .text.stick_norm:00000000 $t
+     /tmp/ccanajdO.s:26     .text.stick_norm:00000000 stick_norm
+     /tmp/ccanajdO.s:110    .text.stick_norm:00000064 $d
+     /tmp/ccanajdO.s:116    .text.RC_Init:00000000 $t
+     /tmp/ccanajdO.s:122    .text.RC_Init:00000000 RC_Init
+     /tmp/ccanajdO.s:144    .text.RC_Init:00000010 $d
+     /tmp/ccanajdO.s:649    .data.failsafe:00000000 failsafe
+     /tmp/ccanajdO.s:644    .bss.arm_latch:00000000 arm_latch
+     /tmp/ccanajdO.s:150    .text.RC_Update:00000000 $t
+     /tmp/ccanajdO.s:156    .text.RC_Update:00000000 RC_Update
+     /tmp/ccanajdO.s:456    .text.RC_Update:00000164 $d
+     /tmp/ccanajdO.s:470    .text.RC_IsFailsafe:00000000 $t
+     /tmp/ccanajdO.s:476    .text.RC_IsFailsafe:00000000 RC_IsFailsafe
+     /tmp/ccanajdO.s:491    .text.RC_IsFailsafe:00000008 $d
+     /tmp/ccanajdO.s:496    .rodata.RC_PrintStatus.str1.4:00000000 $d
+     /tmp/ccanajdO.s:513    .text.RC_PrintStatus:00000000 $t
+     /tmp/ccanajdO.s:519    .text.RC_PrintStatus:00000000 RC_PrintStatus
+     /tmp/ccanajdO.s:633    .text.RC_PrintStatus:00000080 $d
+     /tmp/ccanajdO.s:645    .bss.arm_latch:00000000 $d
 
 UNDEFINED SYMBOLS
 CRSF_Channel
