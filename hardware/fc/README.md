@@ -60,7 +60,7 @@ für die Abstandshalter.
 
 | Pin | Port | Netz | Funktion |
 |---|---|---|---|
-| 26 | PB0 | M1 | TIM3_CH3 |
+| 26 | PB0 | M1 | TIM3_CH3 – DShot per Timer-DMA belegt DMA1 S2/S4/S5/S7: dann UART5-TX (GPS) und USART2-RX (Debug) ohne DMA betreiben (Betaflight nutzt auf F4 ohnehin Bitbang) |
 | 27 | PB1 | M2 | TIM3_CH4 |
 | 22 | PA6 | M3 | TIM3_CH1 |
 | 23 | PA7 | M4 | TIM3_CH2 – alle vier Motoren auf TIM3 (wie bisher), DShot über DMA1 möglich |
@@ -253,16 +253,20 @@ Nicht bestückt werden die Testpunkte TP1–TP5, die Lötbrücken JP1/JP2, Bohru
 - Standard PCBA verlangt **Nutzentrennränder (Edge Rails) und Fiducials** und eine
   Mindestgröße von 70 × 70 mm. Die Platine (42 × 41 mm) ist kleiner und hat Bauteile direkt an
   der Kante: beim Bestellen „Edge Rails/Fiducials: Added by JLCPCB“ wählen bzw. JLCPCB den
-  Nutzen machen lassen. **Die Ränder nur an die beiden 42-mm-Kanten** (ESC-Seite und
-  gegenüber) – an der Ostkante steht die USB-C-Buchse 0,5 mm über. Am besten als Bemerkung
-  dazuschreiben. Die Ränder werden mitgeliefert und lassen sich abbrechen (kein Löten nötig).
+  Nutzen machen lassen (bei PCBA mit gefrästem Spalt und Stegen, kein V-Cut). Als Bemerkung
+  dazuschreiben: „USB-C connector overhangs the east edge by 0.5 mm, please keep a routed gap
+  there.“ Die Ränder werden mitgeliefert und lassen sich abbrechen (kein Löten nötig); die
+  Stegreste an der Kante mit einer Feile glätten.
 
-**Extended-Teile, 16 Teilenummern:** STM32F405RGT6 (C15742), ICM-42688-P (C1850418),
+**Extended-Teile, 18 Teilenummern** (bei Standard-Bestückung kostet ohnehin jede Teilenummer
+gleich viel; die Einteilung zählt nur für die Verfügbarkeit): STM32F405RGT6 (C15742), ICM-42688-P (C1850418),
 LMR33630BDDAR (C544370), USBLC6-2SC6 (C7519), Si2319CDS (C146287), USB-C TYPE-C-31-M-12
 (C165948), Spule XGL4020-332MEC (C6937839), Elko 470 µF/35 V (C48615113), die fünf JST-SH-
 Buchsen ZX-SH1.0-2/3/4/5/8PWT (C7430444, C7430445, C7430446, C7430447, C7430450) – diese gibt
 es gar nicht als Basic/Preferred. Nur wegen des Footprints Extended sind Quarz 8 MHz 3225
-(C20617566), Ferrit 0402 (C7509833) und 10 µF/50 V 1210 (C17498688); Alternativen mit
+(C20617566), Ferrit 0402 (C7509833) und 10 µF/50 V 1210 (C17498688). Die gelbe und die grüne
+LED (C72038, C72043) stehen seit 03/2025 nicht mehr auf der Basic/Preferred-Liste; aktuell sind
+dort nur rote und weiße 0603-LEDs. Ihr Bestand ist unbekannt – beim BOM-Upload prüfen. Alternativen mit
 Footprint-Änderung stehen in `scripts/lcsc.py` (`ALTERNATIVES`). Die Auswahl steht in
 `scripts/lcsc.py` (Stand 13.10.2026, mit Quellen).
 
@@ -272,30 +276,34 @@ Nummern nur aus Websuche-Momentaufnahmen (in der Prüfliste als „unbestätigt�
 Kein gewähltes Teil war dort als nicht lagernd erkennbar – beim Hochladen der BOM zeigt
 JLCPCB den aktuellen Bestand, das ist die maßgebliche Prüfung.
 
-**Drehlagen:** Die Korrekturen sind durch Vergleich der Pad-Lagen der KiCad-Footprints mit
-den JLCPCB/EasyEDA-Footprints bestimmt (Bibliothek CDFER/JLCPCB-Kicad-Library; der Zusatz
-BL/BR im Footprintnamen nennt die Ecke von Pin 1) und gegen die Tabellen von JLCKicadTools und
-KiBot abgeglichen: LQFP und SOIC +270°, SOT-23-6 +270°, **SOT-23 (3 Pins) +180°** (die ältere
-JLCKicadTools-Tabelle nennt −90°, das passt nicht zum JLC-Footprint), SOT-223 +180°,
-Elko 10×10 +180°, HRO-USB-C +180°. Unterseite: KiCad spiegelt Bauteile beim Umdrehen, JLCPCB
-nicht – die Drehung wird wie bei kicad-jlcpcb-tools umgerechnet (180° − KiCad-Winkel, dann
-Korrektur). Die Koordinaten sind die Mitte der Lötpads.
+**Drehlagen:** Die CPL-Drehung bezieht sich bei JLCPCB auf die Lage des Footprints in der
+JLC/EasyEDA-Bibliothek. Die Korrekturen sind deshalb durch Vergleich der Pad-Lagen der
+KiCad-Footprints mit den EasyEDA-Footprints bestimmt (CDFER/JLCPCB-Kicad-Library und mit
+easyeda2kicad umgewandelte Footprints der bestellten LCSC-Teile aus öffentlichen Projekten; der
+Zusatz BL/BR/TL im Namen nennt die Ecke von Pin 1): LQFP und SOIC +270°, SOT-23-6 +270°,
+**SOT-23 (3 Pins) +180°**, SOT-223 +180°; **0°** für LGA-14, SOD-323, SMA, LED 0603, Quarz,
+**JST-SH (ZX-SH1.0, C7430446)** und **USB-C (C165948)**. Die verbreiteten Tabellen von
+JLCKicadTools und KiBot nennen für JST, USB-C und Elko 180° – das passt nicht zu den heutigen
+JLC-Footprints dieser Teile. Eine Simulation (EasyEDA-Footprint mit CPL-Drehung auf die
+KiCad-Pads gelegt) passt für alle vergleichbaren Teile ohne Zusatzdrehung. Unterseite: KiCad
+spiegelt Bauteile beim Umdrehen, JLCPCB nicht – die Drehung wird wie bei kicad-jlcpcb-tools
+umgerechnet (180° − KiCad-Winkel, dann Korrektur). Die Koordinaten sind die Mitte der Lötpads.
 
-In der JLCPCB-Vorschau **besonders prüfen** (keine sichere Vergleichsquelle):
-- **U2** ICM-42688-P (LGA-14): keine Korrektur; Pin 1 muss rechts unten liegen.
+In der JLCPCB-Vorschau **besonders prüfen**:
+- **C21** Elko: Für dieses Teil lag kein JLC-Footprint vor; angenommen ist dieselbe Lage wie
+  KiCad (Pluspol links). **Der Pluspol muss links liegen** (von oben, USB-C rechts) – verpolt
+  an 25 V wäre der Elko zerstört.
 - **U4** LMR33630 (HSOP-8): +270° angenommen (wie die JLC-Footprints ESOP-8 „BL“);
   Pin 1 muss rechts oben liegen, das Wärmepad auf dem großen Mittelpad.
-- **J2–J11** JST-SH: +180° angenommen (wie JST-GH/PH in beiden Tabellen); in der
-  Unterseiten-Ansicht muss die Steckeröffnung jeder Randbuchse zur Platinenkante zeigen,
-  bei J8/J11 zur Platinenmitte, und die schmalen Signalpads unter den Kontakten liegen.
-- **J1** USB-C: Lage (Mitte der Pads, 1,46 mm neben dem KiCad-Ursprung) und Drehung –
-  die Steckeröffnung muss über die Ostkante zeigen.
+- **J1** USB-C: Die Steckeröffnung muss über die Ostkante zeigen.
+- **J2–J11** JST-SH: Öffnung jeder Buchse zur Platinenkante. Das Landemuster der
+  Megastar-Buchse liegt 0,3 mm anders als das JST-Original; die Pads überlappen trotzdem.
 
 Außerdem für jedes IC, jede Diode und den Elko kontrollieren, dass Pin-1-Punkt bzw.
 Kathodenstrich/Pluspol auf der Seite liegt, die in der Prüfliste steht (Oberseite von oben
-mit USB-C rechts, Unterseite von unten mit USB-C links), z. B. U1 Pin 1 links oben, U3 Pin 1
-rechts oben, U5 Pin 1 rechts unten, U6/Q1/Q2 Pin 1 links oben, Y1 Pin 1 rechts oben, D1 und
-LEDs Kathode links, D2/D6 Kathode unten, C21 Pluspol links.
+mit USB-C rechts, Unterseite von unten mit USB-C links), z. B. U1 Pin 1 links oben, U2 Pin 1
+rechts unten, U3/U4 Pin 1 rechts oben, U5 Pin 1 rechts unten, U6/Q1/Q2 Pin 1 links oben,
+Y1 Pin 1 rechts oben, D1 Kathode links, D2–D6 Kathode unten, C21 Pluspol links.
 
 ### Bestellablauf (jlcpcb.com)
 
