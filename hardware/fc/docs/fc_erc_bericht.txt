@@ -1,0 +1,13 @@
+ERC report (2026-10-13T12:37:54+0000, Encoding UTF8)
+
+***** Sheet /
+[pin_to_pin]: Pins of type Bidirectional and Power output are connected
+    ; warning
+    @(330.20 mm, 68.58 mm): Symbol U3 Pin 3 [IO2, Bidirectional, Line]
+    @(53.34 mm, 373.38 mm): Symbol U5 Pin 2 [VO, Power output, Line]
+[pin_to_pin]: Pins of type Bidirectional and Power output are connected
+    ; warning
+    @(330.20 mm, 71.12 mm): Symbol U3 Pin 7 [IO3, Bidirectional, Line]
+    @(53.34 mm, 373.38 mm): Symbol U5 Pin 2 [VO, Power output, Line]
+
+ ** ERC messages: 2  Errors 0  Warnings 2

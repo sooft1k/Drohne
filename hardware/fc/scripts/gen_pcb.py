@@ -9,6 +9,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import pcbnew
 import design
+import lcsc
 from gen_sch import uid
 from placement import PLACE, BOTTOM_TEXT, TOP_TEXT
 import prerouting
@@ -126,6 +127,8 @@ class Builder:
             ref_t.SetTextThickness(mm(0.08))
             ref_t.SetLayer(pcbnew.B_Fab if side == 'bottom' else pcbnew.F_Fab)
             fp.Value().SetVisible(False)
+            if ref in lcsc.REF:
+                fp.SetProperty('LCSC', lcsc.REF[ref])
             self.fps[ref] = fp
 
     def pad_pos_obj(self, pad):

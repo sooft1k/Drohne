@@ -1,0 +1,11 @@
+Designator,Funktion,Footprint,Bauteilvorschlag
+J2,ESC,JST_SH_SM08B-SRSS-TB_1x08-1MP_P1.00mm_Horizontal,"JST SM08B-SRSS-TB (Original) oder kompatibel ZX-SH1.0-8PWT (LCSC C7430450, 100 476 Stueck lt. jlcparts 21.09.2026)"
+J3,ELRS,PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left,"4-polige SMD-Stiftleiste 2,54 mm, Pins abwechselnd links/rechts (KiCad PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left)"
+J4,I2C,PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left,"4-polige SMD-Stiftleiste 2,54 mm, Pins abwechselnd links/rechts (KiCad PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left)"
+J5,GPS,PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left,"4-polige SMD-Stiftleiste 2,54 mm, Pins abwechselnd links/rechts (KiCad PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left)"
+J6,VTX,PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left,"4-polige SMD-Stiftleiste 2,54 mm, Pins abwechselnd links/rechts (KiCad PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left)"
+J7,CAM,PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left,"3-polige SMD-Stiftleiste 2,54 mm, Pin 1 links"
+J8,SWD,PinHeader_1x05_P2.54mm_Vertical_SMD_Pin1Left,"5-polige SMD-Stiftleiste 2,54 mm, Pin 1 links"
+J9,UART,PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left,"4-polige SMD-Stiftleiste 2,54 mm, Pins abwechselnd links/rechts (KiCad PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left)"
+J10,GPIO,PinHeader_1x08_P2.54mm_Vertical_SMD_Pin1Left,"8-polige SMD-Stiftleiste 2,54 mm, Pin 1 links"
+J11,BUZZER,PinHeader_1x02_P2.54mm_Vertical_SMD_Pin1Left,"2-polige SMD-Stiftleiste 2,54 mm, Pin 1 links"

@@ -10,6 +10,7 @@ import uuid as uuidlib
 sys.path.insert(0, os.path.dirname(__file__))
 from sexp import parse, dump, find, find1, Sym
 import design
+import lcsc
 
 PRJ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 KISYM = '/usr/share/kicad/symbols'
@@ -238,8 +239,11 @@ def part_extent(p, flat):
 
 
 def draw_part(sh, p, ox, oy):
+    props = {'Beschreibung': p['desc']} if p['desc'] else {}
+    if p['ref'] in lcsc.REF:
+        props['LCSC'] = lcsc.REF[p['ref']]
     flat = sh.symbol(p['sym'], p['ref'], p['value'], ox, oy, 0, footprint=p['fp'],
-                     extra_props={'Beschreibung': p['desc']} if p['desc'] else None)
+                     extra_props=props or None)
     pins = [q for q in sym_pins(flat) if q['unit'] in (0, 1)]
     done = {}
     for q in pins:

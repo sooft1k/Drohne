@@ -27,8 +27,12 @@ python3 scripts/gen_pcb.py      # Umriss, Bohrungen, Platzierung, Flächen, Hand
 python3 scripts/route.py        # Autorouting (Freerouting 2.0.1, Java) + Nachrouter, Zonen füllen
 python3 scripts/run_drc.py fc.kicad_pcb build/drc.rpt
 python3 scripts/report.py fc.kicad_pcb build/fc.net   # Kennzahlen + Abgleich Platine/Schaltplan
-python3 scripts/fab.py          # Gerber, Bohrdaten, ZIP, BOM, CPL
+python3 scripts/sync_fields.py  # nur Werte/LCSC-Nummern in die geroutete Platine uebernehmen
+python3 scripts/fab.py          # Gerber, Bohrdaten, ZIP, JLCPCB-BOM/CPL, Pruefliste, Handliste
 ```
+
+ERC mit KiCad 9 (kicad-cli 7 kann keine ERC):
+`kicad-cli sch erc --format report --severity-all -o erc.rpt fc.kicad_sch`
 
 `route.py` probiert für den ersten Freerouting-Lauf bis zu sechs Parametersätze (Via- und
 Rip-up-Kosten) und nimmt den ersten vollständigen; bleiben Verbindungen offen, folgen bis zu
@@ -123,6 +127,18 @@ Sensorachsen X und Y zeigen damit entgegen der Gehäuse-Normallage – in der Fi
 
 TX/RX jeweils aus Sicht des FC (FC-TX an Empfänger-RX anschließen).
 
+**J2 vor dem ersten Anstecken prüfen.** Die Spezifikation nennt nur die Signale des
+ESC-Steckers, nicht ihre Reihenfolge; die Belegung oben ist gewählt, nicht vom ESC
+übernommen. Für den UAngel 4in1 60A BLHeli_S war keine Pinbelegung auffindbar (Handbuch
+verweist nur allgemein auf das FC-Handbuch), und die Reihenfolge der 8-poligen Stecker ist
+herstellerabhängig. Vorgehen: Beschriftung am ESC-Stecker ablesen bzw. mit dem Multimeter
+Durchgang messen (Akku+ und Akku− gegen die großen Lötpads, M1–M4 gegen die Signalpads),
+dann mit der Tabelle vergleichen. Kritisch sind vor allem Pin 1/2 (Akku+/GND): vertauscht
+liegt die Akkuspannung an der Masse des FC. Weicht die Reihenfolge ab, entweder das Kabel
+umpinnen (JST-SH-Kontakte lassen sich aus dem Gehäuse ziehen) oder J2 im Projekt anpassen.
+BLHeli_S liefert keine Telemetrie; ein TLM- oder 5-V-Pin des ESC landet an Pin 4, der über
+die offene Lötbrücke JP2 nicht angeschlossen ist.
+
 ## Footprints
 
 | Referenzen | Footprint | Bauteil |
@@ -149,7 +165,7 @@ TX/RX jeweils aus Sicht des FC (FC-TX an Empfänger-RX anschließen).
 | JP1, JP2 | `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm` | BOOT0, ESC_5V |
 | L1 | `Inductor_SMD:L_Coilcraft_XAL4040-XXX` | 3.3uH |
 | Q1, Q2 | `Package_TO_SOT_SMD:SOT-23` | 2N7002, Si2319CDS |
-| R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20 | `Resistor_SMD:R_0402_1005Metric` | 0R, 100R, 100k, 10k, 1k, 24.9k, 4.7k, 5.1k |
+| R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20 | `Resistor_SMD:R_0402_1005Metric` | 0R, 100R, 470R, 1k, 4.7k, 5.1k, 8.2k, 10k, 33k, 100k |
 | TP1, TP2, TP3, TP4, TP5 | `TestPoint:TestPoint_Pad_D1.5mm` | 3V3, 5V, GND, VBAT, VIDEO |
 | U1 | `Package_QFP:LQFP-64_10x10mm_P0.5mm` | STM32F405RGT6 |
 | U2 | `Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y` | ICM-42688-P |
@@ -177,6 +193,9 @@ TX/RX jeweils aus Sicht des FC (FC-TX an Empfänger-RX anschließen).
 | VTX-Versorgung | 5 V oder 9 V | nur 5 V | kein 9-V-Regler vorgesehen |
 | PB2/BOOT1 | – | 10 k nach GND | sonst startet DFU (BOOT0 gebrückt) je nach Zufall aus dem SRAM |
 | 5-V-Leitungen | 1 mm | Fläche auf Lage 3, Ausgang Spule → C26 **0,8 mm**, Stichleitungen Pad → Via **0,4 mm** (≤ 2,4 mm lang) | mit 1 mm ließen sich die Abgänge zwischen den Stiftleisten nicht routen; Ströme der Abgänge < 1 A |
+| 5-V-Rückführung | – | R10/R11 = **33 k / 8,2 k** (5,02 V) statt 100 k / 24,9 k | 24,9 k gibt es nur als Extended-Teil; 33 k (Basic) und 8,2 k (Preferred) ergeben dieselbe Spannung |
+| LED grün | – | Vorwiderstand R16 **470 Ω** statt 1 kΩ | die gewählte Preferred-LED ist InGaN (Uf ≈ 2,7 V); mit 1 kΩ an 3,3 V wäre sie zu dunkel. Strom ≈ 1,3 mA (PC15 darf max. 3 mA) |
+| Quarz | – | 8 MHz, **CL 12 pF** (YXC, C20617566) mit 2 × 18 pF | passend zu den vorhandenen 18-pF-Lastkondensatoren |
 | GPIO4 | – | **PC5** (Pin 25) statt PA1 | das PA1-Pad liegt zwischen BUZZER und DBG_TX eingeklemmt und ließ sich nicht entflechten |
 | Kupfer außen | 70 µm (2 oz) | **35 µm (1 oz) bestellen** | JLCPCB verlangt bei 2 oz außen mind. 0,2 mm Breite/Abstand – der Gyro-Footprint hat 0,15 mm Padabstand. Die Motorströme fließen ohnehin nicht über den FC (nur ~1 A über das JST-SH-Kabel) |
 | Massebohrung | eine | H2 (Südost) | direkt am ESC-GND; die Südwest-Ecke hätte mit ihrem Massering die 5-V-Fläche auf Lage 3 zerteilt |
@@ -201,12 +220,40 @@ Die Bohrdaten liegen getrennt als `fc-PTH.drl` und `fc-NPTH.drl` bei (Excellon, 
 Bohrdaten und Bestückkoordinaten beziehen sich alle auf den Bohr-/Bestückungsursprung in der
 **linken unteren Platinenecke**.
 
-`fc_bom.csv` und `fc_cpl_top.csv` (JLCPCB-Format: Designator, Mid X, Mid Y, Layer, Rotation)
-sind für die Bestückung der Oberseite gedacht; die Steckverbinder auf der Unterseite (J2–J11)
-werden von Hand gelötet. Die Stückliste enthält Wert, Footprint und – wo festgelegt – die
-Herstellernummer, aber **keine LCSC-Nummern**: die Teile im JLCPCB-Bestückungsassistenten
-auswählen und dort die **Drehlage jedes Bauteils in der Vorschau prüfen** (JLCPCB nutzt für
-manche Gehäuse andere Nulllagen als KiCad, typisch SOT-23, SOT-223, LQFP, Elko).
+### Bestückung bei JLCPCB (nur Oberseite)
+
+| Datei | Zweck |
+|---|---|
+| `fertigung/jlcpcb_bom.csv` | Stückliste Oberseite im JLCPCB-Format mit **LCSC-Nummern** (71 Bauteile, 38 Teilenummern) |
+| `fertigung/jlcpcb_cpl.csv` | Bestückkoordinaten Oberseite, Drehung bereits für JLCPCB korrigiert |
+| `fertigung/jlcpcb_pruefliste.csv` | je Bauteil: LCSC-Typ, Bestand mit Datum/Quelle, Drehung KiCad → CPL, **Lage von Pin 1 bzw. Kathode/Pluspol** auf der Platine |
+| `fertigung/handbestueckung_unten.csv` | Steckverbinder der Unterseite zum Selbstlöten (J2–J11) mit Bauteilvorschlägen |
+
+Bestellung als **Economic PCBA, einseitig (Top)**: dann sind die Preferred-Teile wie Basic-Teile
+ohne Rüstgebühr. Die Auswahl steht in `scripts/lcsc.py` (Stand 13.10.2026, mit Quellen).
+
+**Extended-Teile (je 3 USD Rüstgebühr), 11 Stück:** STM32F405RGT6 (C15742), ICM-42688-P
+(C1850418), LMR33630BDDAR (C544370), USBLC6-2SC6 (C7519), Si2319CDS (C146287), USB-C
+TYPE-C-31-M-12 (C165948), Spule XGL4020-332MEC (C6937839), Elko 470 µF/35 V (C48615113) – diese
+acht gibt es gar nicht als Basic/Preferred. Nur wegen des Footprints Extended sind Quarz
+8 MHz 3225 (C20617566), Ferrit 0402 (C7509833) und 10 µF/50 V 1210 (C17498688); Alternativen
+mit Footprint-Änderung stehen in `scripts/lcsc.py` (`ALTERNATIVES`).
+
+**Lagerbestand:** lcsc.com und jlcpcb.com waren aus der Arbeitsumgebung gesperrt. Bestände
+stammen aus dem JLCPCB-Katalogabzug von yaqwsx/jlcparts (mit Abrufdatum) bzw. für ältere
+Nummern nur aus Websuche-Momentaufnahmen (in der Prüfliste als „unbestätigt“ markiert).
+Kein gewähltes Teil war dort als nicht lagernd erkennbar – beim Hochladen der BOM zeigt
+JLCPCB den aktuellen Bestand, das ist die maßgebliche Prüfung.
+
+**Drehlagen:** Die CPL enthält die Korrekturen der verbreiteten Tabelle von JLCKicadTools
+(LQFP und SOIC +270°, SOT-23/SOT-23-6 −90°, SOT-223 +180°, Elko 10×10 +180°, HRO-USB-C +180°).
+Für **U2 (ICM-42688-P, LGA-14)** und **U4 (LMR33630, HSOP-8)** gibt es keinen Tabelleneintrag –
+diese beiden in der JLCPCB-Vorschau besonders prüfen. Dort für jedes IC, jede Diode und den
+Elko kontrollieren, dass Pin-1-Punkt bzw. Kathodenstrich/Pluspol auf der Seite liegt, die in
+der Prüfliste steht (Platine von oben, USB-C rechts, ESC-Stecker unten), z. B. U1 Pin 1
+links oben, U2 Pin 1 rechts unten, U3/U4 Pin 1 rechts oben, U5 Pin 1 rechts unten,
+U6/Q1/Q2 Pin 1 links oben, Y1 Pin 1 rechts oben, D1 und LEDs Kathode links, D2/D6 Kathode
+unten, C21 Pluspol links.
 
 ## Routing
 
@@ -237,9 +284,10 @@ Editor, Zonen frisch gefüllt) – Bericht in `docs/fc_drc_bericht.txt`:
 | Schaltplan ↔ `design.py` (`check_netlist.py`) | 292 Knoten, 0 Fehler |
 | Platine ↔ Schaltplan-Netzliste (`report.py`) | 310 Pads, 0 Abweichungen |
 
-Nicht gelaufen: ERC (kicad-cli 7 kann das noch nicht) – bitte einmal im Schaltplaneditor
-den „Electrical Rules Checker“ starten. Die Verbindungen selbst sind über die beiden
-Netzlisten-Abgleiche oben geprüft.
+**ERC** (KiCad 9.0.3, `kicad-cli sch erc --severity-all`, Bericht `docs/fc_erc_bericht.txt`):
+**0 Fehler, 2 Warnungen**. Beide melden, dass beim Flash U3 die Pins IO2 (/WP) und IO3
+(/HOLD) direkt an +3,3 V (Ausgang des AMS1117) liegen („bidirektional an Spannungsausgang“).
+Das ist beabsichtigt: im normalen SPI-Betrieb müssen /WP und /HOLD dauerhaft high sein.
 
 ## Unsichere Stellen im Routing (bitte vor der Bestellung ansehen)
 

@@ -115,7 +115,7 @@ C('C7', '100nF', '+3V3A', 'GND', 'mcu', 'VDDA')
 C('C8', '1uF', '+3V3A', 'GND', 'mcu', 'VDDA')
 part('FB1', 'Device:FerriteBead_Small', '600R@100MHz',
      'Inductor_SMD:L_0402_1005Metric', {'1': '+3V3', '2': '+3V3A'}, 'mcu',
-     'VDDA-Filter', 'BLM15AG601SN1D')
+     'VDDA-Filter', 'BLM15PX601SH1D')
 C('C9', '2.2uF', 'VCAP1', 'GND', 'mcu', 'VCAP_1, X5R/X7R')
 C('C10', '2.2uF', 'VCAP2', 'GND', 'mcu', 'VCAP_2, X5R/X7R')
 C('C11', '100nF', 'NRST', 'GND', 'mcu', 'NRST')
@@ -125,9 +125,9 @@ part('JP1', 'Jumper:SolderJumper_2_Open', 'BOOT0', SJ_OPEN,
 R('R2', '10k', 'BOOT1', 'GND', 'mcu', 'PB2/BOOT1 Pull-down (fuer DFU)')
 part('Y1', 'Device:Crystal_GND24', '8MHz', 'Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm',
      {'1': 'OSC_IN', '2': 'GND', '3': 'XTAL_OUT', '4': 'GND'}, 'mcu',
-     'Quarz 8 MHz, CL ca. 10-12 pF', 'X322508MSB4SI')
-C('C12', '18pF', 'OSC_IN', 'GND', 'mcu', 'Lastkondensator (je nach Quarz pruefen)')
-C('C13', '18pF', 'XTAL_OUT', 'GND', 'mcu', 'Lastkondensator (je nach Quarz pruefen)')
+     'Quarz 8 MHz, CL 12 pF', 'XL2OI-111-8M')
+C('C12', '18pF', 'OSC_IN', 'GND', 'mcu', 'Lastkondensator fuer CL 12 pF')
+C('C13', '18pF', 'XTAL_OUT', 'GND', 'mcu', 'Lastkondensator fuer CL 12 pF')
 R('R3', '0R', 'OSC_OUT', 'XTAL_OUT', 'mcu', 'Quarz-Serienwiderstand (Platzhalter)')
 
 # ---------------------------------------------------------------- Messung
@@ -166,8 +166,8 @@ R('R9', '100k', 'Q1_G', 'GND', 'pwr_in', 'Gate nach GND')
 part('D1', 'Device:D_Zener', 'BZT52C15S', SOD323, {'1': 'VBAT', '2': 'Q1_G'},
      'pwr_in', 'Zener 15 V Gate-Schutz', 'BZT52C15S')
 part('C21', 'Device:C_Polarized', '470uF/35V', 'Capacitor_SMD:CP_Elec_10x10.5',
-     {'1': 'VBAT', '2': 'GND'}, 'pwr_in', 'Eingangs-Elko, low ESR', 'EEE-FK1V471P')
-C('C22', '10uF/50V', 'VBAT', 'GND', 'pwr_in', 'Eingangs-Keramik X7R', fp=C1210)
+     {'1': 'VBAT', '2': 'GND'}, 'pwr_in', 'Eingangs-Elko, low ESR', 'JVE35V470M10X10')
+C('C22', '10uF/50V', 'VBAT', 'GND', 'pwr_in', 'Eingangs-Keramik X7R (1210 wegen DC-Bias)', fp=C1210)
 
 # ---------------------------------------------------------------- 5-V-Schaltregler
 part('U4', 'Regulator_Switching:LMR33630BDDA', 'LMR33630BDDA',
@@ -179,9 +179,9 @@ C('C23', '100nF/50V', 'VBAT', 'GND', 'buck', 'VIN HF-Abblockung')
 C('C24', '100nF', 'BUCK_BOOT', 'BUCK_SW', 'buck', 'Bootstrap')
 C('C25', '1uF', 'BUCK_VCC', 'GND', 'buck', 'VCC intern')
 part('L1', 'Device:L', '3.3uH', 'Inductor_SMD:L_Coilcraft_XAL4040-XXX',
-     {'1': 'BUCK_SW', '2': '+5V'}, 'buck', 'Isat >= 4 A, 4x4 mm', 'XAL4040-332MEB')
-R('R10', '100k', '+5V', 'BUCK_FB', 'buck', 'FB oben (Vout = 1 V * (1 + R10/R11))')
-R('R11', '24.9k', 'BUCK_FB', 'GND', 'buck', 'FB unten -> 5,02 V')
+     {'1': 'BUCK_SW', '2': '+5V'}, 'buck', 'Isat >= 4 A, 4x4 mm', 'XGL4020-332MEC')
+R('R10', '33k', '+5V', 'BUCK_FB', 'buck', 'FB oben (Vout = 1 V * (1 + R10/R11))')
+R('R11', '8.2k', 'BUCK_FB', 'GND', 'buck', 'FB unten: 33k/8,2k -> 5,02 V')
 C('C26', '22uF/16V', '+5V', 'GND', 'buck', '5-V-Ausgang', fp=C0805)
 C('C27', '22uF/16V', '+5V', 'GND', 'buck', '5-V-Ausgang', fp=C0805)
 C('C28', '100nF', '+5V', 'GND', 'buck', '5-V-Ausgang')
@@ -218,7 +218,7 @@ part('D4', 'Device:LED', 'gelb', LED0603, {'1': 'LED_ERR', '2': 'LED_ERR_A'}, 'l
 part('D5', 'Device:LED', 'gruen', LED0603, {'1': 'LED_LINK', '2': 'LED_LINK_A'}, 'led', 'FUNK (aktiv-low)')
 R('R14', '1k', '+3V3', 'LED_ARM_A', 'led', 'Vorwiderstand')
 R('R15', '1k', '+3V3', 'LED_ERR_A', 'led', 'Vorwiderstand')
-R('R16', '1k', '+3V3', 'LED_LINK_A', 'led', 'Vorwiderstand')
+R('R16', '470R', '+3V3', 'LED_LINK_A', 'led', 'Vorwiderstand (gruene InGaN-LED, Uf ca. 2,7 V)')
 
 # ---------------------------------------------------------------- Piepser
 part('Q2', 'Transistor_FET:2N7002', '2N7002', SOT23,
