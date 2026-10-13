@@ -419,7 +419,7 @@
       (net 8 "BUCK_SW") (tstamp b5e86652-4b93-4b1a-8822-f4daba111c50))
     (pad "9" smd rect (at 0 0 270) (size 2.95 4.9) (layers "F.Cu")
       (net 22 "GND") (tstamp cacfe6ac-11e9-42ec-87ec-26f338f71070))
-    (model "${KICAD6_3DMODEL_DIR}/Package_SO.3dshapes/HTSOP-8-1EP_3.9x4.9mm_Pitch1.27mm.wrl"
+    (model "${KICAD6_3DMODEL_DIR}/Package_SO.3dshapes/HTSOP-8-1EP_3.9x4.9mm_P1.27mm.wrl"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz 0 0 0))

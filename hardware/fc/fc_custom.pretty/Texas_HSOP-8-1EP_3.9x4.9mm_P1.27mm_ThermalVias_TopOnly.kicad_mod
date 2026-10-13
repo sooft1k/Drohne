@@ -229,7 +229,7 @@
     (layers "F.Cu")
     (tstamp 5eeb7c77-07c0-4d2f-bb49-98761a4193bc)
   )
-  (model "${KICAD6_3DMODEL_DIR}/Package_SO.3dshapes/HTSOP-8-1EP_3.9x4.9mm_Pitch1.27mm.wrl"
+  (model "${KICAD6_3DMODEL_DIR}/Package_SO.3dshapes/HTSOP-8-1EP_3.9x4.9mm_P1.27mm.wrl"
     (offset
       (xyz 0 0 0)
     )

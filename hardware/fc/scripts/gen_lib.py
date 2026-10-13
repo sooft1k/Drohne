@@ -116,6 +116,9 @@ def write_footprints():
                 continue
         if isinstance(x, list) and x and x[0] == 'descr':
             x = [Sym('descr'), x[1] + ' - ohne Kupferpad und Vias auf B.Cu, Vias setzt das Layout (FC-Projekt)']
+        if isinstance(x, list) and x and x[0] == 'model':
+            # 3D-Modell heisst ab KiCad 8 ...P1.27mm statt ...Pitch1.27mm
+            x = [x[0], x[1].replace('HTSOP-8-1EP_3.9x4.9mm_Pitch1.27mm', 'HTSOP-8-1EP_3.9x4.9mm_P1.27mm')] + x[2:]
         keep.append(x)
     with open(os.path.join(d, newname + '.kicad_mod'), 'w') as f:
         f.write(dump(keep) + '\n')
