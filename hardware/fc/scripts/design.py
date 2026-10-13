@@ -110,7 +110,7 @@ C('C2', '100nF', '+3V3', 'GND', 'mcu', 'VDD Pin 19')
 C('C3', '100nF', '+3V3', 'GND', 'mcu', 'VDD Pin 32')
 C('C4', '100nF', '+3V3', 'GND', 'mcu', 'VDD Pin 48')
 C('C5', '100nF', '+3V3', 'GND', 'mcu', 'VDD Pin 64')
-C('C6', '4.7uF', '+3V3', 'GND', 'mcu', 'VDD Eingang, Keramik', fp=C0603)
+C('C6', '10uF/25V', '+3V3', 'GND', 'mcu', 'VDD Eingang, Keramik (gleiches Teil wie C29/C33)', fp=C0603)
 C('C7', '100nF', '+3V3A', 'GND', 'mcu', 'VDDA')
 C('C8', '1uF', '+3V3A', 'GND', 'mcu', 'VDDA')
 part('FB1', 'Device:FerriteBead_Small', '600R@100MHz',
@@ -131,8 +131,8 @@ C('C13', '18pF', 'XTAL_OUT', 'GND', 'mcu', 'Lastkondensator fuer CL 12 pF')
 R('R3', '0R', 'OSC_OUT', 'XTAL_OUT', 'mcu', 'Quarz-Serienwiderstand (Platzhalter)')
 
 # ---------------------------------------------------------------- Messung
-R('R4', '10k', 'VBAT', 'VBAT_SENSE', 'meas', 'Spannungsteiler oben')
-R('R5', '1k', 'VBAT_SENSE', 'GND', 'meas', 'Spannungsteiler unten')
+R('R4', '100k', 'VBAT', 'VBAT_SENSE', 'meas', 'Spannungsteiler oben (100k: 5 mW bei 6S statt 52 mW)')
+R('R5', '10k', 'VBAT_SENSE', 'GND', 'meas', 'Spannungsteiler unten (11:1 wie bisher)')
 C('C14', '100nF', 'VBAT_SENSE', 'GND', 'meas', 'parallel zu R5')
 R('R6', '1k', 'CURR_IN', 'CURR_SENSE', 'meas', 'Schutzwiderstand Strommessung')
 C('C15', '100nF', 'CURR_SENSE', 'GND', 'meas', 'Tiefpass Strommessung')
@@ -190,7 +190,7 @@ C('C28', '100nF', '+5V', 'GND', 'buck', '5-V-Ausgang')
 part('U5', 'Regulator_Linear:AMS1117-3.3', 'AMS1117-3.3',
      'Package_TO_SOT_SMD:SOT-223-3_TabPin2',
      {'1': 'GND', '2': '+3V3', '3': '+5V'}, 'ldo', '3,3-V-Linearregler', 'AMS1117-3.3')
-C('C29', '10uF', '+5V', 'GND', 'ldo', 'AMS1117 Eingang', fp=C0603)
+C('C29', '10uF/25V', '+5V', 'GND', 'ldo', 'AMS1117 Eingang', fp=C0603)
 C('C30', '100nF', '+5V', 'GND', 'ldo', 'AMS1117 Eingang')
 C('C31', '22uF', '+3V3', 'GND', 'ldo', 'AMS1117 Ausgang', fp=C0805)
 C('C32', '100nF', '+3V3', 'GND', 'ldo', 'AMS1117 Ausgang')
@@ -209,7 +209,7 @@ part('D2', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA', {'1': '+5V', '2': 'VB
      'usb', 'USB-VBUS -> 5 V, verhindert Rueckspeisung', 'SS14')
 R('R12', '5.1k', 'USB_CC1', 'GND', 'usb', 'CC1')
 R('R13', '5.1k', 'USB_CC2', 'GND', 'usb', 'CC2')
-C('C33', '10uF', 'VBUS', 'GND', 'usb', 'VBUS', fp=C0603)
+C('C33', '10uF/25V', 'VBUS', 'GND', 'usb', 'VBUS', fp=C0603)
 C('C34', '100nF', 'VBUS', 'GND', 'usb', 'VBUS')
 
 # ---------------------------------------------------------------- LEDs
@@ -221,9 +221,10 @@ R('R15', '1k', '+3V3', 'LED_ERR_A', 'led', 'Vorwiderstand')
 R('R16', '470R', '+3V3', 'LED_LINK_A', 'led', 'Vorwiderstand (gruene InGaN-LED, Uf ca. 2,7 V)')
 
 # ---------------------------------------------------------------- Piepser
-part('Q2', 'Transistor_FET:2N7002', '2N7002', SOT23,
-     {'1': 'BUZ_G', '2': 'GND', '3': 'BUZ_N'}, 'buz', 'Piepser-Treiber')
-R('R17', '100R', 'BUZZER', 'BUZ_G', 'buz', 'Gate-Serienwiderstand')
+part('Q2', 'Transistor_FET:AO3400A', 'AO3400A', SOT23,
+     {'1': 'BUZ_G', '2': 'GND', '3': 'BUZ_N'}, 'buz',
+     'Piepser-Treiber (V_GS(th) max. 1,45 V: an 3,3 V sicher durchgeschaltet)', 'AO3400A')
+R('R17', '1k', 'BUZZER', 'BUZ_G', 'buz', 'Gate-Serienwiderstand')
 R('R18', '10k', 'BUZ_G', 'GND', 'buz', 'Gate Pull-down')
 part('D6', 'Device:D', '1N4148WS', SOD323, {'1': '+5V', '2': 'BUZ_N'}, 'buz',
      'Freilaufdiode')
@@ -231,10 +232,11 @@ part('J11', 'Connector_Generic:Conn_01x02', 'BUZZER', SH % (2, 2),
      {'1': '+5V', '2': 'BUZ_N'}, 'buz', 'Piezo-Summer (+ / -)', side='bottom')
 
 # ---------------------------------------------------------------- I2C
-R('R19', '4.7k', 'I2C_SDA', '+3V3', 'i2c', 'Pull-up SDA')
-R('R20', '4.7k', 'I2C_SCL', '+3V3', 'i2c', 'Pull-up SCL')
+R('R19', '5.1k', 'I2C_SDA', '+3V3', 'i2c', 'Pull-up SDA')
+R('R20', '5.1k', 'I2C_SCL', '+3V3', 'i2c', 'Pull-up SCL')
 
-# ---------------------------------------------------------------- Steckverbinder (Unterseite)
+# ---------------------------------------------------------------- Steckverbinder
+# ELRS, I2C und GPS oben (Westkante, oft gesteckt), alle uebrigen auf der Unterseite
 part('J2', 'Connector_Generic:Conn_01x08', 'ESC', SH % (8, 8),
      {'1': 'VBAT_IN', '2': 'GND', '3': 'CURR_IN', '4': 'ESC_5V',
       '5': 'M1', '6': 'M2', '7': 'M3', '8': 'M4'}, 'conn',
@@ -243,13 +245,13 @@ part('JP2', 'Jumper:SolderJumper_2_Open', 'ESC_5V', SJ_OPEN,
      {'1': 'ESC_5V', '2': '+5V'}, 'conn', 'nur schliessen, wenn der ESC 5 V vom FC braucht')
 part('J3', 'Connector_Generic:Conn_01x04', 'ELRS', SH % (4, 4),
      {'1': 'ELRS_TX', '2': 'ELRS_RX', '3': '+5V', '4': 'GND'}, 'conn',
-     'ELRS-Empfaenger', side='bottom')
+     'ELRS-Empfaenger', side='top')
 part('J4', 'Connector_Generic:Conn_01x04', 'I2C', SH % (4, 4),
      {'1': 'I2C_SDA', '2': 'I2C_SCL', '3': '+3V3', '4': 'GND'}, 'conn',
-     'I2C extern', side='bottom')
+     'I2C extern', side='top')
 part('J5', 'Connector_Generic:Conn_01x04', 'GPS', SH % (4, 4),
      {'1': 'GPS_TX', '2': 'GPS_RX', '3': '+5V', '4': 'GND'}, 'conn',
-     'GPS', side='bottom')
+     'GPS', side='top')
 part('J6', 'Connector_Generic:Conn_01x04', 'VTX', SH % (4, 4),
      {'1': 'VTX_TX', '2': 'VTX_RX', '3': '+5V', '4': 'GND'}, 'conn',
      'Videosender', side='bottom')

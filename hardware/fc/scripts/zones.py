@@ -11,8 +11,8 @@ W2, H2 = 21.0, 20.5
 GAP = 0.4
 VB_N = -12.5    # Nordband VBAT bis v = -12.5
 VB_NE = 12.2    # ... nach Osten bis u = 12.2
-VB_WS = -18.5   # Weststreifen VBAT bis u = -18.5
-VB_SS = 18.5    # Suedstreifen VBAT ab v = 18.5
+VB_WS = -18.0   # Weststreifen VBAT bis u = -18.0 (>= 2,5 mm breit)
+VB_SS = 18.0    # Suedstreifen VBAT ab v = 18.0 (>= 2,5 mm breit)
 C33_W = -12.8   # 3,3-V-Bereich: u von -12.8 ...
 C33_E = 8.4     # ... bis 8.4
 C33_S = 11.9    # ... und v bis 11.9 (darunter 5-V-Korridor Sued)

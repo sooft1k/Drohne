@@ -148,8 +148,9 @@ class Builder:
         t.SetText(s)
         t.SetPosition(P(u, v))
         t.SetLayer(layer)
-        t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
-        t.SetTextThickness(mm(max(0.12, size * 0.15)))
+        w, h = size if isinstance(size, tuple) else (size, size)
+        t.SetTextSize(pcbnew.VECTOR2I(mm(w), mm(h)))
+        t.SetTextThickness(mm(max(0.16, h * 0.16)))   # JLCPCB: >= 1,0 mm / 0,153 mm
         t.SetBold(bold)
         t.SetTextAngleDegrees(angle)
         if mirror:
@@ -281,7 +282,7 @@ def write_project(path):
               'min_through_hole_diameter': 0.3, 'min_via_annular_width': 0.13,
               'min_copper_edge_clearance': 0.5, 'min_hole_to_hole': 0.25,
               'min_hole_clearance': 0.2, 'min_silk_clearance': 0.0,
-              'min_text_height': 0.6, 'min_text_thickness': 0.1,
+              'min_text_height': 1.0, 'min_text_thickness': 0.15,
               'min_resolved_spokes': 1})
     ds = d['board']['design_settings']
     ds['track_widths'] = [0.0, 0.15, 0.2, 0.25, 0.3, 0.5, 0.8, 1.0]

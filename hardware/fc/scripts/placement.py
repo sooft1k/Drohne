@@ -13,10 +13,10 @@ PLACE = {
     'C4': (8.5, 2.6, 90, T),        # VDD Pin 48
     'C10': (9.6, 2.6, 90, T),      # VCAP2
     'C6': (5.6, -6.3, 0, T),     # 4,7 uF
-    'C7': (-6.3, 11.9, 0, T),      # VDDA 100 nF
+    'C7': (-5.85, 10.0, 90, T),    # VDDA 100 nF direkt an Pin 13 (VDDA) / 12 (VSSA)
     'C8': (-6.3, 12.9, 0, T),      # VDDA 1 uF
     'FB1': (-8.5, 12.4, 270, T),
-    'C11': (-7.0, 9.4, 0, T),      # NRST
+    'C11': (-7.3, 9.4, 0, T),      # NRST
     'R1': (-4.2, -1.0, 0, T),      # BOOT0 pull-down
     'JP1': (-4.6, -2.9, 0, T),     # BOOT0 Loetbruecke
     'R2': (3.3, 16.5, 90, T),      # BOOT1
@@ -42,10 +42,10 @@ PLACE = {
     'R8': (-5.6, -7.6, 0, T),
     # ---------------------------------------------------------- Eingang
     'Q1': (9.6, 17.6, 0, T),
-    'R9': (6.0, 17.5, 90, T),
-    'D1': (6.0, 19.4, 0, T),
+    'R9': (5.0, 17.5, 180, T),
+    'D1': (6.0, 19.05, 0, T),      # Koerper >= 0,8 mm von der Suedkante (Nutzentrennrand)
     'C21': (-5.0, -14.2, 0, T),
-    'C22': (10.0, -16.7, 90, T),
+    'C22': (9.45, -18.0, 180, T),  # Eingangs-Keramik: Masse-Pad direkt an U4 Pin 1 (PGND)
     # ---------------------------------------------------------- 5-V-Regler
     'U4': (4.4, -15.2, 270, T),
     'C23': (5.67, -19.5, 0, T),
@@ -72,12 +72,15 @@ PLACE = {
     'C33': (11.1, 0.9, 180, T),     # VBUS-Pad ost (zur Buchse)
     'C34': (10.75, -0.6, 180, T),
     # ---------------------------------------------------------- LEDs
-    'D3': (-18.8, -5.6, 0, T),
-    'D4': (-18.8, -4.0, 0, T),
-    'D5': (-18.8, -2.4, 0, T),
-    'R14': (-15.8, -5.6, 180, T),
-    'R15': (-15.8, -4.0, 180, T),
-    'R16': (-15.8, -2.4, 180, T),
+    # Reihe oestlich des Gyros (die Westkante oben gehoert den Buchsen ELRS/I2C/GPS):
+    # LED senkrecht, Kathode nach Sueden; Vorwiderstand direkt noerdlich, +3,3 V an der
+    # 3,3-V-Leitung vom AMS1117; Beschriftung ARM/ERR/LINK noerdlich der Widerstaende
+    'D3': (4.2, -0.85, 90, T),
+    'D4': (6.1, -0.85, 90, T),
+    'D5': (8.0, -0.85, 90, T),
+    'R14': (4.2, -3.3, 270, T),
+    'R15': (6.1, -3.3, 270, T),
+    'R16': (8.0, -3.3, 270, T),
     # ---------------------------------------------------------- Piepser
     'Q2': (-9.6, 15.6, 0, T),
     'R17': (-8.0, 18.3, 0, T),
@@ -86,20 +89,24 @@ PLACE = {
     # ---------------------------------------------------------- I2C
     'R19': (-3.0, -5.6, 0, T),
     'R20': (-3.0, -6.6, 0, T),
-    # ---------------------------------------------------------- Steckverbinder Unterseite
-    # JST-SH seitlich (Unterseite). Drehung 0 = Oeffnung nach Sueden, 90 = Westen,
-    # 180 = Norden, 270 = Osten. Randbuchsen: Montagepads 0,5 mm vom Platinenrand.
+    # ---------------------------------------------------------- Steckverbinder
+    # JST-SH seitlich. Unterseite: Drehung 0 = Oeffnung nach Sueden, 90 = Westen, 180 = Norden,
+    # 270 = Osten. Oberseite: 0 = Sueden, 90 = Osten, 180 = Norden, 270 = Westen.
+    # Randbuchsen: Ursprung 3,3 mm vom Platinenrand, Montagepads 0,5 mm vom Rand.
+    # Oberseite, Westkante, Pin 1 jeweils im Norden. Die Courtyards (7,8 mm) muessen 3,45 mm
+    # Abstand zur Bohrungsmitte halten (Courtyard der M3-Bohrung): 3 x 7,8 mm in 23,6 mm.
+    'J5': (-17.7, -7.875, 270, T),    # GPS
+    'J4': (-17.7, 0.0, 270, T),       # I2C
+    'J3': (-17.7, 7.875, 270, T),     # ELRS
+    # Unterseite
     'J2': (4.0, 17.2, 0, B),          # ESC, Suedrand
-    'JP2': (11.2, 12.9, 90, B),
+    'JP2': (10.2, 12.0, 90, B),       # >= 4 mm von der Massebohrung H2
     'J6': (-6.9, 17.2, 0, B),         # VTX, Suedrand West
-    'J4': (-8.0, -17.2, 180, B),      # I2C, Nordrand West
-    'J9': (0.0, -17.2, 180, B),       # UART, Nordrand Mitte
-    'J5': (8.0, -17.2, 180, B),       # GPS, Nordrand Ost
+    'J11': (-9.0, -17.2, 180, B),     # Piepser, Nordrand West
+    'J9': (-2.1, -17.2, 180, B),      # UART, Nordrand Mitte (westlich der Waermevias von U4)
     'J10': (-17.7, -6.0, 90, B),      # GPIO, Westrand
     'J7': (-17.7, 3.8, 90, B),        # CAM, Westrand
-    'J3': (17.7, -5.0, 270, B),       # ELRS, Ostrand
-    'J8': (-8.6, -5.6, 270, B),       # SWD, innen, Oeffnung nach Osten
-    'J11': (-9.7, 7.0, 270, B),       # Piepser, innen, Oeffnung nach Osten
+    'J8': (17.7, -5.0, 270, B),       # SWD, Ostrand
     'TP5': (-4.6, 12.0, 0, B),
     'TP1': (-5.08, -11.6, 0, B),
     'TP2': (16.8, 5.5, 0, B),
@@ -110,30 +117,30 @@ PLACE = {
     'H2': (15.25, 15.25, 0, T),
     'H3': (15.25, -15.25, 0, T),
     'H4': (-15.25, -15.25, 0, T),
-    'FID1': (-18.6, 11.0, 0, T),
-    'FID2': (19.4, 12.6, 0, T),
-    'FID3': (-14.0, -9.6, 0, T),
+    'FID1': (-19.2, 18.7, 0, T),       # Suedwest-Ecke
+    'FID2': (19.4, 12.6, 0, T),        # Ostrand, suedlich der USB-C-Buchse
+    'FID3': (-19.2, -18.7, 0, T),      # Nordwest-Ecke
 }
 
 FIDUCIALS = []
 
-# (Text, u, v, Groesse, Winkel)
+# (Text, u, v, Groesse, Winkel); Groesse = Hoehe oder (Breite, Hoehe)
 TOP_TEXT = [
-    ('FC F405 v1.0', -17.0, 4.0, 0.8, 90),
-    ('ARM', -13.6, -5.6, 0.6, 0),
-    ('ERR', -13.6, -4.0, 0.6, 0),
-    ('LINK', -13.5, -2.4, 0.6, 0),
+    ('FC F405 v1.0', 1.0, -7.9, 1.0, 0),
+    ('A', 4.2, -4.9, 1.0, 0),          # LED rot ARM
+    ('E', 6.1, -4.9, 1.0, 0),          # LED gelb ERR
+    ('L', 8.0, -4.9, 1.0, 0),          # LED gruen LINK
+    ('GPS', -13.75, -7.875, 1.0, 90),
+    ('I2C', -13.75, 0.0, 1.0, 90),
+    ('ELRS', -13.75, 5.9, 1.0, 90),
 ]
 BOTTOM_TEXT = [
-    ('I2C', -8.0, -13.2, 0.9, 0),
-    ('UART', 0.0, -13.2, 0.9, 0),
-    ('GPS', 8.0, -13.2, 0.9, 0),
-    ('GPIO', -13.6, -6.0, 0.9, 90),
-    ('CAM', -13.6, 3.8, 0.9, 90),
-    ('ELRS', 13.6, -5.0, 0.9, 90),
-    ('SWD', -8.6, -10.7, 0.9, 0),
-    ('BUZ', -9.7, 10.6, 0.9, 0),
-    ('VTX', -6.9, 13.2, 0.9, 0),
-    ('ESC', 4.0, 13.2, 0.9, 0),
-    ('5V ESC', 11.2, 10.9, 0.6, 0),
+    ('BUZ', -9.0, -13.2, 1.0, 0),
+    ('UART', -2.1, -13.2, 1.0, 0),
+    ('GPIO', -13.6, -6.0, 1.0, 90),
+    ('CAM', -13.6, 3.8, 1.0, 90),
+    ('SWD', 13.6, -5.0, 1.0, 90),
+    ('VTX', -6.9, 13.2, 1.0, 0),
+    ('ESC', 4.0, 13.2, 1.0, 0),
+    ('5V ESC', 10.2, 9.3, 1.0, 0),
 ]

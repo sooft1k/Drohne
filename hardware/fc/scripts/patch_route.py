@@ -504,9 +504,10 @@ def prune_dangling(b, nets):
                     kill.append(obj)
                     continue
                 # ein freies Ende: nur entfernen, wenn alles Angeschlossene am anderen Ende sitzt
+                # (ein Pad, in dem das feste Ende liegt, zaehlt dazu - Stich ueber das Pad hinaus)
                 fixed_end = ends[0] if free[0] is ends[1] else ends[1]
                 zone = fixed_end.buffer(w + 0.05)
-                if all(s2.intersection(shp).within(zone) for s2 in touching):
+                if all(s2.intersection(shp).within(zone) or s2.contains(fixed_end) for s2 in touching):
                     kill.append(obj)
         if not kill:
             return removed

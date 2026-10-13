@@ -6184,7 +6184,7 @@
         )
       )
     )
-    (symbol "Transistor_FET:2N7002"
+    (symbol "Transistor_FET:AO3400A"
       (pin_names hide)
       (in_bom yes)
       (on_board yes)
@@ -6197,7 +6197,7 @@
           (justify left)
         )
       )
-      (property "Value" "2N7002"
+      (property "Value" "AO3400A"
         (at 5.08 0 0)
         (effects
           (font
@@ -6215,7 +6215,7 @@
           (justify left) hide
         )
       )
-      (property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
+      (property "Datasheet" "http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf"
         (at 5.08 -3.81 0)
         (effects
           (font
@@ -6224,7 +6224,7 @@
           (justify left) hide
         )
       )
-      (property "ki_keywords" "N-Channel Switching MOSFET"
+      (property "ki_keywords" "N-Channel MOSFET"
         (at 0 0 0)
         (effects
           (font
@@ -6232,7 +6232,7 @@
           ) hide
         )
       )
-      (property "ki_description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
+      (property "ki_description" "30V Vds, 5.7A Id, N-Channel MOSFET, SOT-23"
         (at 0 0 0)
         (effects
           (font
@@ -6248,7 +6248,7 @@
           ) hide
         )
       )
-      (symbol "2N7002_0_1"
+      (symbol "AO3400A_0_1"
         (polyline
           (pts
             (xy 0.254 0)
@@ -6435,7 +6435,7 @@
           )
         )
       )
-      (symbol "2N7002_1_1"
+      (symbol "AO3400A_1_1"
         (pin input line
           (at -5.08 0 0)
           (length 2.54)
@@ -9969,7 +9969,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 101.6 58.42 0)
       (effects
         (font
@@ -10168,7 +10168,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 116.84 58.42 0)
       (effects
         (font
@@ -10367,7 +10367,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 17.78 193.04 0)
       (effects
         (font
@@ -10566,7 +10566,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 35.56 193.04 0)
       (effects
         (font
@@ -10765,7 +10765,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 53.34 193.04 0)
       (effects
         (font
@@ -10931,7 +10931,7 @@
         (justify left)
       )
     )
-    (property "Value" "4.7uF"
+    (property "Value" "10uF/25V"
       (at 71.755 195.58 0)
       (effects
         (font
@@ -10956,7 +10956,7 @@
         ) hide
       )
     )
-    (property "Beschreibung" "VDD Eingang, Keramik"
+    (property "Beschreibung" "VDD Eingang, Keramik (gleiches Teil wie C29/C33)"
       (at 71.12 193.04 0)
       (effects
         (font
@@ -10964,7 +10964,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C19666"
+    (property "LCSC" "C96446"
       (at 71.12 193.04 0)
       (effects
         (font
@@ -11163,7 +11163,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 86.36 193.04 0)
       (effects
         (font
@@ -12076,7 +12076,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 53.34 231.14 0)
       (effects
         (font
@@ -14023,7 +14023,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 226.06 58.42 0)
       (effects
         (font
@@ -14421,7 +14421,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 261.62 58.42 0)
       (effects
         (font
@@ -15227,7 +15227,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 365.76 58.42 0)
       (effects
         (font
@@ -15570,7 +15570,7 @@
         )
       )
     )
-    (property "Value" "10k"
+    (property "Value" "100k"
       (at 416.56 58.42 90)
       (effects
         (font
@@ -15594,7 +15594,7 @@
         ) hide
       )
     )
-    (property "Beschreibung" "Spannungsteiler oben"
+    (property "Beschreibung" "Spannungsteiler oben (100k: 5 mW bei 6S statt 52 mW)"
       (at 416.56 58.42 0)
       (effects
         (font
@@ -15602,7 +15602,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C25744"
+    (property "LCSC" "C25741"
       (at 416.56 58.42 0)
       (effects
         (font
@@ -15726,7 +15726,7 @@
         )
       )
     )
-    (property "Value" "1k"
+    (property "Value" "10k"
       (at 434.34 53.34 90)
       (effects
         (font
@@ -15750,7 +15750,7 @@
         ) hide
       )
     )
-    (property "Beschreibung" "Spannungsteiler unten"
+    (property "Beschreibung" "Spannungsteiler unten (11:1 wie bisher)"
       (at 434.34 53.34 0)
       (effects
         (font
@@ -15758,7 +15758,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C11702"
+    (property "LCSC" "C25744"
       (at 434.34 53.34 0)
       (effects
         (font
@@ -15916,7 +15916,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 452.12 53.34 0)
       (effects
         (font
@@ -16189,7 +16189,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 487.68 53.34 0)
       (effects
         (font
@@ -17858,7 +17858,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 762 53.34 0)
       (effects
         (font
@@ -18999,7 +18999,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 749.3 106.68 0)
       (effects
         (font
@@ -19451,7 +19451,7 @@
         (justify left)
       )
     )
-    (property "Value" "10uF"
+    (property "Value" "10uF/25V"
       (at 89.535 396.24 0)
       (effects
         (font
@@ -19484,7 +19484,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C19702"
+    (property "LCSC" "C96446"
       (at 88.9 393.7 0)
       (effects
         (font
@@ -19683,7 +19683,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 106.68 393.7 0)
       (effects
         (font
@@ -20081,7 +20081,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 139.7 393.7 0)
       (effects
         (font
@@ -21465,7 +21465,7 @@
         (justify left)
       )
     )
-    (property "Value" "10uF"
+    (property "Value" "10uF/25V"
       (at 272.415 459.74 0)
       (effects
         (font
@@ -21498,7 +21498,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C19702"
+    (property "LCSC" "C96446"
       (at 271.78 457.2 0)
       (effects
         (font
@@ -21697,7 +21697,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C1525"
+    (property "LCSC" "C307331"
       (at 287.02 457.2 0)
       (effects
         (font
@@ -22704,7 +22704,7 @@
     (uuid "552b11bf-604c-5d83-9947-dd3d591e3992")
   )
   (symbol
-    (lib_id "Transistor_FET:2N7002")
+    (lib_id "Transistor_FET:AO3400A")
     (at 457.2 386.08 0)
     (unit 1)
     (in_bom yes)
@@ -22720,7 +22720,7 @@
         (justify left)
       )
     )
-    (property "Value" "2N7002"
+    (property "Value" "AO3400A"
       (at 462.28 386.08 0)
       (effects
         (font
@@ -22738,7 +22738,7 @@
         (justify left) hide
       )
     )
-    (property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
+    (property "Datasheet" "http://www.aosmd.com/pdfs/datasheet/AO3400A.pdf"
       (at 462.28 389.89 0)
       (effects
         (font
@@ -22747,7 +22747,7 @@
         (justify left) hide
       )
     )
-    (property "Beschreibung" "Piepser-Treiber"
+    (property "Beschreibung" "Piepser-Treiber (V_GS(th) max. 1,45 V: an 3,3 V sicher durchgeschaltet)"
       (at 457.2 386.08 0)
       (effects
         (font
@@ -22755,7 +22755,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C8545"
+    (property "LCSC" "C20917"
       (at 457.2 386.08 0)
       (effects
         (font
@@ -22904,7 +22904,7 @@
         )
       )
     )
-    (property "Value" "100R"
+    (property "Value" "1k"
       (at 477.52 386.08 90)
       (effects
         (font
@@ -22936,7 +22936,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C25076"
+    (property "LCSC" "C11702"
       (at 477.52 386.08 0)
       (effects
         (font
@@ -23509,7 +23509,7 @@
         )
       )
     )
-    (property "Value" "4.7k"
+    (property "Value" "5.1k"
       (at 581.66 386.08 90)
       (effects
         (font
@@ -23541,7 +23541,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C25900"
+    (property "LCSC" "C25905"
       (at 581.66 386.08 0)
       (effects
         (font
@@ -23665,7 +23665,7 @@
         )
       )
     )
-    (property "Value" "4.7k"
+    (property "Value" "5.1k"
       (at 599.44 386.08 90)
       (effects
         (font
@@ -23697,7 +23697,7 @@
         ) hide
       )
     )
-    (property "LCSC" "C25900"
+    (property "LCSC" "C25905"
       (at 599.44 386.08 0)
       (effects
         (font

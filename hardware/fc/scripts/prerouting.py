@@ -63,18 +63,22 @@ def apply(bd):
     p12 = P('U1', '12')
     T('GND', [p12, (p12[0] + 1.6, p12[1])], 0.3)
     V('GND', p12[0] + 1.6, p12[1])
-    # VDDA (Pin 13): nach innen, Via, auf der Unterseite zum Filter (FB1, C7, C8)
+    # VDDA (Pin 13): 100 nF (C7) direkt am Pin, Masse direkt an VSSA (Pin 12)
     p13 = P('U1', '13')
+    c7p1, c7p2 = P('C7', '1'), P('C7', '2')
+    T('+3V3A', [p13, (c7p1[0] + 0.45, p13[1]), c7p1], 0.3)
+    T('GND', [p12, (c7p2[0] + 0.45, p12[1]), c7p2], 0.3)
+    # ... und nach innen, Via, auf der Unterseite zum Filter (FB1, C8)
     va = (p13[0] + 1.325, p13[1] + 0.5)
     T('+3V3A', [p13, (p13[0] + 0.875, p13[1]), va], 0.3)
     V('+3V3A', *va)
-    c7p1, c8p1, fb1p2 = P('C7', '1'), P('C8', '1'), P('FB1', '2')
-    vb = (c7p1[0] - 0.82, c7p1[1] + 0.7)
-    T('+3V3A', [va, (c7p1[0] - 0.12, va[1]), (vb[0], va[1] + 0.7), vb], 0.3, layer=B_CU)
+    c8p1, fb1p2 = P('C8', '1'), P('FB1', '2')
+    ref = (c8p1[0], c8p1[1] - 1.0)
+    vb = (ref[0] - 0.82, ref[1] + 0.7)
+    T('+3V3A', [va, (ref[0] - 0.12, va[1]), (vb[0], va[1] + 0.7), vb], 0.3, layer=B_CU)
     V('+3V3A', *vb)
-    T('+3V3A', [vb, c7p1], 0.3)
+    T('+3V3A', [vb, c8p1], 0.3)
     T('+3V3A', [vb, fb1p2], 0.3)
-    T('+3V3A', [c7p1, c8p1], 0.3)
 
     # ------------------------------------------------ Gyro
     p8, p5, p6, p7 = P('U2', '8'), P('U2', '5'), P('U2', '6'), P('U2', '7')
@@ -134,9 +138,18 @@ def apply(bd):
     T('VBAT', [q2, (q2[0], c23p1[1] + 0.35), c23p1], 0.4)
     T('GND', [q1, (q1[0], c23p2[1] + 0.35), c23p2], 0.4)
     T('VBAT', [q3, (q3[0], q3[1] - 0.95), (q2[0], q2[1] - 0.95)], 0.4)
-    # Via zwischen den Montagepads der Buchsen J9/J5 auf der Unterseite
+    # Via oestlich des Montagepads der UART-Buchse J9 auf der Unterseite
     T('VBAT', [(q3[0], q3[1] - 0.95), (q3[0] + 0.185, q3[1] - 1.5)], 0.4)
     V('VBAT', q3[0] + 0.185, q3[1] - 1.5)
+    T('VBAT', [(q3[0], q3[1] - 0.95), (q3[0] - 0.77, q3[1] - 1.5)], 0.4)
+    V('VBAT', q3[0] - 0.77, q3[1] - 1.5)
+    # Eingangs-Keramik C22: Masse-Pad direkt an PGND (Pin 1), VBAT-Pad mit zwei Vias in die Flaeche
+    c22p1, c22p2 = P('C22', '1'), P('C22', '2')
+    T('GND', [q1, c22p2], 0.6)
+    T('VBAT', [c22p1, (c22p1[0], -16.2), (c22p1[0] - 0.4, -16.2)], 0.6)
+    T('VBAT', [(c22p1[0], -16.2), (c22p1[0] + 0.35, -16.2)], 0.6)
+    V('VBAT', c22p1[0] - 0.4, -16.2)
+    V('VBAT', c22p1[0] + 0.35, -16.2)
     T('GND', [c23p2, (c23p2[0] + 2.75, c23p2[1] + 0.2)], 0.4)
     V('GND', c23p2[0] + 2.75, c23p2[1] + 0.2)
     l1p1 = P('L1', '1')
@@ -165,11 +178,14 @@ def apply(bd):
     r4p1 = P('R4', '1')
     T('VBAT', [r4p1, (r4p1[0], r4p1[1] - 1.45)], 0.4)
 
-    # ------------------------------------------------ LED-Vorwiderstaende: 3,3 V
+    # ------------------------------------------------ LEDs (oestlich des Gyros): Vorwiderstaende
+    # an die 3,3-V-Leitung vom AMS1117 (Via bei u = 7,6), Widerstand -> Anode senkrecht
     r14, r15, r16 = P('R14', '1'), P('R15', '1'), P('R16', '1')
-    T('+3V3', [r14, r16], 0.3)
-    T('+3V3', [r15, (-11.9, r15[1])], 0.3)
-    V('+3V3', -11.9, r15[1])
+    T('+3V3', [r14, r15, r16], 0.3)
+    T('+3V3', [r16, (7.6, tab_pos[1] - 0.1)], 0.3)
+    for r, d, net in (('R14', 'D3', 'LED_ARM_A'), ('R15', 'D4', 'LED_ERR_A'),
+                      ('R16', 'D5', 'LED_LINK_A')):
+        T(net, [P(r, '2'), P(d, '2')], 0.25)
 
     steckverbinder(bd)
 
@@ -177,9 +193,20 @@ def apply(bd):
     r10p1, l1p2 = P('R10', '1'), P('L1', '2')
     T('+5V', [r10p1, (r10p1[0], -8.45), (l1p2[0], -8.45), (l1p2[0], -9.3)], 0.4)
 
+    # ------------------------------------------------ VCAP1-Kondensator C9: Masse ueber R9 (Pull-down
+    # des Verpolschutz-Gates, ebenfalls GND) auf ein gemeinsames Via
+    c9g, r9g = P('C9', '2'), P('R9', '2')
+    T('GND', [c9g, (c9g[0], r9g[1] - 0.6), r9g], 0.3)
+    T('GND', [r9g, (r9g[0] - 0.57, r9g[1] + 0.4)], 0.3)
+    V('GND', r9g[0] - 0.57, r9g[1] + 0.4)
+
     # ------------------------------------------------ Verpolschutz: Source an VBAT (Zenerdiode)
     q1s, d1k = P('Q1', '2'), P('D1', '1')
-    T('VBAT', [q1s, (q1s[0] - 0.36, 18.7), (d1k[0], 18.7), d1k], 0.4)
+    T('VBAT', [q1s, (q1s[0] - 0.35, q1s[1] - 0.2), (d1k[0] + 0.35, q1s[1] - 0.2),
+               (d1k[0], q1s[1] + 0.15), d1k], 0.4)
+    T('VBAT', [q1s, (q1s[0] + 0.6, 19.4), (10.9, 19.4)], 0.8)
+    V('VBAT', 10.0, 19.4)
+    V('VBAT', 10.9, 19.4)
 
     # ------------------------------------------------ Rueckkopplungsteiler: Masse ueber C25
     r11p2, c25p2 = P('R11', '2'), P('C25', '2')
@@ -266,23 +293,30 @@ def apply(bd):
              (j2m3[0] - 0.17, j2m3[1] + 0.17)], 0.25, layer=B_CU)
 
     # ------------------------------------------------ Akkueingang ESC -> Verpolschutz (Drain)
-    j2p1, q1d = P('J2', '1'), P('Q1', '3')
+    j2p1 = [bd.pad_pos_obj(p) for p in bd.fps['J2'].Pads() if p.GetNetname() == 'VBAT_IN'][0]
+    q1d = P('Q1', '3')
     T('VBAT_IN', [j2p1, (j2p1[0], j2p1[1] - 1.45)], 0.6, layer=B_CU)
+    T('VBAT_IN', [(j2p1[0], j2p1[1] - 1.45), (j2p1[0] + 0.75, j2p1[1] - 1.45)], 0.8, layer=B_CU)
     V('VBAT_IN', j2p1[0], j2p1[1] - 1.45)
+    V('VBAT_IN', j2p1[0] + 0.75, j2p1[1] - 1.45)
+    T('VBAT_IN', [(j2p1[0], j2p1[1] - 1.45), (j2p1[0] + 0.75, j2p1[1] - 1.45)], 0.8)
     T('VBAT_IN', [(j2p1[0], j2p1[1] - 1.45), (j2p1[0] + 0.5, 15.5), (q1d[0] + 0.36, 15.5),
                   (q1d[0] + 0.36, q1d[1] - 0.3), q1d], 0.8)
 
 
 def steckverbinder(bd):
-    """Versorgungspins der JST-SH-Buchsen (Unterseite), deren Pads ausserhalb der passenden
-    Innenlagen-Flaeche liegen: kurze Bahn auf B.Cu zu einem Via im richtigen Bereich."""
+    """Versorgungspins der JST-SH-Buchsen, deren Pads ausserhalb der passenden Innenlagen-Flaeche
+    liegen: kurze Bahn auf der Bestueckungsseite der Buchse zu einem Via im richtigen Bereich.
+    (GPS/ELRS oben und VTX/CAM/ESC unten liegen mit ihrem 5-V-Pin ueber der 5-V-Flaeche; diese
+    Pads bekommen ihr Via in fanout.py.)"""
     P = bd.pad_pos
     T = bd.track
     V = bd.via
-    # I2C (Nordrand West), 3,3 V: zum Testpunkt TP1 (3,3 V, hat sein Via in der 3,3-V-Flaeche)
-    j4, tp1 = P('J4', '3'), P('TP1', '1')
-    T('+3V3', [j4, (j4[0], tp1[1] - 1.0), (tp1[0] - 0.7, tp1[1])], 0.3, layer=B_CU)
-    # UART (Nordrand Mitte), 3,3 V: nach Sueden unter den Elko (Via in der 3,3-V-Flaeche)
+    # I2C (oben, Westkante Mitte), 3,3 V: nach Osten suedlich am Flash vorbei in die 3,3-V-Flaeche
+    j4 = P('J4', '3')
+    T('+3V3', [j4, (-12.6, j4[1]), (-11.8, 1.65)], 0.3)
+    V('+3V3', -11.8, 1.65)
+    # UART (unten, Nordrand Mitte), 3,3 V: nach Sueden unter den Elko (Via in der 3,3-V-Flaeche)
     j9 = P('J9', '3')
     T('+3V3', [j9, (j9[0] - 0.2, j9[1] + 1.2), (j9[0] - 0.2, -11.2)], 0.3, layer=B_CU)
     V('+3V3', j9[0] - 0.2, -11.2)
@@ -294,15 +328,18 @@ def steckverbinder(bd):
              and abs(pcbnew.ToMM(t.GetPosition().y) - 100.0 - j9g[1]) < 0.3
              and pcbnew.ToMM(t.GetPosition().x) - 100.0 > j9g[0])
     T('GND', [j9g, gv], 0.3, layer=B_CU)
-    # GPS (Nordrand Ost), 5 V: unter dem Schaltregler-Ausgang nach Suedosten in die 5-V-Flaeche
-    j5 = P('J5', '3')
-    T('+5V', [j5, (j5[0], -12.6), (9.6, -11.6), (11.8, -11.6)], 0.4, layer=B_CU)
-    V('+5V', 11.8, -11.6)
-    # GPIO (Westrand), 3,3 V: nach Osten in die 3,3-V-Flaeche
+    # GPIO (unten, Westrand), 3,3 V: nach Osten in die 3,3-V-Flaeche
     j10 = P('J10', '7')
     T('+3V3', [j10, (-12.8, j10[1]), (-12.0, j10[1] - 0.8)], 0.3, layer=B_CU)
     V('+3V3', -12.0, j10[1] - 0.8)
-    # Piepser (innen West), 5 V: nach Westen in die 5-V-Flaeche
+    # Piepser (unten, Nordrand West), 5 V: unter dem VBAT-Nordband nach Suedwesten in den
+    # 5-V-Westbereich (ausserhalb des Sperrkreises der Bohrung H4)
     j11 = P('J11', '1')
-    T('+5V', [j11, (-13.5, j11[1]), (-14.0, j11[1] + 0.5)], 0.4, layer=B_CU)
-    V('+5V', -14.0, j11[1] + 0.5)
+    T('+5V', [j11, (j11[0], -13.9), (-11.3, -11.6), (-13.65, -11.6)], 0.4, layer=B_CU)
+    V('+5V', -13.65, -11.6)
+    # SWD (unten, Ostrand), 3,3 V: Via neben dem Pad, oben direkt an die Kuehlfahne des AMS1117
+    # (3,3-V-Ausgang; die Innenlage ist dort 5 V)
+    j8 = P('J8', '4')
+    T('+3V3', [j8, (14.4, j8[1])], 0.3, layer=B_CU)
+    V('+3V3', 14.4, j8[1])
+    T('+3V3', [(14.4, j8[1]), (13.6, j8[1])], 0.3)
