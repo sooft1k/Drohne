@@ -9,9 +9,9 @@ Erstellt mit KiCad 7.0 (öffnet auch in KiCad 8/9; dabei wird einmalig konvertie
 | `fc.kicad_sch` | Schaltplan (ein A1-Blatt, nach Funktionsgruppen, Netzlabels + Versorgungssymbole) |
 | `fc.kicad_pcb` | Platine: 42 × 41 mm, 4 Lagen, platziert und vollständig geroutet |
 | `fc_custom.kicad_sym` | Projektsymbole: ICM-42688-P, Versorgungssymbole VBAT und +3V3A |
-| `fc_custom.pretty` | LMR33630-Footprint ohne Kupfer auf der Unterseite (dort sitzen Stiftleisten); USB-C-Buchse mit an der Platinenkante gekürztem Bestückungsdruck |
-| `fertigung/` | Gerber + Bohrdateien (ZIP für JLCPCB), Stückliste, Bestückkoordinaten |
-| `docs/` | Schaltplan als PDF, Lagenbilder (oben, unten gespiegelt, Lage 2, Lage 3), DRC-Bericht, Routing-Kennzahlen |
+| `fc_custom.pretty` | LMR33630-Footprint ohne Kupfer auf der Unterseite (dort sitzen Steckverbinder); USB-C-Buchse mit an der Platinenkante gekürztem Bestückungsdruck |
+| `fertigung/` | Gerber + Bohrdateien (ZIP für JLCPCB), Stückliste und Bestückkoordinaten für beide Seiten, Prüfliste |
+| `docs/` | Schaltplan als PDF, Lagenbilder (oben, unten gespiegelt, Lage 2, Lage 3), 3D-Ansichten, DRC- und ERC-Bericht, Routing-Kennzahlen |
 | `scripts/` | Generatoren – alles wird aus `scripts/design.py` erzeugt |
 
 ## Neu erzeugen
@@ -28,7 +28,7 @@ python3 scripts/route.py        # Autorouting (Freerouting 2.0.1, Java) + Nachro
 python3 scripts/run_drc.py fc.kicad_pcb build/drc.rpt
 python3 scripts/report.py fc.kicad_pcb build/fc.net   # Kennzahlen + Abgleich Platine/Schaltplan
 python3 scripts/sync_fields.py  # nur Werte/LCSC-Nummern in die geroutete Platine uebernehmen
-python3 scripts/fab.py          # Gerber, Bohrdaten, ZIP, JLCPCB-BOM/CPL, Pruefliste, Handliste
+python3 scripts/fab.py          # Gerber, Bohrdaten, ZIP, JLCPCB-BOM/CPL (beide Seiten), Pruefliste
 ```
 
 ERC mit KiCad 9 (kicad-cli 7 kann keine ERC):
@@ -49,7 +49,7 @@ neuer Lauf ergibt ein anderes, ebenfalls zu prüfendes Routing. Maßgeblich ist 
 | 1 F.Cu | Bauteile, Signale, Restfläche GND |
 | 2 In1.Cu | durchgehende GND-Fläche (nur Via-Durchbrüche, keine Leiterbahnen, keine Schlitze) |
 | 3 In2.Cu | Versorgung: +3V3 (Mitte unter MCU/Gyro/Flash), +5V (Ost, Süd, West), VBAT (Ring am Rand: Nordband zum Regler, schmale Streifen West/Süd zum Verpolschutz) |
-| 4 B.Cu | Steckverbinder (SMD-Stiftleisten, JST-SH), Signale, Restfläche GND |
+| 4 B.Cu | Steckverbinder (alle JST-SH), Signale, Restfläche GND |
 
 Keine Leiterbahn auf Lage 2 und 3 – dort liegen nur Flächen. Montagebohrungen M3
 (Ø 3,2 mm) auf 30,5 × 30,5 mm; nur **H2 (Südost, neben dem ESC-Stecker)** ist mit GND
@@ -91,7 +91,7 @@ für die Abstandshalter.
 | 3 | PC14 | LED_ERR | LED gelb, aktiv-low |
 | 4 | PC15 | LED_LINK | LED grün, aktiv-low |
 | 14 | PA0 | BUZZER | TIM2_CH1/TIM5_CH1, high = Piepser an (N-FET) |
-| 9 | PC1 | GPIO1 | Stiftleiste GPIO Pin 1 |
+| 9 | PC1 | GPIO1 | Buchse GPIO (J10) Pin 1 |
 | 10 | PC2 | GPIO2 | Pin 2 |
 | 11 | PC3 | GPIO3 | Pin 3 |
 | 25 | PC5 | GPIO4 | Pin 4 |
@@ -109,21 +109,31 @@ Gyro-Einbaulage: Der ICM-42688-P sitzt nahe der Platinenmitte und ist um **180°
 Sensorachsen X und Y zeigen damit entgegen der Gehäuse-Normallage – in der Firmware
 „Ausrichtung CW180°" einstellen bzw. X und Y invertieren.
 
-## Steckverbinder (alle auf der Unterseite)
+## Steckverbinder (alle auf der Unterseite, JST-SH 1,0 mm, seitlich steckbar)
 
-| Ref | Name | Pin 1 → n |
-|---|---|---|
-| J2 | ESC, JST-SH 8 | 1 VBAT · 2 GND · 3 CURR · 4 5V (über JP2, offen) · 5 M1 · 6 M2 · 7 M3 · 8 M4 |
-| J3 | ELRS | 1 TX · 2 RX · 3 5V · 4 GND |
-| J4 | I2C | 1 SDA · 2 SCL · 3 3V3 · 4 GND |
-| J5 | GPS | 1 TX · 2 RX · 3 5V · 4 GND |
-| J6 | VTX | 1 TX · 2 RX · 3 5V · 4 GND |
-| J7 | CAM | 1 5V · 2 VIDEO · 3 GND (VIDEO zusätzlich auf Lötpad TP5) |
-| J8 | SWD | 1 SWDIO · 2 SWCLK · 3 NRST · 4 3V3 · 5 GND |
-| J9 | UART (Debug) | 1 TX · 2 RX · 3 3V3 · 4 GND |
-| J10 | GPIO | 1–6 GPIO1–6 · 7 3V3 · 8 GND |
-| J11 | Piepser | 1 +5V · 2 BZ− (Drain) |
-| J1 | USB-C | Oberseite |
+Alle Buchsen sind JST-SH-kompatibel (SMxxB-SRSS-TB, bestückt wird Megastar ZX-SH1.0-xPWT) und
+werden von JLCPCB mitbestückt. Passende Gegenstecker: JST SHR-0xV-S bzw. die üblichen
+„JST-SH 1,0 mm“-Kabel. Lage auf der Unterseite (von unten gesehen ist alles gespiegelt; die
+Angaben hier gelten **von oben** gesehen, USB-C rechts, ESC-Stecker unten):
+
+| Ref | Name | Lage, Steckrichtung | Pin 1 → n |
+|---|---|---|---|
+| J2 | ESC, 8-polig | Südrand Mitte, Stecker von Süden | 1 VBAT · 2 GND · 3 CURR · 4 5V (über JP2, offen) · 5 M1 · 6 M2 · 7 M3 · 8 M4 |
+| J6 | VTX, 4-polig | Südrand West, von Süden | 1 TX · 2 RX · 3 5V · 4 GND |
+| J4 | I2C, 4-polig | Nordrand West, von Norden | 1 SDA · 2 SCL · 3 3V3 · 4 GND |
+| J9 | UART (Debug), 4-polig | Nordrand Mitte, von Norden | 1 TX · 2 RX · 3 3V3 · 4 GND |
+| J5 | GPS, 4-polig | Nordrand Ost, von Norden | 1 TX · 2 RX · 3 5V · 4 GND |
+| J10 | GPIO, 8-polig | Westrand, von Westen | 1–6 GPIO1–6 · 7 3V3 · 8 GND |
+| J7 | CAM, 3-polig | Westrand, von Westen | 1 5V · 2 VIDEO · 3 GND (VIDEO zusätzlich auf Lötpad TP5) |
+| J3 | ELRS, 4-polig | Ostrand (unter der USB-C-Buchse versetzt), von Osten | 1 TX · 2 RX · 3 5V · 4 GND |
+| J8 | SWD, 5-polig | innen West, Öffnung nach Osten | 1 SWDIO · 2 SWCLK · 3 NRST · 4 3V3 · 5 GND |
+| J11 | Piepser, 2-polig | innen West, Öffnung nach Osten | 1 +5V · 2 BZ− (Drain) |
+| J1 | USB-C | Oberseite, Ostrand | |
+
+Pin 1 ist auf dem Bestückungsdruck mit einem Strich neben dem ersten Kontakt markiert. Die
+Buchsen am Rand sitzen 0,7 mm hinter der Platinenkante (Kupferabstand 0,5 mm), die Stecker
+ragen über die Kante hinaus. SWD und Piepser liegen innen; ihre Stecker liegen flach auf der
+Unterseite, das Kabel braucht dort etwa 8 mm freien Platz Richtung Platinenmitte.
 
 TX/RX jeweils aus Sicht des FC (FC-TX an Empfänger-RX anschließen).
 
@@ -156,12 +166,11 @@ die offene Lötbrücke JP2 nicht angeschlossen ist.
 | H1, H3, H4 | `MountingHole:MountingHole_3.2mm_M3` | M3 |
 | H2 | `MountingHole:MountingHole_3.2mm_M3_Pad` | M3 GND |
 | J1 | `fc_custom:USB_C_Receptacle_HRO_TYPE-C-31-M-12_Kante` (KiCad-Footprint, Bestückungsdruck an der Kante gekürzt) | USB-C |
-| J2 | `Connector_JST:JST_SH_SM08B-SRSS-TB_1x08-1MP_P1.00mm_Horizontal` | ESC |
-| J3, J4, J5, J6, J9 | `Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left` | ELRS, GPS, I2C, UART, VTX |
-| J7 | `Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left` | CAM |
-| J8 | `Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical_SMD_Pin1Left` | SWD |
-| J10 | `Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical_SMD_Pin1Left` | GPIO |
-| J11 | `Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical_SMD_Pin1Left` | BUZZER |
+| J2, J10 | `Connector_JST:JST_SH_SM08B-SRSS-TB_1x08-1MP_P1.00mm_Horizontal` | ESC, GPIO |
+| J3, J4, J5, J6, J9 | `Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal` | ELRS, I2C, GPS, VTX, UART |
+| J7 | `Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal` | CAM |
+| J8 | `Connector_JST:JST_SH_SM05B-SRSS-TB_1x05-1MP_P1.00mm_Horizontal` | SWD |
+| J11 | `Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal` | BUZZER |
 | JP1, JP2 | `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm` | BOOT0, ESC_5V |
 | L1 | `Inductor_SMD:L_Coilcraft_XAL4040-XXX` | 3.3uH |
 | Q1, Q2 | `Package_TO_SOT_SMD:SOT-23` | 2N7002, Si2319CDS |
@@ -186,13 +195,13 @@ die offene Lötbrücke JP2 nicht angeschlossen ist.
 | VREF+ | an VDDA mit 100 nF | entfällt als Pin | im LQFP64 intern mit VDDA verbunden; VDDA hat 100 nF + 1 µF hinter der Ferritperle FB1 |
 | I²C extern | I2C1 oder I2C2 | I2C1 auf **PB8/PB9** | PB6 wird direkt neben dem Gyro als CS gebraucht – Firmware: nur die GPIO-Pins ändern (AF4 bleibt) |
 | Status-LEDs | an GPIOs | **PC13–PC15, aktiv-low** | einzige freie Pins auf der Seite der LEDs; PC13–PC15 dürfen nur Strom ziehen (wie die bisherige PC13-LED) |
-| Stiftleisten | Stiftleiste, Unterseite | **SMD-Stiftleisten 2,54 mm** auf der Unterseite | THT-Leisten hätten auch die Oberseite blockiert; dafür mechanisch weniger robust – Kabel nicht am Draht ziehen |
+| Stiftleisten | Stiftleiste, Unterseite | **JST-SH-Buchsen 1,0 mm** (seitlich steckbar) auf der Unterseite | die Platine soll komplett bestückt geliefert werden: JLCPCB bestückt die SMD-Buchsen mit; Stiftleisten hätten von Hand gelötet werden müssen. JST-SH ist bei FPV-Komponenten (ELRS, GPS, VTX) üblich |
 | ESC-Pin „5 V" | 5 V | über **Lötbrücke JP2 (offen)** | verhindert, dass ein BEC im ESC gegen den FC-Regler arbeitet; nur schließen, wenn der ESC 5 V vom FC braucht |
-| Piepser | Treiber | zusätzlich 2-polige Leiste J11 (+5 V / BZ−) | in der Spezifikation fehlt ein Anschluss für den Summer |
+| Piepser | Treiber | zusätzlich 2-polige Buchse J11 (+5 V / BZ−) | in der Spezifikation fehlt ein Anschluss für den Summer |
 | Kamera-Video | Pin am CAM-Stecker | zusätzlich Lötpad **TP5 VIDEO** | das Videosignal hat in der Spezifikation kein Ziel (kein OSD, VTX-Stecker ohne Video) |
 | VTX-Versorgung | 5 V oder 9 V | nur 5 V | kein 9-V-Regler vorgesehen |
 | PB2/BOOT1 | – | 10 k nach GND | sonst startet DFU (BOOT0 gebrückt) je nach Zufall aus dem SRAM |
-| 5-V-Leitungen | 1 mm | Fläche auf Lage 3, Ausgang Spule → C26 **0,8 mm**, Stichleitungen Pad → Via **0,4 mm** (≤ 2,4 mm lang) | mit 1 mm ließen sich die Abgänge zwischen den Stiftleisten nicht routen; Ströme der Abgänge < 1 A |
+| 5-V-Leitungen | 1 mm | Fläche auf Lage 3, Ausgang Spule → C26 **0,8 mm**, Stichleitungen Pad → Via **0,4 mm** | die Pads der JST-SH-Buchsen sind nur 0,6 mm breit; Ströme der Abgänge < 1 A |
 | 5-V-Rückführung | – | R10/R11 = **33 k / 8,2 k** (5,02 V) statt 100 k / 24,9 k | 24,9 k gibt es nur als Extended-Teil; 33 k (Basic) und 8,2 k (Preferred) ergeben dieselbe Spannung |
 | LED grün | – | Vorwiderstand R16 **470 Ω** statt 1 kΩ | die gewählte Preferred-LED ist InGaN (Uf ≈ 2,7 V); mit 1 kΩ an 3,3 V wäre sie zu dunkel. Strom ≈ 1,3 mA (PC15 darf max. 3 mA) |
 | Quarz | – | 8 MHz, **CL 12 pF** (YXC, C20617566) mit 2 × 18 pF | passend zu den vorhandenen 18-pF-Lastkondensatoren |
@@ -220,24 +229,34 @@ Die Bohrdaten liegen getrennt als `fc-PTH.drl` und `fc-NPTH.drl` bei (Excellon, 
 Bohrdaten und Bestückkoordinaten beziehen sich alle auf den Bohr-/Bestückungsursprung in der
 **linken unteren Platinenecke**.
 
-### Bestückung bei JLCPCB (nur Oberseite)
+### Bestückung bei JLCPCB (beide Seiten)
 
 | Datei | Zweck |
 |---|---|
-| `fertigung/jlcpcb_bom.csv` | Stückliste Oberseite im JLCPCB-Format mit **LCSC-Nummern** (71 Bauteile, 38 Teilenummern) |
-| `fertigung/jlcpcb_cpl.csv` | Bestückkoordinaten Oberseite, Drehung bereits für JLCPCB korrigiert |
-| `fertigung/jlcpcb_pruefliste.csv` | je Bauteil: LCSC-Typ, Bestand mit Datum/Quelle, Drehung KiCad → CPL, **Lage von Pin 1 bzw. Kathode/Pluspol** auf der Platine |
-| `fertigung/handbestueckung_unten.csv` | Steckverbinder der Unterseite zum Selbstlöten (J2–J11) mit Bauteilvorschlägen |
+| `fertigung/jlcpcb_bom.csv` | Stückliste aller bestückten Teile (oben 71, unten 10) im JLCPCB-Format mit **LCSC-Nummern**, 43 Teilenummern |
+| `fertigung/jlcpcb_cpl.csv` | Bestückkoordinaten beider Seiten (Spalte Layer Top/Bottom), Drehung bereits für JLCPCB umgerechnet |
+| `fertigung/jlcpcb_pruefliste.csv` | je Bauteil: Seite, LCSC-Typ, Bestand mit Datum/Quelle, Drehung KiCad → CPL mit Quelle der Korrektur, **Lage von Pin 1 bzw. Kathode/Pluspol** |
 
-Bestellung als **Economic PCBA, einseitig (Top)**: dann sind die Preferred-Teile wie Basic-Teile
-ohne Rüstgebühr. Die Auswahl steht in `scripts/lcsc.py` (Stand 13.10.2026, mit Quellen).
+Nicht bestückt werden die Testpunkte TP1–TP5, die Lötbrücken JP1/JP2, Bohrungen und Fiducials.
 
-**Extended-Teile (je 3 USD Rüstgebühr), 11 Stück:** STM32F405RGT6 (C15742), ICM-42688-P
-(C1850418), LMR33630BDDAR (C544370), USBLC6-2SC6 (C7519), Si2319CDS (C146287), USB-C
-TYPE-C-31-M-12 (C165948), Spule XGL4020-332MEC (C6937839), Elko 470 µF/35 V (C48615113) – diese
-acht gibt es gar nicht als Basic/Preferred. Nur wegen des Footprints Extended sind Quarz
-8 MHz 3225 (C20617566), Ferrit 0402 (C7509833) und 10 µF/50 V 1210 (C17498688); Alternativen
-mit Footprint-Änderung stehen in `scripts/lcsc.py` (`ALTERNATIVES`).
+**Bestellart: Standard PCBA, beidseitig.** Economic PCBA bestückt nur eine Seite. Folgen:
+- Einrichtgebühr für zwei Seiten (laut JLCPCB-Preisliste 50 USD statt 25 USD), zweite Schablone.
+- Rüstgebühr (Feeder Loading Fee) auch für die 4 Preferred-Teile, nicht nur für Extended-Teile.
+- Standard PCBA verlangt **Nutzentrennränder (Edge Rails) und Fiducials** und eine
+  Mindestgröße von 70 × 70 mm. Die Platine (42 × 41 mm) ist kleiner und hat Bauteile direkt an
+  der Kante: beim Bestellen „Edge Rails/Fiducials: Added by JLCPCB“ wählen bzw. JLCPCB den
+  Nutzen machen lassen. **Die Ränder nur an die beiden 42-mm-Kanten** (ESC-Seite und
+  gegenüber) – an der Ostkante steht die USB-C-Buchse 0,5 mm über. Am besten als Bemerkung
+  dazuschreiben. Die Ränder werden mitgeliefert und lassen sich abbrechen (kein Löten nötig).
+
+**Extended-Teile, 16 Teilenummern:** STM32F405RGT6 (C15742), ICM-42688-P (C1850418),
+LMR33630BDDAR (C544370), USBLC6-2SC6 (C7519), Si2319CDS (C146287), USB-C TYPE-C-31-M-12
+(C165948), Spule XGL4020-332MEC (C6937839), Elko 470 µF/35 V (C48615113), die fünf JST-SH-
+Buchsen ZX-SH1.0-2/3/4/5/8PWT (C7430444, C7430445, C7430446, C7430447, C7430450) – diese gibt
+es gar nicht als Basic/Preferred. Nur wegen des Footprints Extended sind Quarz 8 MHz 3225
+(C20617566), Ferrit 0402 (C7509833) und 10 µF/50 V 1210 (C17498688); Alternativen mit
+Footprint-Änderung stehen in `scripts/lcsc.py` (`ALTERNATIVES`). Die Auswahl steht in
+`scripts/lcsc.py` (Stand 13.10.2026, mit Quellen).
 
 **Lagerbestand:** lcsc.com und jlcpcb.com waren aus der Arbeitsumgebung gesperrt. Bestände
 stammen aus dem JLCPCB-Katalogabzug von yaqwsx/jlcparts (mit Abrufdatum) bzw. für ältere
@@ -245,31 +264,59 @@ Nummern nur aus Websuche-Momentaufnahmen (in der Prüfliste als „unbestätigt�
 Kein gewähltes Teil war dort als nicht lagernd erkennbar – beim Hochladen der BOM zeigt
 JLCPCB den aktuellen Bestand, das ist die maßgebliche Prüfung.
 
-**Drehlagen:** Die CPL enthält die Korrekturen der verbreiteten Tabelle von JLCKicadTools
-(LQFP und SOIC +270°, SOT-23/SOT-23-6 −90°, SOT-223 +180°, Elko 10×10 +180°, HRO-USB-C +180°).
-Für **U2 (ICM-42688-P, LGA-14)** und **U4 (LMR33630, HSOP-8)** gibt es keinen Tabelleneintrag –
-diese beiden in der JLCPCB-Vorschau besonders prüfen. Dort für jedes IC, jede Diode und den
-Elko kontrollieren, dass Pin-1-Punkt bzw. Kathodenstrich/Pluspol auf der Seite liegt, die in
-der Prüfliste steht (Platine von oben, USB-C rechts, ESC-Stecker unten), z. B. U1 Pin 1
-links oben, U2 Pin 1 rechts unten, U3/U4 Pin 1 rechts oben, U5 Pin 1 rechts unten,
-U6/Q1/Q2 Pin 1 links oben, Y1 Pin 1 rechts oben, D1 und LEDs Kathode links, D2/D6 Kathode
-unten, C21 Pluspol links.
+**Drehlagen:** Die Korrekturen sind durch Vergleich der Pad-Lagen der KiCad-Footprints mit
+den JLCPCB/EasyEDA-Footprints bestimmt (Bibliothek CDFER/JLCPCB-Kicad-Library; der Zusatz
+BL/BR im Footprintnamen nennt die Ecke von Pin 1) und gegen die Tabellen von JLCKicadTools und
+KiBot abgeglichen: LQFP und SOIC +270°, SOT-23-6 +270°, **SOT-23 (3 Pins) +180°** (die ältere
+JLCKicadTools-Tabelle nennt −90°, das passt nicht zum JLC-Footprint), SOT-223 +180°,
+Elko 10×10 +180°, HRO-USB-C +180°. Unterseite: KiCad spiegelt Bauteile beim Umdrehen, JLCPCB
+nicht – die Drehung wird wie bei kicad-jlcpcb-tools umgerechnet (180° − KiCad-Winkel, dann
+Korrektur). Die Koordinaten sind die Mitte der Lötpads.
+
+In der JLCPCB-Vorschau **besonders prüfen** (keine sichere Vergleichsquelle):
+- **U2** ICM-42688-P (LGA-14): keine Korrektur; Pin 1 muss rechts unten liegen.
+- **U4** LMR33630 (HSOP-8): +270° angenommen (wie die JLC-Footprints ESOP-8 „BL“);
+  Pin 1 muss rechts oben liegen, das Wärmepad auf dem großen Mittelpad.
+- **J2–J11** JST-SH: +180° angenommen (wie JST-GH/PH in beiden Tabellen); in der
+  Unterseiten-Ansicht muss die Steckeröffnung jeder Randbuchse zur Platinenkante zeigen,
+  bei J8/J11 zur Platinenmitte, und die schmalen Signalpads unter den Kontakten liegen.
+- **J1** USB-C: Lage (Mitte der Pads, 1,46 mm neben dem KiCad-Ursprung) und Drehung –
+  die Steckeröffnung muss über die Ostkante zeigen.
+
+Außerdem für jedes IC, jede Diode und den Elko kontrollieren, dass Pin-1-Punkt bzw.
+Kathodenstrich/Pluspol auf der Seite liegt, die in der Prüfliste steht (Oberseite von oben
+mit USB-C rechts, Unterseite von unten mit USB-C links), z. B. U1 Pin 1 links oben, U3 Pin 1
+rechts oben, U5 Pin 1 rechts unten, U6/Q1/Q2 Pin 1 links oben, Y1 Pin 1 rechts oben, D1 und
+LEDs Kathode links, D2/D6 Kathode unten, C21 Pluspol links.
+
+### Bestellablauf (jlcpcb.com)
+
+1. `fertigung/fc_jlcpcb_gerber.zip` hochladen, Parameter wie in der Tabelle oben
+   (4 Lagen, 1,6 mm, JLC04161H-7628, 1 oz/1 oz, ENIG, Tented Vias), Edge Rails wie oben.
+2. „PCB Assembly“ einschalten: **Standard**, Seite **Both Sides**, Anzahl wählen.
+3. `fertigung/jlcpcb_bom.csv` und `fertigung/jlcpcb_cpl.csv` hochladen, Teilezuordnung und
+   Bestand prüfen (alle 43 Positionen müssen ein Teil haben).
+4. In der Platzierungsvorschau Ober- und Unterseite mit der Prüfliste abgleichen (Liste oben),
+   falsch gedrehte Teile dort korrigieren.
+5. Bestellen; JLCPCB prüft die Daten (DFM) und meldet sich bei Rückfragen per E-Mail.
 
 ## Routing
 
-**Von Hand vorverlegt und gesperrt** (`scripts/prerouting.py`, 363 von 926 Kupferobjekten):
+**Von Hand vorverlegt und gesperrt** (`scripts/prerouting.py`, 381 von 909 Kupferobjekten):
 alle Abblockkondensatoren mit kurzem Weg zum Pin und Via direkt daneben (STM32 VDD/VSS,
 VCAP1/2, VDDA über FB1, Gyro VDD/VDDIO, Flash), Gyro-Masse ohne Vias unter dem Chip,
 Schaltregler-Leistungskreis (C23 an VIN/GND, Schaltknoten 0,8 mm zur Spule, Bootstrap,
 VCC, Rückführung, Wärmevias), 3,3-V-Ausgang des AMS1117, Akkueingang ESC → Verpolschutz,
 USB D+/D− vom Prozessor zum USBLC6, VBUS (beide Buchsen-Pads, Diode, C33/C34), CC1/CC2,
-das SPI-Bündel zwischen Gyro und Prozessor sowie Via-Fluchten für ELRS und GYRO_CS.
+das SPI-Bündel zwischen Gyro und Prozessor, Via-Fluchten für ELRS und GYRO_CS, die
+Motorsignale M3/M4 (kreuzen sich auf kurzem Weg zum ESC-Stecker) und die Versorgungspins der
+JST-SH-Buchsen, die außerhalb ihrer Fläche auf Lage 3 liegen (I2C, UART, GPS, GPIO, Piepser).
 Danach setzt `fanout.py` jedem übrigen Versorgungspad ein Via in die passende Fläche.
 
 **Autorouter**: alle übrigen Signale (Freerouting, F.Cu und B.Cu; Lage 2 und 3 sind als
-Flächen gesperrt). Kennzahlen (`docs/fc_routing_kennzahlen.txt`): 180 Vias, 0 Vias unter dem
-Gyro, 0 Leiterbahnen auf Lage 2/3, kleinste Bahnbreite 0,2 mm, USB D+ 9,6 mm / D− 9,7 mm,
-nächster Motorleitungs-Endpunkt 14,6 mm vom Gyro.
+Flächen gesperrt). Kennzahlen (`docs/fc_routing_kennzahlen.txt`): 195 Vias, 0 Vias unter dem
+Gyro, 0 Leiterbahnen auf Lage 2/3, kleinste Bahnbreite 0,2 mm, USB D+ 9,6 mm / D− 9,2 mm,
+nächster Motorleitungs-Endpunkt 14,7 mm vom Gyro.
 
 ## Designregelprüfung (DRC)
 
@@ -282,7 +329,7 @@ Editor, Zonen frisch gefüllt) – Bericht in `docs/fc_drc_bericht.txt`:
 | nicht verbundene Pads | **0** |
 | Footprint-Fehler / Abweichung zur Bibliothek | **0** |
 | Schaltplan ↔ `design.py` (`check_netlist.py`) | 292 Knoten, 0 Fehler |
-| Platine ↔ Schaltplan-Netzliste (`report.py`) | 310 Pads, 0 Abweichungen |
+| Platine ↔ Schaltplan-Netzliste (`report.py`) | 319 Pads, 0 Abweichungen |
 
 **ERC** (KiCad 9.0.3, `kicad-cli sch erc --severity-all`, Bericht `docs/fc_erc_bericht.txt`):
 **0 Fehler, 2 Warnungen**. Beide melden, dass beim Flash U3 die Pins IO2 (/WP) und IO3
@@ -293,12 +340,12 @@ Das ist beabsichtigt: im normalen SPI-Betrieb müssen /WP und /HOLD dauerhaft hi
 
 1. **Unter der USB-C-Buchse** liegen Kupfer und Vias: je ein VBUS-Via zwischen Pad-Ende und
    Führungsstift (Verbindung der beiden VBUS-Pads über B.Cu), die D+-Brücke zwischen den
-   Pads A6/B6 auf F.Cu östlich der Pad-Enden und ein +5-V-Via zum Testpunkt TP2. Alles ist
+   Pads A6/B6 auf F.Cu östlich der Pad-Enden und ein +5-V-Via für den Testpunkt TP2. Alles ist
    lackiert bzw. tented, das Blechgehäuse liegt aber direkt darauf (Kurzschlussgefahr bei
    beschädigtem Lötstopplack).
-2. **CC1** läuft auf B.Cu einmal um den VTX-Stecker herum (12 mm, zwei Vias) – elektrisch
-   unkritisch, aber ein Umweg.
-3. **27 Vias unter dem Prozessorgehäuse** (Versorgung und Signal-Fluchten, u. a. SPI-SCK,
+2. **CC1** läuft auf B.Cu in einem Bogen östlich um die USB-Bauteile (12 mm, zwei Vias) –
+   elektrisch unkritisch, aber ein Umweg.
+3. **29 Vias unter dem Prozessorgehäuse** (Versorgung und Signal-Fluchten, u. a. SPI-SCK,
    GYRO_CS, ELRS). Tented, Standard bei LQFP, aber nicht unter jedem Fertiger erwünscht.
 4. **SPI-SCK** wechselt direkt unterhalb der Via-Sperrfläche des Gyros auf B.Cu (0,05 mm
    Reserve zur Sperrfläche) und kommt innerhalb des Prozessor-Pinrings wieder hoch; SCK,
@@ -314,7 +361,10 @@ Das ist beabsichtigt: im normalen SPI-Betrieb müssen /WP und /HOLD dauerhaft hi
    Strom des FC (< 1,5 A) reicht das; Motorstrom fließt nicht über den FC.
 8. **USB D+/D−** ohne definierte Impedanz (Full-Speed 12 MBit/s, 10 mm – unkritisch).
 9. **Autorouter-Bahnen** sind funktional, aber nicht schön: viele Vias und einige Umwege
-   (Leiterbahnlänge F.Cu 611 mm, B.Cu 654 mm). Wer nachbessern will, kann im KiCad-Editor
+   (Leiterbahnlänge F.Cu 585 mm, B.Cu 636 mm). Wer nachbessern will, kann im KiCad-Editor
    einzelne Netze neu verlegen; die gesperrte Handverdrahtung bleibt dabei liegen.
-10. **ESC-Belegung (J2)** und **JST-SH-Ausrichtung** gegen den tatsächlichen ESC prüfen
-    (es gibt keinen einheitlichen Standard für die 8-polige Belegung).
+10. **ESC-Belegung (J2)** gegen den tatsächlichen ESC prüfen (es gibt keinen einheitlichen
+    Standard für die 8-polige Belegung).
+11. **Buchsen an der Nordkante** (I2C, UART, GPS) liegen auf der Unterseite unter dem
+    Schaltregler; zwischen ihnen und den Montagebohrungen bleiben 3,35 mm (Courtyard) – bei
+    dicken Gummidämpfern oder Muttern prüfen, ob der Stecker frei bleibt.

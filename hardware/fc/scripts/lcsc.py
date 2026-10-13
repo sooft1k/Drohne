@@ -1,4 +1,4 @@
-# LCSC-/JLCPCB-Teileauswahl fuer die maschinelle Bestueckung der Oberseite.
+# LCSC-/JLCPCB-Teileauswahl fuer die maschinelle Bestueckung beider Seiten.
 #
 # Stand: 13.10.2026. Quellen der Angaben (die Kataloge lcsc.com / jlcpcb.com selbst waren aus
 # der Arbeitsumgebung nicht erreichbar):
@@ -11,8 +11,10 @@
 #   Bestand     JLCPCB-Katalog (jlcparts) mit Abrufdatum je Teil; fuer aeltere Nummern, die dort
 #               fehlen, nur Momentaufnahmen aus der Websuche (ohne Datum, "unbestaetigt").
 #
-# Preferred = "Preferred Extended": bei Economic-Bestueckung ohne Ruestgebuehr (wie Basic).
-# Extended  = 3 USD Ruestgebuehr je Teilenummer.
+# Die Platine wird beidseitig bestueckt (Steckverbinder unten) und braucht deshalb die
+# Standard-Bestueckung. Dort kostet jede Extended- und auch jede Preferred-Teilenummer eine
+# Ruestgebuehr (Feeder Loading Fee); nur Basic-Teile sind ohne. Bei der (nur einseitigen)
+# Economic-Bestueckung waeren Preferred-Teile frei.
 
 PARTS = {
     # LCSC: (Hersteller-Nr., Hersteller, Kurzbeschreibung, Typ, Bestand, Bestand-Stand/Quelle)
@@ -67,9 +69,20 @@ PARTS = {
                  'Extended', 1490, 'jlcparts 17.09.2026'),
     'C165948':  ('TYPE-C-31-M-12', 'HRO', 'USB-C-Buchse 16 Pin', 'Extended', None,
                  'Websuche LCSC/jlcsearch: 71 350 bis 349 576 je nach Momentaufnahme (unbestaetigt)'),
+    # Steckverbinder Unterseite: JST-SH-kompatibel, 1 mm, seitlich steckbar (SMxxB-SRSS-TB)
+    'C7430444': ('ZX-SH1.0-2PWT', 'Megastar', 'JST-SH-Buchse 2-polig seitlich SMD', 'Extended', 49738,
+                 'jlcparts 21.09.2026'),
+    'C7430445': ('ZX-SH1.0-3PWT', 'Megastar', 'JST-SH-Buchse 3-polig seitlich SMD', 'Extended', 94961,
+                 'jlcparts 21.09.2026'),
+    'C7430446': ('ZX-SH1.0-4PWT', 'Megastar', 'JST-SH-Buchse 4-polig seitlich SMD', 'Extended', 200816,
+                 'jlcparts 21.09.2026'),
+    'C7430447': ('ZX-SH1.0-5PWT', 'Megastar', 'JST-SH-Buchse 5-polig seitlich SMD', 'Extended', 63385,
+                 'jlcparts 21.09.2026'),
+    'C7430450': ('ZX-SH1.0-8PWT', 'Megastar', 'JST-SH-Buchse 8-polig seitlich SMD', 'Extended', 100476,
+                 'jlcparts 21.09.2026'),
 }
 
-# Referenz -> LCSC-Nummer (nur Oberseite; Unterseite wird von Hand geloetet)
+# Referenz -> LCSC-Nummer (alle bestueckten Teile, Ober- und Unterseite)
 REF = {}
 for lcsc, refs in {
     'C1525': 'C1 C2 C3 C4 C5 C7 C11 C14 C15 C16 C18 C20 C24 C28 C30 C32 C34',
@@ -83,6 +96,8 @@ for lcsc, refs in {
     'C8545': 'Q2', 'C146287': 'Q1',
     'C15742': 'U1', 'C1850418': 'U2', 'C97521': 'U3', 'C544370': 'U4', 'C6186': 'U5', 'C7519': 'U6',
     'C20617566': 'Y1', 'C7509833': 'FB1', 'C6937839': 'L1', 'C165948': 'J1',
+    'C7430444': 'J11', 'C7430445': 'J7', 'C7430446': 'J3 J4 J5 J6 J9', 'C7430447': 'J8',
+    'C7430450': 'J2 J10',
 }.items():
     for r in refs.split():
         REF[r] = lcsc
@@ -94,16 +109,4 @@ ALTERNATIVES = {
     'FB1': 'C1002 GZ1608D601TF Basic, aber 0603 statt 0402',
     'C22': 'C13585 CL31A106KBHNNNE 10 uF 50 V Basic, aber 1206 statt 1210 und X5R: bei 25 V '
            'bleibt deutlich weniger Kapazitaet uebrig',
-}
-
-# Von Hand zu loetende Steckverbinder (Unterseite) - Vorschlaege zum Selbstbestellen
-HAND = {
-    'J2': 'JST SM08B-SRSS-TB (Original) oder kompatibel ZX-SH1.0-8PWT (LCSC C7430450, '
-          '100 476 Stueck lt. jlcparts 21.09.2026)',
-    'J3 J4 J5 J6 J9': '4-polige SMD-Stiftleiste 2,54 mm, Pins abwechselnd links/rechts '
-                      '(KiCad PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left)',
-    'J7': '3-polige SMD-Stiftleiste 2,54 mm, Pin 1 links',
-    'J8': '5-polige SMD-Stiftleiste 2,54 mm, Pin 1 links',
-    'J10': '8-polige SMD-Stiftleiste 2,54 mm, Pin 1 links',
-    'J11': '2-polige SMD-Stiftleiste 2,54 mm, Pin 1 links',
 }

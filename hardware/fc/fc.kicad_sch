@@ -23339,7 +23339,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal"
       (at 464.82 416.56 0)
       (effects
         (font
@@ -23356,6 +23356,14 @@
       )
     )
     (property "Beschreibung" "Piezo-Summer (+ / -)"
+      (at 464.82 416.56 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430444"
       (at 464.82 416.56 0)
       (effects
         (font
@@ -23867,6 +23875,14 @@
         ) hide
       )
     )
+    (property "LCSC" "C7430450"
+      (at 43.18 510.54 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
     (pin "1"
       (uuid "eb692a64-6657-55c6-82da-932db0f1a593")
     )
@@ -24289,7 +24305,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal"
       (at 139.7 505.46 0)
       (effects
         (font
@@ -24306,6 +24322,14 @@
       )
     )
     (property "Beschreibung" "ELRS-Empfaenger"
+      (at 139.7 505.46 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430446"
       (at 139.7 505.46 0)
       (effects
         (font
@@ -24528,7 +24552,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal"
       (at 180.34 505.46 0)
       (effects
         (font
@@ -24545,6 +24569,14 @@
       )
     )
     (property "Beschreibung" "I2C extern"
+      (at 180.34 505.46 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430446"
       (at 180.34 505.46 0)
       (effects
         (font
@@ -24767,7 +24799,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal"
       (at 223.52 505.46 0)
       (effects
         (font
@@ -24784,6 +24816,14 @@
       )
     )
     (property "Beschreibung" "GPS"
+      (at 223.52 505.46 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430446"
       (at 223.52 505.46 0)
       (effects
         (font
@@ -25006,7 +25046,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal"
       (at 264.16 505.46 0)
       (effects
         (font
@@ -25023,6 +25063,14 @@
       )
     )
     (property "Beschreibung" "Videosender"
+      (at 264.16 505.46 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430446"
       (at 264.16 505.46 0)
       (effects
         (font
@@ -25245,7 +25293,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal"
       (at 307.34 505.46 0)
       (effects
         (font
@@ -25262,6 +25310,14 @@
       )
     )
     (property "Beschreibung" "Kamera"
+      (at 307.34 505.46 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430445"
       (at 307.34 505.46 0)
       (effects
         (font
@@ -25459,7 +25515,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM05B-SRSS-TB_1x05-1MP_P1.00mm_Horizontal"
       (at 43.18 533.4 0)
       (effects
         (font
@@ -25476,6 +25532,14 @@
       )
     )
     (property "Beschreibung" "SWD"
+      (at 43.18 533.4 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430447"
       (at 43.18 533.4 0)
       (effects
         (font
@@ -25723,7 +25787,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal"
       (at 83.82 530.86 0)
       (effects
         (font
@@ -25740,6 +25804,14 @@
       )
     )
     (property "Beschreibung" "Debug-UART"
+      (at 83.82 530.86 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430446"
       (at 83.82 530.86 0)
       (effects
         (font
@@ -25962,7 +26034,7 @@
         )
       )
     )
-    (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical_SMD_Pin1Left"
+    (property "Footprint" "Connector_JST:JST_SH_SM08B-SRSS-TB_1x08-1MP_P1.00mm_Horizontal"
       (at 127 535.94 0)
       (effects
         (font
@@ -25979,6 +26051,14 @@
       )
     )
     (property "Beschreibung" "Freie GPIOs (XSHUT)"
+      (at 127 535.94 0)
+      (effects
+        (font
+          (size 1.27 1.27)
+        ) hide
+      )
+    )
+    (property "LCSC" "C7430450"
       (at 127 535.94 0)
       (effects
         (font

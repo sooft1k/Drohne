@@ -134,8 +134,9 @@ def apply(bd):
     T('VBAT', [q2, (q2[0], c23p1[1] + 0.35), c23p1], 0.4)
     T('GND', [q1, (q1[0], c23p2[1] + 0.35), c23p2], 0.4)
     T('VBAT', [q3, (q3[0], q3[1] - 0.95), (q2[0], q2[1] - 0.95)], 0.4)
-    T('VBAT', [(q3[0], q3[1] - 0.95), (q3[0] + 0.535, q3[1] - 1.5)], 0.4)
-    V('VBAT', q3[0] + 0.535, q3[1] - 1.5)
+    # Via zwischen den Montagepads der Buchsen J9/J5 auf der Unterseite
+    T('VBAT', [(q3[0], q3[1] - 0.95), (q3[0] + 0.185, q3[1] - 1.5)], 0.4)
+    V('VBAT', q3[0] + 0.185, q3[1] - 1.5)
     T('GND', [c23p2, (c23p2[0] + 2.75, c23p2[1] + 0.2)], 0.4)
     V('GND', c23p2[0] + 2.75, c23p2[1] + 0.2)
     l1p1 = P('L1', '1')
@@ -170,16 +171,7 @@ def apply(bd):
     T('+3V3', [r15, (-11.9, r15[1])], 0.3)
     V('+3V3', -11.9, r15[1])
 
-    # ------------------------------------------------ 3,3 V an Stiftleisten ausserhalb der 3,3-V-Flaeche
-    j10 = P('J10', '7')
-    T('+3V3', [j10, (-13.0, j10[1]), (-11.9, 4.6)], 0.3, layer=B_CU)
-    V('+3V3', -11.9, 4.6)
-    j4 = P('J4', '3')
-    tp1 = P('TP1', '1')
-    T('+3V3', [j4, (j4[0], tp1[1] - 1.0), tp1], 0.3, layer=B_CU)
-    j9 = P('J9', '3')
-    T('+3V3', [j9, (j9[0], -13.0), (6.6, -11.6), (6.6, -9.4)], 0.3, layer=B_CU)
-    V('+3V3', 6.6, -9.4)
+    steckverbinder(bd)
 
     # ------------------------------------------------ 5 V fuer den Rueckkopplungsteiler
     r10p1, l1p2 = P('R10', '1'), P('L1', '2')
@@ -210,11 +202,6 @@ def apply(bd):
     T('USB_DP', [dp, (8.3, dp[1]), (8.6, u6p1[1] + 0.1), u6p1], 0.2)
     xg = u6p3[0] - 0.66 - 0.26
     T('USB_DM', [dm, (xg, dm[1]), (xg, u6p3[1] - 0.2), (xg + 0.2, u6p3[1]), u6p3], 0.2)
-
-    # VTX-Stecker (unten), GND-Pad 4: eigenes Via suedlich des Pads (Fanout findet keinen Platz)
-    j6g = P('J6', '4')
-    T('GND', [j6g, (j6g[0] - 0.25, j6g[1] + 0.2), (8.5, 9.8)], 0.3, layer=B_CU)
-    V('GND', 8.5, 9.8)
 
     # ELRS (USART1, Pin 42/43): oestlich liegt D-, daher nach innen auf Vias im Pinring
     e_tx, e_rx = P('U1', '42'), P('U1', '43')
@@ -266,9 +253,56 @@ def apply(bd):
     T('+3V3', [fb1p1, (fb1p1[0], fb1p1[1] - 0.97)], 0.3)
     V('+3V3', fb1p1[0], fb1p1[1] - 0.97)
 
+    # ------------------------------------------------ Motorsignale M3/M4 (kreuzen sich): kurz
+    # senkrecht vom Prozessor nach Sueden, je ein Via, unten in den ESC-Stecker
+    m3, m4 = P('U1', '22'), P('U1', '23')
+    j2m3, j2m4 = P('J2', '7'), P('J2', '8')
+    T('M4', [m4, (m4[0], 16.43)], 0.25)
+    V('M4', m4[0], 16.43)
+    T('M4', [(m4[0], 16.43), (m4[0], j2m4[1] + 0.25)], 0.25, layer=B_CU)
+    T('M3', [m3, (m3[0], 16.11), (m3[0] - 0.08, 16.19), (m3[0] - 0.08, 17.2)], 0.25)
+    V('M3', m3[0] - 0.08, 17.2)
+    T('M3', [(m3[0] - 0.08, 17.2), (0.8, 17.2), (j2m3[0] - 0.17, 16.67),
+             (j2m3[0] - 0.17, j2m3[1] + 0.17)], 0.25, layer=B_CU)
+
     # ------------------------------------------------ Akkueingang ESC -> Verpolschutz (Drain)
     j2p1, q1d = P('J2', '1'), P('Q1', '3')
     T('VBAT_IN', [j2p1, (j2p1[0], j2p1[1] - 1.45)], 0.6, layer=B_CU)
     V('VBAT_IN', j2p1[0], j2p1[1] - 1.45)
     T('VBAT_IN', [(j2p1[0], j2p1[1] - 1.45), (j2p1[0] + 0.5, 15.5), (q1d[0] + 0.36, 15.5),
                   (q1d[0] + 0.36, q1d[1] - 0.3), q1d], 0.8)
+
+
+def steckverbinder(bd):
+    """Versorgungspins der JST-SH-Buchsen (Unterseite), deren Pads ausserhalb der passenden
+    Innenlagen-Flaeche liegen: kurze Bahn auf B.Cu zu einem Via im richtigen Bereich."""
+    P = bd.pad_pos
+    T = bd.track
+    V = bd.via
+    # I2C (Nordrand West), 3,3 V: zum Testpunkt TP1 (3,3 V, hat sein Via in der 3,3-V-Flaeche)
+    j4, tp1 = P('J4', '3'), P('TP1', '1')
+    T('+3V3', [j4, (j4[0], tp1[1] - 1.0), (tp1[0] - 0.7, tp1[1])], 0.3, layer=B_CU)
+    # UART (Nordrand Mitte), 3,3 V: nach Sueden unter den Elko (Via in der 3,3-V-Flaeche)
+    j9 = P('J9', '3')
+    T('+3V3', [j9, (j9[0] - 0.2, j9[1] + 1.2), (j9[0] - 0.2, -11.2)], 0.3, layer=B_CU)
+    V('+3V3', j9[0] - 0.2, -11.2)
+    # UART, Masse: zum naechsten Waermevia des Schaltreglers
+    j9g = P('J9', '4')
+    gv = min((pcbnew.ToMM(t.GetPosition().x) - 100.0, pcbnew.ToMM(t.GetPosition().y) - 100.0)
+             for t in bd.board.GetTracks()
+             if t.Type() == pcbnew.PCB_VIA_T and t.GetNetname() == 'GND'
+             and abs(pcbnew.ToMM(t.GetPosition().y) - 100.0 - j9g[1]) < 0.3
+             and pcbnew.ToMM(t.GetPosition().x) - 100.0 > j9g[0])
+    T('GND', [j9g, gv], 0.3, layer=B_CU)
+    # GPS (Nordrand Ost), 5 V: unter dem Schaltregler-Ausgang nach Suedosten in die 5-V-Flaeche
+    j5 = P('J5', '3')
+    T('+5V', [j5, (j5[0], -12.6), (9.6, -11.6), (11.8, -11.6)], 0.4, layer=B_CU)
+    V('+5V', 11.8, -11.6)
+    # GPIO (Westrand), 3,3 V: nach Osten in die 3,3-V-Flaeche
+    j10 = P('J10', '7')
+    T('+3V3', [j10, (-12.8, j10[1]), (-12.0, j10[1] - 0.8)], 0.3, layer=B_CU)
+    V('+3V3', -12.0, j10[1] - 0.8)
+    # Piepser (innen West), 5 V: nach Westen in die 5-V-Flaeche
+    j11 = P('J11', '1')
+    T('+5V', [j11, (-13.5, j11[1]), (-14.0, j11[1] + 0.5)], 0.4, layer=B_CU)
+    V('+5V', -14.0, j11[1] + 0.5)

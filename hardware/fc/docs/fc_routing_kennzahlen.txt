@@ -1,33 +1,33 @@
 USB_DP     Laenge    9.6 mm  Vias   0  Breiten [0.2]
-USB_DM     Laenge    9.7 mm  Vias   0  Breiten [0.2]
-SPI1_SCK   Laenge   20.5 mm  Vias   3  Breiten [0.2]
-SPI1_MISO  Laenge   19.9 mm  Vias   2  Breiten [0.2]
-SPI1_MOSI  Laenge   24.2 mm  Vias   2  Breiten [0.2]
-GYRO_CS    Laenge   17.0 mm  Vias   2  Breiten [0.2]
+USB_DM     Laenge    9.2 mm  Vias   0  Breiten [0.2]
+SPI1_SCK   Laenge   20.3 mm  Vias   3  Breiten [0.2]
+SPI1_MISO  Laenge   20.7 mm  Vias   2  Breiten [0.2]
+SPI1_MOSI  Laenge   22.7 mm  Vias   2  Breiten [0.2]
+GYRO_CS    Laenge   20.5 mm  Vias   2  Breiten [0.2]
 GYRO_INT1  Laenge    5.9 mm  Vias   0  Breiten [0.2]
-M1         Laenge    4.6 mm  Vias   1  Breiten [0.25]
+M1         Laenge    4.5 mm  Vias   1  Breiten [0.25]
 M2         Laenge    3.7 mm  Vias   1  Breiten [0.25]
 M3         Laenge    6.2 mm  Vias   1  Breiten [0.25]
 M4         Laenge    3.7 mm  Vias   1  Breiten [0.25]
-OSC_IN     Laenge    5.2 mm  Vias   0  Breiten [0.2]
+OSC_IN     Laenge    4.9 mm  Vias   0  Breiten [0.2]
 OSC_OUT    Laenge    4.2 mm  Vias   0  Breiten [0.2]
 XTAL_OUT   Laenge    3.3 mm  Vias   0  Breiten [0.2]
 VBUS       Laenge   15.7 mm  Vias   2  Breiten [0.3, 0.4, 0.5]
-+5V        Laenge   38.3 mm  Vias  16  Breiten [0.4, 0.8]
-+3V3       Laenge   74.4 mm  Vias  24  Breiten [0.25, 0.3, 0.5, 0.6]
-GND        Laenge   83.8 mm  Vias  66  Breiten [0.25, 0.3, 0.4, 0.5]
-VBAT       Laenge   19.1 mm  Vias   5  Breiten [0.4, 1.0]
++5V        Laenge   39.5 mm  Vias  16  Breiten [0.4, 0.8]
++3V3       Laenge   73.4 mm  Vias  24  Breiten [0.25, 0.3, 0.5, 0.6]
+GND        Laenge   84.2 mm  Vias  72  Breiten [0.25, 0.3, 0.4]
+VBAT       Laenge   19.7 mm  Vias   5  Breiten [0.4, 1.0]
 Vias unter dem Gyro: 0
 kleinste Leiterbahnbreite: 0.200 mm
-Vias gesamt: 180  Leiterbahnsegmente: 746
+Vias gesamt: 195  Leiterbahnsegmente: 714
 Leiterbahnen auf Lage 2/3: 0
-Gyro-Mitte (u, v): (1.50, -2.20) mm; kleinster Abstand Motorleitung-Endpunkt -> Gyro: 14.6 mm
-schmaler als Netzklasse (+3V3, Soll 0.50 mm): 47 Stuecke, Breiten [0.25, 0.3]
+Gyro-Mitte (u, v): (1.50, -2.20) mm; kleinster Abstand Motorleitung-Endpunkt -> Gyro: 14.7 mm
+schmaler als Netzklasse (+3V3, Soll 0.50 mm): 46 Stuecke, Breiten [0.25, 0.3]
 schmaler als Netzklasse (+3V3A, Soll 0.50 mm): 8 Stuecke, Breiten [0.3]
-schmaler als Netzklasse (+5V, Soll 0.60 mm): 19 Stuecke, Breiten [0.4]
+schmaler als Netzklasse (+5V, Soll 0.60 mm): 22 Stuecke, Breiten [0.4]
 schmaler als Netzklasse (BUCK_SW, Soll 0.60 mm): 1 Stuecke, Breiten [0.4]
 schmaler als Netzklasse (GND, Soll 0.50 mm): 77 Stuecke, Breiten [0.25, 0.3, 0.4]
 schmaler als Netzklasse (VBAT, Soll 1.00 mm): 13 Stuecke, Breiten [0.4]
 schmaler als Netzklasse (VBAT_IN, Soll 1.00 mm): 5 Stuecke, Breiten [0.6, 0.8]
 schmaler als Netzklasse (VBUS, Soll 0.50 mm): 10 Stuecke, Breiten [0.3, 0.4]
-Abgleich Platine/Schaltplan: 310 Pads, 0 Abweichungen
+Abgleich Platine/Schaltplan: 319 Pads, 0 Abweichungen

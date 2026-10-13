@@ -14,7 +14,7 @@ C1210 = 'Capacitor_SMD:C_1210_3225Metric'
 LED0603 = 'LED_SMD:LED_0603_1608Metric'
 SOT23 = 'Package_TO_SOT_SMD:SOT-23'
 SOD323 = 'Diode_SMD:D_SOD-323'
-HDR = 'Connector_PinHeader_2.54mm:PinHeader_1x%02d_P2.54mm_Vertical_SMD_Pin1Left'
+SH = 'Connector_JST:JST_SH_SM%02dB-SRSS-TB_1x%02d-1MP_P1.00mm_Horizontal'   # JST-SH, seitlich steckbar
 SJ_OPEN = 'Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm'
 TP_PAD = 'TestPoint:TestPoint_Pad_D1.5mm'
 
@@ -227,7 +227,7 @@ R('R17', '100R', 'BUZZER', 'BUZ_G', 'buz', 'Gate-Serienwiderstand')
 R('R18', '10k', 'BUZ_G', 'GND', 'buz', 'Gate Pull-down')
 part('D6', 'Device:D', '1N4148WS', SOD323, {'1': '+5V', '2': 'BUZ_N'}, 'buz',
      'Freilaufdiode')
-part('J11', 'Connector_Generic:Conn_01x02', 'BUZZER', HDR % 2,
+part('J11', 'Connector_Generic:Conn_01x02', 'BUZZER', SH % (2, 2),
      {'1': '+5V', '2': 'BUZ_N'}, 'buz', 'Piezo-Summer (+ / -)', side='bottom')
 
 # ---------------------------------------------------------------- I2C
@@ -235,39 +235,43 @@ R('R19', '4.7k', 'I2C_SDA', '+3V3', 'i2c', 'Pull-up SDA')
 R('R20', '4.7k', 'I2C_SCL', '+3V3', 'i2c', 'Pull-up SCL')
 
 # ---------------------------------------------------------------- Steckverbinder (Unterseite)
-part('J2', 'Connector_Generic:Conn_01x08', 'ESC',
-     'Connector_JST:JST_SH_SM08B-SRSS-TB_1x08-1MP_P1.00mm_Horizontal',
+part('J2', 'Connector_Generic:Conn_01x08', 'ESC', SH % (8, 8),
      {'1': 'VBAT_IN', '2': 'GND', '3': 'CURR_IN', '4': 'ESC_5V',
       '5': 'M1', '6': 'M2', '7': 'M3', '8': 'M4'}, 'conn',
      'ESC, JST-SH 8-polig (Pinfolge pruefen!)', 'SM08B-SRSS-TB', side='bottom')
 part('JP2', 'Jumper:SolderJumper_2_Open', 'ESC_5V', SJ_OPEN,
      {'1': 'ESC_5V', '2': '+5V'}, 'conn', 'nur schliessen, wenn der ESC 5 V vom FC braucht')
-part('J3', 'Connector_Generic:Conn_01x04', 'ELRS', HDR % 4,
+part('J3', 'Connector_Generic:Conn_01x04', 'ELRS', SH % (4, 4),
      {'1': 'ELRS_TX', '2': 'ELRS_RX', '3': '+5V', '4': 'GND'}, 'conn',
      'ELRS-Empfaenger', side='bottom')
-part('J4', 'Connector_Generic:Conn_01x04', 'I2C', HDR % 4,
+part('J4', 'Connector_Generic:Conn_01x04', 'I2C', SH % (4, 4),
      {'1': 'I2C_SDA', '2': 'I2C_SCL', '3': '+3V3', '4': 'GND'}, 'conn',
      'I2C extern', side='bottom')
-part('J5', 'Connector_Generic:Conn_01x04', 'GPS', HDR % 4,
+part('J5', 'Connector_Generic:Conn_01x04', 'GPS', SH % (4, 4),
      {'1': 'GPS_TX', '2': 'GPS_RX', '3': '+5V', '4': 'GND'}, 'conn',
      'GPS', side='bottom')
-part('J6', 'Connector_Generic:Conn_01x04', 'VTX', HDR % 4,
+part('J6', 'Connector_Generic:Conn_01x04', 'VTX', SH % (4, 4),
      {'1': 'VTX_TX', '2': 'VTX_RX', '3': '+5V', '4': 'GND'}, 'conn',
      'Videosender', side='bottom')
-part('J7', 'Connector_Generic:Conn_01x03', 'CAM', HDR % 3,
+part('J7', 'Connector_Generic:Conn_01x03', 'CAM', SH % (3, 3),
      {'1': '+5V', '2': 'CAM_VIDEO', '3': 'GND'}, 'conn', 'Kamera', side='bottom')
-part('J8', 'Connector_Generic:Conn_01x05', 'SWD', HDR % 5,
+part('J8', 'Connector_Generic:Conn_01x05', 'SWD', SH % (5, 5),
      {'1': 'SWDIO', '2': 'SWCLK', '3': 'NRST', '4': '+3V3', '5': 'GND'}, 'conn',
      'SWD', side='bottom')
-part('J9', 'Connector_Generic:Conn_01x04', 'UART', HDR % 4,
+part('J9', 'Connector_Generic:Conn_01x04', 'UART', SH % (4, 4),
      {'1': 'DBG_TX', '2': 'DBG_RX', '3': '+3V3', '4': 'GND'}, 'conn',
      'Debug-UART', side='bottom')
-part('J10', 'Connector_Generic:Conn_01x08', 'GPIO', HDR % 8,
+part('J10', 'Connector_Generic:Conn_01x08', 'GPIO', SH % (8, 8),
      {'1': 'GPIO1', '2': 'GPIO2', '3': 'GPIO3', '4': 'GPIO4', '5': 'GPIO5',
       '6': 'GPIO6', '7': '+3V3', '8': 'GND'}, 'conn', 'Freie GPIOs (XSHUT)',
      side='bottom')
 part('TP5', 'Connector:TestPoint', 'VIDEO', TP_PAD, {'1': 'CAM_VIDEO'}, 'conn',
      'Video-Durchleitung zum analogen VTX', side='bottom')
+
+# Hersteller-Nr. der JST-SH-Buchsen (Original JST; bestueckt wird ein kompatibler Typ, lcsc.py)
+for _p in PARTS:
+    if _p['fp'].startswith('Connector_JST:JST_SH_SM') and not _p['mpn']:
+        _p['mpn'] = 'SM%sB-SRSS-TB' % _p['fp'].split('_SM')[1][:2]
 
 # ---------------------------------------------------------------- Testpunkte, Mechanik
 part('TP1', 'Connector:TestPoint', '3V3', TP_PAD, {'1': '+3V3'}, 'mech', 'Testpunkt', side='bottom')

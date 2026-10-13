@@ -1,9 +1,8 @@
-# Fertigungsdaten fuer JLCPCB:
+# Fertigungsdaten fuer JLCPCB (Standard-Bestueckung, beide Seiten):
 #   fertigung/fc_jlcpcb_gerber.zip        Gerber (4 Lagen) + Excellon-Bohrdateien
-#   fertigung/jlcpcb_bom.csv              Stueckliste nur Oberseite (maschinelle Bestueckung)
-#   fertigung/jlcpcb_cpl.csv              Bestueckkoordinaten Oberseite, Drehung fuer JLCPCB korrigiert
+#   fertigung/jlcpcb_bom.csv              Stueckliste aller bestueckten Teile (oben und unten)
+#   fertigung/jlcpcb_cpl.csv              Bestueckkoordinaten beider Seiten, Drehung fuer JLCPCB
 #   fertigung/jlcpcb_pruefliste.csv       je Bauteil: LCSC-Typ, Bestand, Drehung, Lage von Pin 1
-#   fertigung/handbestueckung_unten.csv   Steckverbinder der Unterseite (selbst loeten)
 import csv
 import math
 import os
@@ -24,21 +23,24 @@ PCB = os.path.join(PRJ, 'fc.kicad_pcb')
 LAYERS = 'F.Cu,In1.Cu,In2.Cu,B.Cu,F.Paste,B.Paste,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts'
 NOT_PLACED = ('H', 'FID', 'TP', 'JP')
 
-# Drehkorrektur KiCad -> JLCPCB (wird zur KiCad-Drehung addiert).
-# Quelle der Tabellenwerte: JLCKicadTools, cpl_rotations_db.csv (Erfahrungswerte der Community
-# mit den JLCPCB/LCSC-Footprints). Ohne Tabelleneintrag: keine Korrektur, in der Vorschau pruefen.
+# Drehkorrektur KiCad -> JLCPCB (wird zur KiCad-Drehung addiert, gegen den Uhrzeigersinn).
+# Bestimmt durch Vergleich der Pad-Lagen der KiCad-Footprints mit den JLCPCB/EasyEDA-Footprints
+# (github.com/CDFER/JLCPCB-Kicad-Library, Ordner Archived-Symbols-Footprints; der Namenszusatz
+# BL/BR/TL nennt dort die Ecke von Pin 1) und mit den Tabellen von JLCKicadTools und KiBot.
 CORRECTIONS = [
-    (r'^LQFP-', 270, 'Tabelle JLCKicadTools'),
-    (r'^SOIC-', 270, 'Tabelle JLCKicadTools'),
-    (r'^SOT-223', 180, 'Tabelle JLCKicadTools'),
-    (r'^SOT-23', -90, 'Tabelle JLCKicadTools (^SOT-23, gilt auch fuer SOT-23-6)'),
-    (r'^CP_Elec_10x10', 180, 'Tabelle JLCKicadTools'),
-    (r'^USB_C_Receptacle_HRO_TYPE-C-31-M-12', 180, 'Tabelle JLCKicadTools'),
-    (r'^Texas_HSOP-8', 0, 'KEIN Tabelleneintrag - in der JLCPCB-Vorschau pruefen'),
-    (r'^LGA-14', 0, 'KEIN Tabelleneintrag - in der JLCPCB-Vorschau pruefen'),
+    (r'^LQFP-', 270, 'JLCKicadTools/KiBot (EasyEDA-QFP: Pin 1 unten links)'),
+    (r'^SOIC-', 270, 'Pad-Vergleich SOIC-8_L5.3-W5.3-P1.27-LS8.0-BL, JLCKicadTools/KiBot'),
+    (r'^SOT-223', 180, 'Pad-Vergleich SOT-223-3_L6.5-W3.4-P2.30-LS7.0-BR, JLCKicadTools/KiBot'),
+    (r'^SOT-23-6', 270, 'Pad-Vergleich SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL, JLCKicadTools'),
+    (r'^SOT-23$', 180, 'Pad-Vergleich SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR, KiBot'),
+    (r'^CP_Elec_10x10', 180, 'JLCKicadTools/KiBot'),
+    (r'^USB_C_Receptacle_HRO_TYPE-C-31-M-12', 180, 'JLCKicadTools/KiBot'),
+    (r'^Texas_HSOP-8', 270, 'ANNAHME wie ESOP-8_..._BL-EP (Pin 1 unten links) - in der Vorschau pruefen'),
+    (r'^LGA-14', 0, 'KEIN Vergleichsfootprint - in der Vorschau pruefen'),
+    (r'^JST_SH_SM', 180, 'ANNAHME wie JST_GH_SM/JST_PH_S (JLCKicadTools/KiBot) - in der Vorschau pruefen'),
 ]
 POLAR = re.compile(r'^(U|Q|D|Y|J)\d|^C21$')
-PIN1_NAME = {'D': 'Kathode', 'C': 'Pluspol', 'J': 'Pin A1', 'Y': 'Pin 1'}
+PIN1_NAME = {'D': 'Kathode', 'C': 'Pluspol', 'Y': 'Pin 1'}
 
 
 def run(args):
@@ -58,7 +60,7 @@ def correction(fp_name):
 
 
 def direction(dx, dy):
-    """Richtung von der Bauteilmitte zu Pin 1, Platine von oben (USB-C rechts, ESC-Stecker unten)."""
+    """Richtung von der Bauteilmitte zu Pin 1 (dy nach unten positiv)."""
     if math.hypot(dx, dy) < 0.05:
         return 'Mitte'
     a = math.degrees(math.atan2(-dy, dx)) % 360
@@ -67,28 +69,55 @@ def direction(dx, dy):
     return names[int(((a + 22.5) % 360) // 45)]
 
 
-def pin1_positions():
+def placements():
+    """Bestueckdaten aus der Platine: Mitte der loetbaren Pads relativ zum Bohrursprung
+    (Y nach oben), Seite, KiCad-Drehung, JLCPCB-Drehung, Lage von Pin 1."""
     import pcbnew
     b = pcbnew.LoadBoard(PCB)
-    out = {}
+    org = b.GetDesignSettings().GetAuxOrigin()
+    rows = {}
     for fp in b.GetFootprints():
         ref = fp.GetReference()
-        if not POLAR.match(ref):
+        if ref.startswith(NOT_PLACED):
             continue
-        want = 'A1' if ref.startswith('J') else '1'
-        pads = [p for p in fp.Pads() if p.GetNumber() == want]
-        if not pads:
-            continue
-        c, p = fp.GetPosition(), pads[0].GetPosition()
-        out[ref] = direction(pcbnew.ToMM(p.x - c.x), pcbnew.ToMM(p.y - c.y))
-    return out
+        bottom = fp.GetLayer() == pcbnew.B_Cu
+        pads = [p for p in fp.Pads() if p.GetAttribute() != pcbnew.PAD_ATTRIB_NPTH]
+        bb = pads[0].GetBoundingBox()
+        for p in pads[1:]:
+            bb.Merge(p.GetBoundingBox())
+        c = bb.GetCenter()
+        x, y = pcbnew.ToMM(c.x - org.x), -pcbnew.ToMM(c.y - org.y)
+        off = math.hypot(pcbnew.ToMM(c.x - fp.GetPosition().x), pcbnew.ToMM(c.y - fp.GetPosition().y))
+        name = fp.GetFPID().GetLibItemName().wx_str()
+        kirot = fp.GetOrientationDegrees() % 360
+        # Unterseite: KiCad spiegelt die Bauteile, JLCPCB nicht (wie kicad-jlcpcb-tools)
+        base = (180 - kirot) % 360 if bottom else kirot
+        corr, src = correction(name)
+        if off > 0.05:
+            src = (src + '; ' if src else '') + ('Position = Mitte der Pads, %.2f mm neben dem '
+                                                 'KiCad-Ursprung - Lage in der Vorschau pruefen' % off)
+        jrot = (base + corr) % 360
+        where = ''
+        if POLAR.match(ref):
+            want = 'A1' if ref == 'J1' else '1'
+            p1 = [p for p in fp.Pads() if p.GetNumber() == want]
+            if p1:
+                dx = pcbnew.ToMM(p1[0].GetPosition().x - fp.GetPosition().x)
+                dy = pcbnew.ToMM(p1[0].GetPosition().y - fp.GetPosition().y)
+                if bottom:
+                    dx = -dx      # Unterseite von unten gesehen
+                where = '%s %s' % (PIN1_NAME.get(ref[0], 'Pin 1'), direction(dx, dy))
+        rows[ref] = dict(ref=ref, x=x, y=y, side='Bottom' if bottom else 'Top', fp=name,
+                         kirot=kirot, base=base, corr=corr, src=src, jrot=jrot, where=where,
+                         off=off)
+    return rows
 
 
 def main():
     if os.path.isdir(GERBER):
         shutil.rmtree(GERBER)
     os.makedirs(GERBER)
-    for old in ('fc_bom.csv', 'fc_cpl_top.csv'):
+    for old in ('fc_bom.csv', 'fc_cpl_top.csv', 'handbestueckung_unten.csv'):
         if os.path.exists(os.path.join(OUT, old)):
             os.remove(os.path.join(OUT, old))
     # Alle Ausgaben relativ zum Bohr-/Bestueckungsursprung (linke untere Platinenecke)
@@ -106,15 +135,22 @@ def main():
             z.write(os.path.join(GERBER, f), f)
 
     parts = {p['ref']: p for p in design.PARTS}
-    top = [p for p in design.PARTS if p['side'] == 'top' and not p['ref'].startswith(NOT_PLACED)]
-    bottom = [p for p in design.PARTS if p['side'] == 'bottom' and not p['ref'].startswith(NOT_PLACED)]
-    missing = [p['ref'] for p in top if p['ref'] not in lcsc.REF]
+    placed = [p for p in design.PARTS if not p['ref'].startswith(NOT_PLACED)]
+    missing = [p['ref'] for p in placed if p['ref'] not in lcsc.REF]
     if missing:
         raise SystemExit('ohne LCSC-Nummer: ' + ', '.join(missing))
+    rows = placements()
+    if set(rows) != {p['ref'] for p in placed}:
+        raise SystemExit('Platine und design.py passen nicht zusammen: %s'
+                         % sorted(set(rows) ^ {p['ref'] for p in placed}))
+    for r in rows.values():
+        want = 'Bottom' if parts[r['ref']]['side'] == 'bottom' else 'Top'
+        if r['side'] != want:
+            raise SystemExit('%s liegt auf %s, design.py sagt %s' % (r['ref'], r['side'], want))
 
-    # ---- Stueckliste Oberseite (JLCPCB-Format)
+    # ---- Stueckliste (JLCPCB-Format)
     groups = {}
-    for p in top:
+    for p in placed:
         groups.setdefault(lcsc.REF[p['ref']], []).append(p['ref'])
     with open(os.path.join(OUT, 'jlcpcb_bom.csv'), 'w', newline='') as f:
         w = csv.writer(f)
@@ -124,62 +160,43 @@ def main():
             p = parts[refs[0]]
             w.writerow([p['value'], ','.join(refs), p['fp'].split(':')[1], code])
 
-    # ---- Bestueckkoordinaten Oberseite mit Drehkorrektur
-    raw = os.path.join(OUT, 'pos_raw.csv')
-    run(['kicad-cli', 'pcb', 'export', 'pos', '--side', 'front', '--format', 'csv', '--units', 'mm',
-         '--use-drill-file-origin', '-o', raw, PCB])
-    pin1 = pin1_positions()
-    rows = []
-    with open(raw, newline='') as fi:
-        for r in csv.DictReader(fi):
-            if r['Ref'].startswith(NOT_PLACED):
-                continue
-            corr, src = correction(r['Package'])
-            rot = (float(r['Rot']) + corr) % 360
-            rows.append((r, rot, corr, src))
-    os.remove(raw)
-    rows.sort(key=lambda t: natkey(t[0]['Ref']))
+    # ---- Bestueckkoordinaten beider Seiten
+    order = sorted(rows.values(), key=lambda r: (r['side'] != 'Top', natkey(r['ref'])))
     with open(os.path.join(OUT, 'jlcpcb_cpl.csv'), 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation'])
-        for r, rot, corr, src in rows:
-            w.writerow([r['Ref'], '%.4fmm' % float(r['PosX']), '%.4fmm' % float(r['PosY']), 'Top',
-                        '%g' % rot])
+        for r in order:
+            w.writerow([r['ref'], '%.4fmm' % r['x'], '%.4fmm' % r['y'], r['side'], '%g' % r['jrot']])
 
     # ---- Pruefliste
     with open(os.path.join(OUT, 'jlcpcb_pruefliste.csv'), 'w', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['Designator', 'Wert', 'LCSC', 'Hersteller-Nr.', 'Typ', 'Bestand', 'Bestand Stand/Quelle',
-                    'Footprint', 'Drehung KiCad', 'Korrektur', 'Drehung CPL', 'Korrektur-Quelle',
-                    'Pin 1 bzw. Polaritaet auf der Platine (von oben, USB-C rechts)'])
-        for r, rot, corr, src in rows:
-            ref = r['Ref']
+        w.writerow(['Designator', 'Seite', 'Wert', 'LCSC', 'Hersteller-Nr.', 'Typ', 'Bestand',
+                    'Bestand Stand/Quelle', 'Footprint', 'Drehung KiCad',
+                    'Drehung ungespiegelt (Unterseite: 180 - KiCad)', 'Korrektur', 'Drehung CPL',
+                    'Korrektur-Quelle',
+                    'Pin 1 bzw. Polaritaet (Oberseite von oben mit USB-C rechts, '
+                    'Unterseite von unten mit USB-C links)'])
+        for r in order:
+            ref = r['ref']
             code = lcsc.REF[ref]
             mpn, mfr, desc, typ, stock, stand = lcsc.PARTS[code]
-            where = ''
-            if ref in pin1:
-                where = '%s %s' % (PIN1_NAME.get(ref[0], 'Pin 1'), pin1[ref])
-            w.writerow([ref, parts[ref]['value'], code, mpn, typ, '' if stock is None else stock, stand,
-                        r['Package'], '%g' % float(r['Rot']), '%+d' % corr if corr else '0', '%g' % rot,
-                        src, where])
-
-    # ---- Handbestueckung Unterseite
-    with open(os.path.join(OUT, 'handbestueckung_unten.csv'), 'w', newline='') as f:
-        w = csv.writer(f)
-        w.writerow(['Designator', 'Funktion', 'Footprint', 'Bauteilvorschlag'])
-        hand = {}
-        for refs, txt in lcsc.HAND.items():
-            for r in refs.split():
-                hand[r] = txt
-        for p in sorted(bottom, key=lambda p: natkey(p['ref'])):
-            w.writerow([p['ref'], p['value'], p['fp'].split(':')[1], hand.get(p['ref'], '')])
+            w.writerow([ref, 'oben' if r['side'] == 'Top' else 'unten', parts[ref]['value'], code,
+                        mpn, typ, '' if stock is None else stock, stand, r['fp'],
+                        '%g' % r['kirot'], '%g' % r['base'],
+                        '%+d' % r['corr'] if r['corr'] else '0', '%g' % r['jrot'], r['src'],
+                        r['where']])
 
     ext = sorted({c for c in groups if lcsc.PARTS[c][3] == 'Extended'})
     pref = sorted({c for c in groups if lcsc.PARTS[c][3] == 'Preferred'})
-    print('Oberseite: %d Bauteile, %d Teilenummern (%d Extended, %d Preferred)'
-          % (len(top), len(groups), len(ext), len(pref)))
+    top = [r for r in rows.values() if r['side'] == 'Top']
+    bot = [r for r in rows.values() if r['side'] == 'Bottom']
+    print('bestueckt: %d oben, %d unten; %d Teilenummern (%d Extended, %d Preferred)'
+          % (len(top), len(bot), len(groups), len(ext), len(pref)))
     print('Extended:', ', '.join('%s %s' % (c, lcsc.PARTS[c][0]) for c in ext))
-    print('Unterseite (Hand):', ', '.join(p['ref'] for p in sorted(bottom, key=lambda p: natkey(p['ref']))))
+    print('Unterseite:', ', '.join(r['ref'] for r in sorted(bot, key=lambda r: natkey(r['ref']))))
+    big = ['%s %.2f' % (r['ref'], r['off']) for r in rows.values() if r['off'] > 0.05]
+    print('Padmitte != Footprint-Ursprung (mm):', ', '.join(big) or '-')
     print('ZIP:', zpath)
 
 
