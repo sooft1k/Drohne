@@ -37,8 +37,8 @@ def apply(bd):
     p19, p18 = P('U1', '19'), P('U1', '18')
     c2p1 = P('C2', '1')
     T('+3V3', [p19, (p19[0], c2p1[1] - 0.4), (c2p1[0] + 0.15, c2p1[1])], 0.3)
-    T('+3V3', [p19, (p19[0], p19[1] - 1.7)], 0.3)
-    V('+3V3', p19[0], p19[1] - 1.7)
+    T('+3V3', [p19, (p19[0], p19[1] - 2.4)], 0.3)
+    V('+3V3', p19[0], p19[1] - 2.4)
     T('GND', [p18, (p18[0], p18[1] - 0.7), (p18[0] - 0.45, p18[1] - 2.275)], 0.3)
     V('GND', p18[0] - 0.45, p18[1] - 2.275)
 
@@ -46,8 +46,8 @@ def apply(bd):
     p32, p31 = P('U1', '32'), P('U1', '31')
     c3p1, c9p1 = P('C3', '1'), P('C9', '1')
     T('+3V3', [p32, (p32[0], c3p1[1] - 0.45), c3p1], 0.3)
-    T('+3V3', [p32, (p32[0], p32[1] - 1.7)], 0.3)
-    V('+3V3', p32[0], p32[1] - 1.7)
+    T('+3V3', [p32, (p32[0], p32[1] - 2.4)], 0.3)
+    V('+3V3', p32[0], p32[1] - 2.4)
     T('VCAP1', [p31, (p31[0], c9p1[1] - 0.45), c9p1], 0.25)
 
     # VDD48 -> C4, VCAP2 -> C10
@@ -69,7 +69,7 @@ def apply(bd):
     T('+3V3A', [p13, (p13[0] + 0.875, p13[1]), va], 0.3)
     V('+3V3A', *va)
     c7p1, c8p1, fb1p2 = P('C7', '1'), P('C8', '1'), P('FB1', '2')
-    vb = ((c7p1[0] + fb1p2[0]) / 2, c7p1[1])
+    vb = (c7p1[0] - 0.82, c7p1[1] + 0.7)
     T('+3V3A', [va, (c7p1[0] - 0.12, va[1]), (vb[0], va[1] + 0.7), vb], 0.3, layer=B_CU)
     V('+3V3A', *vb)
     T('+3V3A', [vb, c7p1], 0.3)
@@ -90,6 +90,8 @@ def apply(bd):
     T('GND', [c17p2, (c17p2[0] - 0.9, c17p2[1] + 0.5)], 0.3)
     V('GND', c17p2[0] - 0.9, c17p2[1] + 0.5)
     T('+3V3', [p5, (p5[0], p5[1] - 0.65), (c18p1[0], c18p1[1] + 0.1)], 0.25)
+    T('+3V3', [c18p1, (c18p1[0] + 0.95, c18p1[1])], 0.3)
+    V('+3V3', c18p1[0] + 0.95, c18p1[1])
     gv = ((p6[0] + p7[0]) / 2, p6[1] - 1.45)
     T('GND', [p7, (p7[0], p7[1] - 0.6), gv], 0.25)
     T('GND', [p6, (p6[0], p6[1] - 0.6), gv], 0.25)
@@ -98,6 +100,26 @@ def apply(bd):
     T('GND', [p10, (p10[0] - 0.5, p10[1]), (gw[0] + 0.5, gw[1]), gw], 0.25)
     T('GND', [p11, (p11[0] - 0.5, p11[1]), (gw[0] + 0.5, gw[1])], 0.25)
     V('GND', *gw)
+    # SPI-Buendel Gyro -> Prozessor. Reihenfolge (West -> Ost) am Gyro: CS, SCK, MOSI, MISO,
+    # am Prozessor: CS, MOSI, MISO, SCK. CS/MOSI/MISO laufen kreuzungsfrei auf F.Cu, SCK
+    # wechselt direkt unterhalb der Via-Sperrflaeche auf B.Cu und kommt innerhalb des
+    # Pinrings des Prozessors wieder hoch.
+    g_cs, g_sck, g_mosi, g_miso = P('U2', '12'), P('U2', '13'), P('U2', '14'), P('U2', '1')
+    m_cs, m_mosi, m_miso, m_sck = P('U1', '58'), P('U1', '57'), P('U1', '56'), P('U1', '55')
+    T('GYRO_CS', [g_cs, (g_cs[0], -0.8), (g_cs[0] - 0.15, -0.65), (g_cs[0] - 0.15, 1.0),
+                  (m_cs[0], 1.1), m_cs], 0.2)
+    T('SPI1_MOSI', [g_mosi, (g_mosi[0], -0.8), (g_mosi[0] + 0.15, -0.65), (g_mosi[0] + 0.15, 0.1),
+                    (g_mosi[0] - 0.15, 0.4), (m_mosi[0] + 0.2, 0.4), (m_mosi[0], 0.6), m_mosi], 0.2)
+    T('SPI1_MISO', [g_miso, (g_miso[0], 0.45), (m_miso[0], 0.45 + (g_miso[0] - m_miso[0])), m_miso], 0.2)
+    # CS zusaetzlich nach innen auf ein Via (Anschluss des Pull-ups R7 ueber B.Cu)
+    T('GYRO_CS', [m_cs, (m_cs[0], 3.6)], 0.2)
+    V('GYRO_CS', m_cs[0], 3.6)
+    sv1, sv2 = (g_sck[0], -0.25), (m_sck[0], 3.6)
+    T('SPI1_SCK', [g_sck, sv1], 0.2)
+    V('SPI1_SCK', *sv1)
+    T('SPI1_SCK', [sv1, sv2], 0.2, layer=B_CU)
+    V('SPI1_SCK', *sv2)
+    T('SPI1_SCK', [sv2, m_sck], 0.2)
 
     # ------------------------------------------------ Flash
     u3p8, c20p1 = P('U3', '8'), P('C20', '1')
@@ -162,3 +184,91 @@ def apply(bd):
     # ------------------------------------------------ 5 V fuer den Rueckkopplungsteiler
     r10p1, l1p2 = P('R10', '1'), P('L1', '2')
     T('+5V', [r10p1, (r10p1[0], -8.45), (l1p2[0], -8.45), (l1p2[0], -9.3)], 0.4)
+
+    # ------------------------------------------------ Verpolschutz: Source an VBAT (Zenerdiode)
+    q1s, d1k = P('Q1', '2'), P('D1', '1')
+    T('VBAT', [q1s, (q1s[0] - 0.36, 18.7), (d1k[0], 18.7), d1k], 0.4)
+
+    # ------------------------------------------------ Rueckkopplungsteiler: Masse ueber C25
+    r11p2, c25p2 = P('R11', '2'), P('C25', '2')
+    T('GND', [r11p2, (r11p2[0] + 0.5, r11p2[1] + 0.5), c25p2], 0.25)
+
+    # ------------------------------------------------ AMS1117: Pin 2 mit der Kuehlfahne verbinden
+    u5p = [bd.pad_pos_obj(p) for p in bd.fps['U5'].Pads() if p.GetNumber() == '2']
+    u5p.sort()
+    T('+3V3', [u5p[0], u5p[-1]], 0.6)
+
+    # ------------------------------------------------ 5-V-Ausgang: L1 -> C26
+    c26p1 = P('C26', '1')
+    T('+5V', [l1p2, (l1p2[0] + 0.6, c26p1[1]), c26p1], 0.8)
+
+    # ------------------------------------------------ USB D+/D-: Prozessor -> USBLC6
+    # D- muss westlich am GND-Pin des USBLC6 vorbei (zwischen Pad-Enden des Prozessors und
+    # USBLC6 bleiben 0,52 mm: 0,2-mm-Bahn mit je 0,16 mm Abstand)
+    dp, dm = P('U1', '45'), P('U1', '44')
+    u6p1, u6p3 = P('U6', '1'), P('U6', '3')
+    T('USB_DP', [dp, (8.3, dp[1]), (8.6, u6p1[1] + 0.1), u6p1], 0.2)
+    xg = u6p3[0] - 0.66 - 0.26
+    T('USB_DM', [dm, (xg, dm[1]), (xg, u6p3[1] - 0.2), (xg + 0.2, u6p3[1]), u6p3], 0.2)
+
+    # VTX-Stecker (unten), GND-Pad 4: eigenes Via suedlich des Pads (Fanout findet keinen Platz)
+    j6g = P('J6', '4')
+    T('GND', [j6g, (j6g[0] - 0.25, j6g[1] + 0.2), (8.5, 9.8)], 0.3, layer=B_CU)
+    V('GND', 8.5, 9.8)
+
+    # ELRS (USART1, Pin 42/43): oestlich liegt D-, daher nach innen auf Vias im Pinring
+    e_tx, e_rx = P('U1', '42'), P('U1', '43')
+    T('ELRS_RX', [e_rx, (5.85, e_rx[1])], 0.2)
+    V('ELRS_RX', 5.85, e_rx[1])
+    T('ELRS_TX', [e_tx, (6.15, e_tx[1]), (5.25, e_tx[1] + 0.3)], 0.2)
+    V('ELRS_TX', 5.25, e_tx[1] + 0.3)
+
+    # ------------------------------------------------ USBLC6: GND-Via mittig unter dem Gehaeuse
+    u6p2, u6p5 = P('U6', '2'), P('U6', '5')
+    xm = (u6p2[0] + u6p5[0]) / 2
+    T('GND', [u6p2, (xm, u6p2[1])], 0.25)
+    V('GND', xm, u6p2[1])
+    # VBUS: Buchse (Pads A4/B9) -> SS14-Anode
+    vb_pad = [bd.pad_pos_obj(p) for p in bd.fps['J1'].Pads() if p.GetNumber() == 'A4'][0]
+    d2a = P('D2', '2')
+    T('VBUS', [vb_pad, (11.3, vb_pad[1]), (d2a[0] + 0.6, d2a[1] - 0.6)], 0.5)
+    # Zweites VBUS-Pad (B4/A9): je ein Via neben beiden VBUS-Pads (zwischen Pad-Ende und
+    # Fuehrungsstift, unter dem Buchsengehaeuse), Verbindung auf B.Cu
+    vn, vs = P('J1', 'A9'), P('J1', 'A4')
+    via_n, via_s = (15.0, vn[1] + 0.45), (15.0, vs[1] - 0.45)
+    T('VBUS', [vn, (vn[0] + 0.8, vn[1]), via_n], 0.4)
+    T('VBUS', [vs, (vs[0] + 0.8, vs[1]), via_s], 0.4)
+    V('VBUS', *via_n)
+    V('VBUS', *via_s)
+    T('VBUS', [via_n, via_s], 0.5, layer=B_CU)
+    # VBUS-Kondensatoren C33/C34 direkt am noerdlichen VBUS-Pad (westlich, an R13 und dem
+    # GND-Pad B1 vorbei)
+    c33v, c34v = P('C33', '1'), P('C34', '1')
+    T('VBUS', [vn, (13.0, vn[1]), (12.75, vn[1] - 0.35), (12.75, 1.75), (12.3, 1.3), c33v, c34v], 0.3)
+    # CC1 (A5): Via zwischen USBLC6 und Buchse, auf B.Cu ostwaerts um den VTX-Stecker herum
+    # nach Norden, Via neben R12
+    cc1, r12 = P('J1', 'A5'), P('R12', '1')
+    v1, v2 = (12.55, cc1[1] + 0.45), (r12[0] - 0.74, r12[1] + 0.1)
+    T('USB_CC1', [cc1, (12.9, cc1[1]), v1], 0.2)
+    V('USB_CC1', *v1)
+    T('USB_CC1', [v1, (13.72, v1[1]), (13.72, v2[1]), v2], 0.2, layer=B_CU)
+    V('USB_CC1', *v2)
+    T('USB_CC1', [v2, r12], 0.2)
+    # CC2 (B5): direkt nach Westen zu R13
+    cc2, r13 = P('J1', 'B5'), P('R13', '1')
+    T('USB_CC2', [cc2, (12.7, cc2[1]), r13], 0.2)
+
+    # ------------------------------------------------ Akkuteiler: Masse von C14 ueber R5
+    T('GND', [P('C14', '2'), P('R5', '2')], 0.3)
+
+    # ------------------------------------------------ VDDA-Ferritperle: 3,3-V-Via
+    fb1p1 = P('FB1', '1')
+    T('+3V3', [fb1p1, (fb1p1[0], fb1p1[1] - 0.97)], 0.3)
+    V('+3V3', fb1p1[0], fb1p1[1] - 0.97)
+
+    # ------------------------------------------------ Akkueingang ESC -> Verpolschutz (Drain)
+    j2p1, q1d = P('J2', '1'), P('Q1', '3')
+    T('VBAT_IN', [j2p1, (j2p1[0], j2p1[1] - 1.45)], 0.6, layer=B_CU)
+    V('VBAT_IN', j2p1[0], j2p1[1] - 1.45)
+    T('VBAT_IN', [(j2p1[0], j2p1[1] - 1.45), (j2p1[0] + 0.5, 15.5), (q1d[0] + 0.36, 15.5),
+                  (q1d[0] + 0.36, q1d[1] - 0.3), q1d], 0.8)

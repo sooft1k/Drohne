@@ -3,7 +3,7 @@
 #   Lage 3 (In2.Cu): getrennte Versorgungsflaechen
 #       VBAT : Ring am Platinenrand (Nordband, schmaler West- und Suedstreifen),
 #              verbindet den Verpolschutz (Suedost) mit Elko und Schaltregler (Nord)
-#       +5V  : Ostband, Suedkorridor und Westbereich (Steckverbinder mit 5 V)
+#       +5V  : Ostband, Suedband (unter dem MCU-Suedrand) und Westbereich
 #       +3V3 : Mitte (Prozessor, Gyro, Flash)
 import pcbnew
 
@@ -15,7 +15,7 @@ VB_WS = -18.5   # Weststreifen VBAT bis u = -18.5
 VB_SS = 18.5    # Suedstreifen VBAT ab v = 18.5
 C33_W = -12.8   # 3,3-V-Bereich: u von -12.8 ...
 C33_E = 8.4     # ... bis 8.4
-C33_S = 15.6    # ... und v bis 15.6
+C33_S = 11.9    # ... und v bis 11.9 (darunter 5-V-Korridor Sued)
 
 
 def polys():

@@ -88,16 +88,8 @@ def fanout(bd, skip=(), inward_refs=('U1',), log=None):
     b = bd.board
     obs = geom.Obstacles(b)
     done, failed = [], []
-    # Pads, die schon mit Vorverdrahtung verbunden sind, ueberspringen
-    touched = set()
-    for t in b.GetTracks():
-        if t.Type() == pcbnew.PCB_VIA_T:
-            continue
-        for fp in b.GetFootprints():
-            for pad in fp.Pads():
-                if pad.GetNetname() == t.GetNetname() and pad.GetNetname():
-                    if pad.HitTest(t.GetStart()) or pad.HitTest(t.GetEnd()):
-                        touched.add((fp.GetReference(), pad.GetNumber()))
+    # Pads ueberspringen, die ueber Vorverdrahtung schon an einem Via haengen
+    touched = connected_to_via(b)
     for fp in sorted(b.GetFootprints(), key=lambda f: f.GetReference()):
         ref = fp.GetReference()
         fpc = geom.to_uv(fp.GetPosition())
@@ -162,3 +154,53 @@ def thermal_vias(bd, ref, num, net, pitch=1.0):
             x += pitch
         y += pitch * 0.9
     return n
+
+
+def connected_to_via(b):
+    """Menge (Ref, Pad) aller Pads, die ueber vorhandene Leiterbahnen mit einem Via verbunden sind."""
+    items = []   # (kind, obj)
+    parent = {}
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def union(i, j):
+        parent[find(i)] = find(j)
+    pads = []
+    for fp in b.GetFootprints():
+        for pad in fp.Pads():
+            if pad.GetNetname():
+                pads.append((fp.GetReference(), pad))
+    tracks = list(b.GetTracks())
+    n = len(pads) + len(tracks)
+    for i in range(n):
+        parent[i] = i
+    for ti, t in enumerate(tracks):
+        k = len(pads) + ti
+        if t.Type() == pcbnew.PCB_VIA_T:
+            pts = [t.GetPosition()]
+        else:
+            pts = [t.GetStart(), t.GetEnd()]
+        for pi, (ref, pad) in enumerate(pads):
+            if pad.GetNetname() != t.GetNetname():
+                continue
+            if any(pad.HitTest(p) for p in pts):
+                union(k, pi)
+        for tj in range(ti):
+            u = tracks[tj]
+            if u.GetNetname() != t.GetNetname():
+                continue
+            upts = [u.GetPosition()] if u.Type() == pcbnew.PCB_VIA_T else [u.GetStart(), u.GetEnd()]
+            if any(u.HitTest(p) for p in pts) or any(t.HitTest(p) for p in upts):
+                union(k, len(pads) + tj)
+    has_via = set()
+    for ti, t in enumerate(tracks):
+        if t.Type() == pcbnew.PCB_VIA_T:
+            has_via.add(find(len(pads) + ti))
+    for pi, (ref, pad) in enumerate(pads):
+        if pad.GetAttribute() in (pcbnew.PAD_ATTRIB_PTH,):
+            has_via.add(find(pi))
+    return {(ref, pad.GetNumber()) for pi, (ref, pad) in enumerate(pads) if find(pi) in has_via}

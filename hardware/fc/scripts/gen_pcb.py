@@ -24,8 +24,8 @@ NETCLASSES = {
     'Default': (0.2, 0.15, 0.6, 0.3, []),
     'Motor': (0.25, 0.15, 0.6, 0.3, ['M1', 'M2', 'M3', 'M4']),
     'P3V3': (0.5, 0.15, 0.6, 0.3, ['+3V3', '+3V3A']),
-    'P5V': (1.0, 0.2, 0.6, 0.3, ['+5V']),
-    'USB5V': (0.5, 0.2, 0.6, 0.3, ['VBUS', 'ESC_5V']),
+    'P5V': (0.6, 0.2, 0.6, 0.3, ['+5V']),
+    'USB5V': (0.5, 0.15, 0.6, 0.3, ['VBUS', 'ESC_5V']),
     'VBAT': (1.0, 0.2, 0.6, 0.3, ['VBAT', 'VBAT_IN']),
     'GND': (0.5, 0.15, 0.6, 0.3, ['GND']),
     'Buck': (0.6, 0.2, 0.6, 0.3, ['BUCK_SW']),
@@ -278,7 +278,8 @@ def write_project(path):
               'min_through_hole_diameter': 0.3, 'min_via_annular_width': 0.13,
               'min_copper_edge_clearance': 0.5, 'min_hole_to_hole': 0.25,
               'min_hole_clearance': 0.2, 'min_silk_clearance': 0.0,
-              'min_text_height': 0.6, 'min_text_thickness': 0.1})
+              'min_text_height': 0.6, 'min_text_thickness': 0.1,
+              'min_resolved_spokes': 1})
     ds = d['board']['design_settings']
     ds['track_widths'] = [0.0, 0.15, 0.2, 0.25, 0.3, 0.5, 0.8, 1.0]
     ds['via_dimensions'] = [{'diameter': 0.0, 'drill': 0.0}, {'diameter': 0.6, 'drill': 0.3}]
@@ -297,11 +298,11 @@ def build(out=None, with_zones=True):
     b = bd.board
 
     # Sperrflaechen um die drei nicht angeschlossenen Bohrungen (Abstandshalter)
-    for (u, v) in ((HOLE, HOLE), (HOLE, -HOLE), (-HOLE, -HOLE)):
+    for (u, v) in ((-HOLE, HOLE), (HOLE, -HOLE), (-HOLE, -HOLE)):
         bd.keepout(circle(u, v, 3.3), [pcbnew.F_Cu, pcbnew.B_Cu], name='Abstandshalter')
         bd.keepout(circle(u, v, 2.3), [pcbnew.In1_Cu, pcbnew.In2_Cu], name='Bohrung innen')
     # Masse-Bohrung: Kupferring auf allen Lagen, keine fremden Leiter
-    bd.keepout(circle(-HOLE, HOLE, 3.4), [pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu],
+    bd.keepout(circle(HOLE, HOLE, 3.4), [pcbnew.F_Cu, pcbnew.B_Cu, pcbnew.In2_Cu],
                tracks=True, vias=True, pours=False, name='Masse-Bohrung')
     # Randabstand 0,5 mm fuer Kupfer (als Sperrflaeche, damit der Autorouter ihn kennt)
     m = 0.55
@@ -343,6 +344,11 @@ def build(out=None, with_zones=True):
     out = out or os.path.join(PRJ, 'fc.kicad_pcb')
     pcbnew.SaveBoard(out, b)
     write_project(os.path.splitext(out)[0] + '.kicad_pro')
+    # Ausgangsstand fuer route.py (vorverdrahtet, ohne Autorouter-Bahnen)
+    os.makedirs(os.path.join(PRJ, 'build'), exist_ok=True)
+    pre = os.path.join(PRJ, 'build', 'fc_prerouted.kicad_pcb')
+    pcbnew.SaveBoard(pre, b)
+    write_project(os.path.splitext(pre)[0] + '.kicad_pro')
     return bd
 
 

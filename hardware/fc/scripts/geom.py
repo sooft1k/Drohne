@@ -19,6 +19,11 @@ def pad_polygon(pad, layer):
     return Polygon([to_uv(ol.CPoint(i)) for i in range(ol.PointCount())])
 
 
+def zones_of(board):
+    """Alle Zonen (KiCad 7: board.Zones() ist ueber SWIG nicht iterierbar)."""
+    return [board.GetArea(i) for i in range(board.GetAreaCount())]
+
+
 class Obstacles:
     """Kupferobjekte je Lage: Liste von (shape, netname, kind, ref)."""
 
@@ -50,7 +55,7 @@ class Obstacles:
                     self.vias.append((to_uv(pad.GetPosition()), net, r))
         for t in board.GetTracks():
             self.add_track(t)
-        for z in board.Zones():
+        for z in zones_of(board):
             if z.GetIsRuleArea():
                 ol = z.Outline().Outline(0)
                 poly = Polygon([to_uv(ol.CPoint(i)) for i in range(ol.PointCount())])

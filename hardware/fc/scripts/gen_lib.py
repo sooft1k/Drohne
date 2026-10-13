@@ -120,6 +120,31 @@ def write_footprints():
     with open(os.path.join(d, newname + '.kicad_mod'), 'w') as f:
         f.write(dump(keep) + '\n')
 
+    # USB-C-Buchse an der Platinenkante: Die Steckoeffnung ragt 0,5 mm ueber die Kante
+    # (Footprint-y = +3,15 ist die Platinenkante). Bestueckungsdruck dahinter entfernen bzw.
+    # bis 0,2 mm vor die Kante kuerzen.
+    src = 'Connector_USB.pretty/USB_C_Receptacle_HRO_TYPE-C-31-M-12.kicad_mod'
+    t = parse(open(os.path.join(KIFP, src)).read())[0]
+    newname = 'USB_C_Receptacle_HRO_TYPE-C-31-M-12_Kante'
+    t[1] = newname
+    y_max = 3.15 - 0.2
+    keep = []
+    for x in t:
+        if isinstance(x, list) and x and x[0] == 'fp_line' and str(find1(x, 'layer')[1]) == 'F.SilkS':
+            st, en = find1(x, 'start'), find1(x, 'end')
+            ys, ye = float(st[2]), float(en[2])
+            if ys > y_max and ye > y_max:
+                continue
+            if ye > y_max:
+                en[2] = y_max
+            if ys > y_max:
+                st[2] = y_max
+        if isinstance(x, list) and x and x[0] == 'descr':
+            x = [Sym('descr'), x[1] + ' - Bestueckungsdruck an der Platinenkante gekuerzt (FC-Projekt)']
+        keep.append(x)
+    with open(os.path.join(d, newname + '.kicad_mod'), 'w') as f:
+        f.write(dump(keep) + '\n')
+
 
 def write_tables():
     with open(os.path.join(PRJ, 'sym-lib-table'), 'w') as f:

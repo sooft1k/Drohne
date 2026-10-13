@@ -24,7 +24,7 @@ def import_ses(board, ses_path, replace_unlocked=True):
     if replace_unlocked:
         for tr in list(board.GetTracks()):
             if not tr.IsLocked():
-                board.Remove(tr)
+                board.Delete(tr)
     n_wires = n_vias = 0
     for net in find(find1(routes, 'network_out'), 'net'):
         name = net[1]

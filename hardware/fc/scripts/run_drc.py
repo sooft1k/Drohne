@@ -1,5 +1,8 @@
 # DRC ueber die KiCad-Python-API (kicad-cli 7 hat noch kein "pcb drc").
-import sys, re, collections
+import os, sys, re, collections
+# Bibliothekspfade fuer den Abgleich Platine <-> Footprint-Bibliothek
+os.environ.setdefault('KICAD7_FOOTPRINT_DIR', '/usr/share/kicad/footprints')
+os.environ.setdefault('KICAD7_SYMBOL_DIR', '/usr/share/kicad/symbols')
 import pcbnew
 pcb = sys.argv[1]
 rpt = sys.argv[2]

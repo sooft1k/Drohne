@@ -50,7 +50,7 @@ MCU_PINS = {
     '12': 'GND',        # VSSA
     '13': '+3V3A',      # VDDA (VREF+ intern, LQFP64)
     '14': 'BUZZER',     # PA0  TIM2_CH1 / TIM5_CH1
-    '15': 'GPIO4',      # PA1
+    '15': None,         # PA1  (frei; Pad laesst sich zwischen BUZZER/DBG_TX nicht entflechten)
     '16': 'DBG_TX',     # PA2  USART2_TX
     '17': 'DBG_RX',     # PA3  USART2_RX
     '18': 'GND',        # VSS
@@ -60,7 +60,7 @@ MCU_PINS = {
     '22': 'M3',         # PA6  TIM3_CH1
     '23': 'M4',         # PA7  TIM3_CH2
     '24': 'GPIO6',      # PC4
-    '25': None,         # PC5
+    '25': 'GPIO4',      # PC5
     '26': 'M1',         # PB0  TIM3_CH3
     '27': 'M2',         # PB1  TIM3_CH4
     '28': 'BOOT1',      # PB2 / BOOT1 -> 10k nach GND
@@ -140,14 +140,13 @@ C('C15', '100nF', 'CURR_SENSE', 'GND', 'meas', 'Tiefpass Strommessung')
 # ---------------------------------------------------------------- Gyro
 part('U2', 'fc_custom:ICM-42688-P', 'ICM-42688-P',
      'Package_LGA:LGA-14_3x2.5mm_P0.5mm_LayoutBorder3x4y',
-     {'1': 'SPI1_MISO', '2': 'GYRO_RESV', '3': None, '4': 'GYRO_INT1',
+     {'1': 'SPI1_MISO', '2': None, '3': None, '4': 'GYRO_INT1',
       '5': '+3V3', '6': 'GND', '7': 'GND', '8': '+3V3', '9': 'GYRO_INT2',
       '10': 'GND', '11': 'GND', '12': 'GYRO_CS', '13': 'SPI1_SCK',
       '14': 'SPI1_MOSI'}, 'gyro', 'IMU, SPI', 'ICM-42688-P')
 C('C16', '100nF', '+3V3', 'GND', 'gyro', 'Gyro VDD')
 C('C17', '2.2uF', '+3V3', 'GND', 'gyro', 'Gyro VDD')
 C('C18', '100nF', '+3V3', 'GND', 'gyro', 'Gyro VDDIO')
-C('C19', '100nF', 'GYRO_RESV', 'GND', 'gyro', 'RESV Pin 2 (laut Spez.; vermutlich entbehrlich)')
 R('R7', '10k', 'GYRO_CS', '+3V3', 'gyro', 'CS Pull-up')
 
 # ---------------------------------------------------------------- Flash
@@ -198,13 +197,13 @@ C('C32', '100nF', '+3V3', 'GND', 'ldo', 'AMS1117 Ausgang')
 
 # ---------------------------------------------------------------- USB
 part('J1', 'Connector:USB_C_Receptacle_USB2.0_16P', 'USB-C',
-     'Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12',
+     'fc_custom:USB_C_Receptacle_HRO_TYPE-C-31-M-12_Kante',
      {'A1': 'GND', 'A4': 'VBUS', 'A5': 'USB_CC1', 'A6': 'USB_DP', 'A7': 'USB_DM',
       'A8': None, 'A9': 'VBUS', 'A12': 'GND', 'B1': 'GND', 'B4': 'VBUS',
       'B5': 'USB_CC2', 'B6': 'USB_DP', 'B7': 'USB_DM', 'B8': None, 'B9': 'VBUS',
       'B12': 'GND', 'S1': 'GND'}, 'usb', 'USB-C Buchse', 'TYPE-C-31-M-12')
 part('U6', 'Power_Protection:USBLC6-2SC6', 'USBLC6-2SC6', 'Package_TO_SOT_SMD:SOT-23-6',
-     {'1': 'USB_DP', '2': 'GND', '3': 'USB_DM', '4': 'USB_DM', '5': 'VBUS',
+     {'1': 'USB_DP', '2': 'GND', '3': 'USB_DM', '4': 'USB_DM', '5': None,
       '6': 'USB_DP'}, 'usb', 'ESD-Schutz USB', 'USBLC6-2SC6')
 part('D2', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA', {'1': '+5V', '2': 'VBUS'},
      'usb', 'USB-VBUS -> 5 V, verhindert Rueckspeisung', 'SS14')
@@ -275,9 +274,9 @@ part('TP1', 'Connector:TestPoint', '3V3', TP_PAD, {'1': '+3V3'}, 'mech', 'Testpu
 part('TP2', 'Connector:TestPoint', '5V', TP_PAD, {'1': '+5V'}, 'mech', 'Testpunkt', side='bottom')
 part('TP3', 'Connector:TestPoint', 'VBAT', TP_PAD, {'1': 'VBAT'}, 'mech', 'Testpunkt', side='bottom')
 part('TP4', 'Connector:TestPoint', 'GND', TP_PAD, {'1': 'GND'}, 'mech', 'Testpunkt', side='bottom')
-part('H1', 'Mechanical:MountingHole_Pad', 'M3 GND', 'MountingHole:MountingHole_3.2mm_M3_Pad',
-     {'1': 'GND'}, 'mech', 'einzige Bohrung mit Masse')
-part('H2', 'Mechanical:MountingHole', 'M3', 'MountingHole:MountingHole_3.2mm_M3', {}, 'mech')
+part('H1', 'Mechanical:MountingHole', 'M3', 'MountingHole:MountingHole_3.2mm_M3', {}, 'mech')
+part('H2', 'Mechanical:MountingHole_Pad', 'M3 GND', 'MountingHole:MountingHole_3.2mm_M3_Pad',
+     {'1': 'GND'}, 'mech', 'einzige Bohrung mit Masse (neben dem ESC-Stecker)')
 part('H3', 'Mechanical:MountingHole', 'M3', 'MountingHole:MountingHole_3.2mm_M3', {}, 'mech')
 part('H4', 'Mechanical:MountingHole', 'M3', 'MountingHole:MountingHole_3.2mm_M3', {}, 'mech')
 part('FID1', 'Mechanical:Fiducial', 'Fiducial', 'Fiducial:Fiducial_1mm_Mask2mm', {}, 'mech')
