@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "fc_custom")(type "KiCad")(uri "${KIPRJMOD}/fc_custom.pretty")(options "")(descr "Projektbibliothek FC"))
+)
