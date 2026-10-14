@@ -161,7 +161,9 @@ def main():
         for code, refs in sorted(groups.items(), key=lambda t: natkey(min(t[1], key=natkey))):
             refs.sort(key=natkey)
             p = parts[refs[0]]
-            w.writerow([p['value'], ','.join(refs), p['fp'].split(':')[1], code])
+            # Kommentar = Beschreibung des bestellten Teils (die Werte einer Gruppe unterscheiden
+            # sich z. B. bei Buchsen J2 ESC / J10 GPIO)
+            w.writerow([lcsc.PARTS[code][2], ','.join(refs), p['fp'].split(':')[1], code])
 
     # ---- Bestueckkoordinaten beider Seiten
     order = sorted(rows.values(), key=lambda r: (r['side'] != 'Top', natkey(r['ref'])))

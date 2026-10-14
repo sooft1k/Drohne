@@ -205,6 +205,10 @@ def apply(bd):
     T('VBAT', [q1s, (q1s[0] - 0.35, q1s[1] - 0.2), (d1k[0] + 0.35, q1s[1] - 0.2),
                (d1k[0], q1s[1] + 0.15), d1k], 0.4)
     T('VBAT', [q1s, (q1s[0] + 0.6, 19.4), (10.9, 19.4)], 0.8)
+    # Gate: Zener-Anode (West) direkt zu R9 Pin 1, ohne Via (der VBAT-Suedstreifen auf Lage 3
+    # bleibt ungeteilt)
+    d1a, r9g1 = P('D1', '2'), P('R9', '1')
+    T('Q1_G', [d1a, (r9g1[0], d1a[1] - 0.56), r9g1], 0.25)
     V('VBAT', 10.0, 19.4)
     V('VBAT', 10.9, 19.4)
 
@@ -356,3 +360,14 @@ def schiene_4v5(bd):
         V('+4V5', 11.6, vv)
     u5, c29, c30 = P('U5', '3'), P('C29', '1'), P('C30', '1')
     T('+4V5', [u5, (18.3, -7.6), c29, c30], 0.4)
+    # Knoten -> AMS1117: unter der USB-C-Buchse nur auf B.Cu (kein Kupfer unter dem Blechgehaeuse
+    # auf der Oberseite), zwischen den Gehaeusefuessen bei u = 16,6; dann zwischen den SWD-Pads
+    # (J8, unten) und ihren Leitungen unter dem AMS1117 hindurch zum Eingang
+    T('+4V5', [(11.6, 12.4), (12.5, 11.5), (16.6, 11.5), (16.6, 0.9)], 0.4, layer=B_CU)
+    V('+4V5', 16.6, 0.9)
+    T('+4V5', [(16.6, 0.9), (16.6, -1.6), (16.378, -1.826)], 0.4)
+    V('+4V5', 16.378, -1.826)
+    T('+4V5', [(16.378, -1.826), (17.043, -2.49), (17.043, -5.046)], 0.4, layer=B_CU)
+    V('+4V5', 17.043, -5.046)
+    T('+4V5', [(17.043, -5.046), (17.043, -6.688), (17.391, -7.036), (17.536, -7.036),
+               (18.284, -7.783)], 0.4)

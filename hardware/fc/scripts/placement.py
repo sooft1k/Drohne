@@ -43,7 +43,8 @@ PLACE = {
     # ---------------------------------------------------------- Eingang
     'Q1': (9.6, 17.6, 0, T),
     'R9': (5.0, 17.5, 180, T),
-    'D1': (6.0, 19.05, 0, T),      # Koerper >= 0,8 mm von der Suedkante (Nutzentrennrand)
+    'D1': (6.0, 19.05, 180, T),    # Koerper >= 0,8 mm von der Suedkante; Kathode (VBAT) Ost zu Q1,
+                                   # Anode (Gate) West zu R9: Q1_G ohne Vias im VBAT-Streifen (Lage 3)
     'C21': (-7.0, -14.2, 0, T),    # 47 uF 6,3x5,4; Pluspol (West) am Akkuteiler R4
     'C22': (9.45, -18.0, 180, T),  # Eingangs-Keramik: Masse-Pad direkt an U4 Pin 1 (PGND)
     # ---------------------------------------------------------- 5-V-Regler
@@ -109,7 +110,7 @@ PLACE = {
     'J8': (17.7, -5.0, 270, B),       # SWD, Ostrand
     'TP5': (-4.6, 12.0, 0, B),
     'TP1': (-5.08, -11.6, 0, B),
-    'TP2': (16.8, 5.5, 0, B),
+    'TP2': (17.8, 5.5, 0, B),        # neben der +4V5-Bahn (u = 16,6) unter der USB-C-Buchse
     'TP3': (-19.6, 9.6, 0, B),
     'TP4': (2.5, -11.6, 0, B),
     # ---------------------------------------------------------- Mechanik
