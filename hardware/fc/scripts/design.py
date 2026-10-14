@@ -61,7 +61,7 @@ MCU_PINS = {
     '23': 'M4',         # PA7  TIM3_CH2
     '24': 'GPIO6',      # PC4
     '25': 'GPIO4',      # PC5
-    '26': 'M1',         # PB0  TIM3_CH3
+    '26': 'M1',         # PB0  TIM3_CH3 (Motorpins wie in der Firmware, Sensors/motor.c)
     '27': 'M2',         # PB1  TIM3_CH4
     '28': 'BOOT1',      # PB2 / BOOT1 -> 10k nach GND
     '29': None,         # PB10
@@ -165,8 +165,9 @@ part('Q1', 'Transistor_FET:Si2319CDS', 'Si2319CDS', SOT23,
 R('R9', '100k', 'Q1_G', 'GND', 'pwr_in', 'Gate nach GND')
 part('D1', 'Device:D_Zener', 'BZT52C15S', SOD323, {'1': 'VBAT', '2': 'Q1_G'},
      'pwr_in', 'Zener 15 V Gate-Schutz', 'BZT52C15S')
-part('C21', 'Device:C_Polarized', '470uF/35V', 'Capacitor_SMD:CP_Elec_10x10.5',
-     {'1': 'VBAT', '2': 'GND'}, 'pwr_in', 'Eingangs-Elko, low ESR', 'JVE35V470M10X10')
+part('C21', 'Device:C_Polarized', '47uF/35V', 'Capacitor_SMD:CP_Elec_6.3x5.4',
+     {'1': 'VBAT', '2': 'GND'}, 'pwr_in',
+     'Eingangs-Elko (klein wegen Einschaltstrom; die grossen Elkos sitzen am ESC)', 'RVE35V47M6X5')
 C('C22', '10uF/50V', 'VBAT', 'GND', 'pwr_in', 'Eingangs-Keramik X7R (1210 wegen DC-Bias)', fp=C1210)
 
 # ---------------------------------------------------------------- 5-V-Schaltregler
@@ -189,9 +190,9 @@ C('C28', '100nF', '+5V', 'GND', 'buck', '5-V-Ausgang')
 # ---------------------------------------------------------------- 3,3-V-Regler
 part('U5', 'Regulator_Linear:AMS1117-3.3', 'AMS1117-3.3',
      'Package_TO_SOT_SMD:SOT-223-3_TabPin2',
-     {'1': 'GND', '2': '+3V3', '3': '+5V'}, 'ldo', '3,3-V-Linearregler', 'AMS1117-3.3')
-C('C29', '10uF/25V', '+5V', 'GND', 'ldo', 'AMS1117 Eingang', fp=C0603)
-C('C30', '100nF', '+5V', 'GND', 'ldo', 'AMS1117 Eingang')
+     {'1': 'GND', '2': '+3V3', '3': '+4V5'}, 'ldo', '3,3-V-Linearregler (aus der 4,5-V-Schiene)', 'AMS1117-3.3')
+C('C29', '10uF/25V', '+4V5', 'GND', 'ldo', 'AMS1117 Eingang', fp=C0603)
+C('C30', '100nF', '+4V5', 'GND', 'ldo', 'AMS1117 Eingang')
 C('C31', '22uF', '+3V3', 'GND', 'ldo', 'AMS1117 Ausgang', fp=C0805)
 C('C32', '100nF', '+3V3', 'GND', 'ldo', 'AMS1117 Ausgang')
 
@@ -205,8 +206,11 @@ part('J1', 'Connector:USB_C_Receptacle_USB2.0_16P', 'USB-C',
 part('U6', 'Power_Protection:USBLC6-2SC6', 'USBLC6-2SC6', 'Package_TO_SOT_SMD:SOT-23-6',
      {'1': 'USB_DP', '2': 'GND', '3': 'USB_DM', '4': 'USB_DM', '5': None,
       '6': 'USB_DP'}, 'usb', 'ESD-Schutz USB', 'USBLC6-2SC6')
-part('D2', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA', {'1': '+5V', '2': 'VBUS'},
-     'usb', 'USB-VBUS -> 5 V, verhindert Rueckspeisung', 'SS14')
+part('D2', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA', {'1': '+4V5', '2': 'VBUS'},
+     'usb', 'USB-VBUS -> 4,5-V-Schiene, verhindert Rueckspeisung in den USB-Anschluss', 'SS14')
+part('D7', 'Device:D_Schottky', 'SS14', 'Diode_SMD:D_SMA', {'1': '+4V5', '2': '+5V'},
+     'usb', '5 V -> 4,5-V-Schiene; sperrt USB -> 5 V (VTX/Kamera/Piepser laufen an USB nicht mit)',
+     'SS14', side='bottom')
 R('R12', '5.1k', 'USB_CC1', 'GND', 'usb', 'CC1')
 R('R13', '5.1k', 'USB_CC2', 'GND', 'usb', 'CC2')
 C('C33', '10uF/25V', 'VBUS', 'GND', 'usb', 'VBUS', fp=C0603)
@@ -237,20 +241,21 @@ R('R20', '5.1k', 'I2C_SCL', '+3V3', 'i2c', 'Pull-up SCL')
 
 # ---------------------------------------------------------------- Steckverbinder
 # ELRS, I2C und GPS oben (Westkante, oft gesteckt), alle uebrigen auf der Unterseite
+# J2 = Reihenfolge des B-Cube 4in1 (von dessen Oberseite gelesen, Oeffnung vom Betrachter weg,
+# links -> rechts: NC C M4 M3 M2 M1 V G) bei 1:1-Kabel (Kontakt n <-> Kontakt n)
 part('J2', 'Connector_Generic:Conn_01x08', 'ESC', SH % (8, 8),
-     {'1': 'VBAT_IN', '2': 'GND', '3': 'CURR_IN', '4': 'ESC_5V',
-      '5': 'M1', '6': 'M2', '7': 'M3', '8': 'M4'}, 'conn',
-     'ESC, JST-SH 8-polig (Pinfolge pruefen!)', 'SM08B-SRSS-TB', side='bottom')
-part('JP2', 'Jumper:SolderJumper_2_Open', 'ESC_5V', SJ_OPEN,
-     {'1': 'ESC_5V', '2': '+5V'}, 'conn', 'nur schliessen, wenn der ESC 5 V vom FC braucht')
+     {'1': 'GND', '2': 'VBAT_IN', '3': 'M1', '4': 'M2', '5': 'M3', '6': 'M4',
+      '7': 'CURR_IN', '8': None}, 'conn',
+     'ESC B-Cube 4in1, JST-SH 8-polig (Pin 8 = NC am ESC, unbeschaltet)', 'SM08B-SRSS-TB',
+     side='bottom')
 part('J3', 'Connector_Generic:Conn_01x04', 'ELRS', SH % (4, 4),
-     {'1': 'ELRS_TX', '2': 'ELRS_RX', '3': '+5V', '4': 'GND'}, 'conn',
+     {'1': 'ELRS_TX', '2': 'ELRS_RX', '3': '+4V5', '4': 'GND'}, 'conn',
      'ELRS-Empfaenger', side='top')
 part('J4', 'Connector_Generic:Conn_01x04', 'I2C', SH % (4, 4),
      {'1': 'I2C_SDA', '2': 'I2C_SCL', '3': '+3V3', '4': 'GND'}, 'conn',
      'I2C extern', side='top')
 part('J5', 'Connector_Generic:Conn_01x04', 'GPS', SH % (4, 4),
-     {'1': 'GPS_TX', '2': 'GPS_RX', '3': '+5V', '4': 'GND'}, 'conn',
+     {'1': 'GPS_TX', '2': 'GPS_RX', '3': '+4V5', '4': 'GND'}, 'conn',
      'GPS', side='top')
 part('J6', 'Connector_Generic:Conn_01x04', 'VTX', SH % (4, 4),
      {'1': 'VTX_TX', '2': 'VTX_RX', '3': '+5V', '4': 'GND'}, 'conn',
@@ -294,12 +299,13 @@ POWER_SYMBOLS = {
     'GND': 'power:GND',
     '+3V3': 'power:+3V3',
     '+5V': 'power:+5V',
+    '+4V5': 'fc_custom:+4V5',
     'VBUS': 'power:VBUS',
     'VBAT': 'fc_custom:VBAT',
     '+3V3A': 'fc_custom:+3V3A',
 }
 # Netze, die einen PWR_FLAG brauchen (nicht von einem power_out-Pin getrieben)
-PWR_FLAG_NETS = ['GND', '+5V', 'VBAT', 'VBUS', '+3V3A', 'VBAT_IN']
+PWR_FLAG_NETS = ['GND', '+5V', '+4V5', 'VBAT', 'VBUS', '+3V3A', 'VBAT_IN']
 
 GROUP_TITLES = {
     'mcu': 'Prozessor STM32F405RGT6',
@@ -313,7 +319,7 @@ GROUP_TITLES = {
     'led': 'Status-LEDs',
     'buz': 'Piepser',
     'i2c': 'I2C Pull-ups',
-    'conn': 'Steckverbinder (Unterseite)',
+    'conn': 'Steckverbinder',
     'mech': 'Testpunkte / Mechanik',
 }
 

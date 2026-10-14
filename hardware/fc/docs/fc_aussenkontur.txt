@@ -24,7 +24,7 @@ Teile bis 3 mm an einer Kante (Koerper laut Fertigungslage + Pads):
    R6   1k         oben  Koerper X 20.13 .. 20.67  Koerper->Kante +1.78  Kupfer->Kante +1.52
    R9   100k       oben  Koerper X 25.47 .. 26.53  Koerper->Kante +2.73  Kupfer->Kante +2.68
 == Kante Nord (Y = 41.00)
-   C21  470uF/35V  oben  Koerper X 10.75 .. 21.25  Koerper->Kante +1.05  Kupfer->Kante +5.05
+   C21  47uF/35V   oben  Koerper X 10.70 .. 17.30  Koerper->Kante +3.00  Kupfer->Kante +5.50
    C22  10uF/50V   oben  Koerper X 28.85 .. 32.05  Koerper->Kante +1.25  Kupfer->Kante +1.15
    C23  100nF/50V  oben  Koerper X 26.17 .. 27.17  Koerper->Kante +0.75  Kupfer->Kante +0.69
    J11  BUZZER     unten Koerper X 10.00 .. 14.00  Koerper->Kante +0.72  Kupfer->Kante +0.53  Oeffnung nach Nord
@@ -35,6 +35,6 @@ Buchsen innen (> 3 mm vom Rand):
 
 Bohrungen:
    H2  X 36.25  Y 5.25  (M3 GND)
-   H4  X 5.75  Y 35.75  (M3)
-   H3  X 36.25  Y 35.75  (M3)
    H1  X 5.75  Y 5.25  (M3)
+   H3  X 36.25  Y 35.75  (M3)
+   H4  X 5.75  Y 35.75  (M3)

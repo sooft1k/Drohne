@@ -33,9 +33,9 @@ CORRECTIONS = [
     (r'^SOT-223', 180, 'Pad-Vergleich SOT-223-3_L6.5-W3.4-P2.30-LS7.0-BR, JLCKicadTools/KiBot'),
     (r'^SOT-23-6', 270, 'Pad-Vergleich SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL, JLCKicadTools'),
     (r'^SOT-23$', 180, 'Pad-Vergleich SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR, KiBot'),
-    # Elko: Footprint von C48615113 nicht verfuegbar; der EasyEDA-Elko CAP-SMD_BD8.0 (C2983323) hat
+    # Elko: Footprint von C48970990 nicht verfuegbar; der EasyEDA-Elko CAP-SMD_BD8.0 (C2983323) hat
     # den Pluspol links wie KiCad. Die Tabellen von JLCKicadTools/KiBot nennen 180 (aeltere JLC-Lage)
-    (r'^CP_Elec_10x10', 0, 'Pad-Vergleich mit EasyEDA-Elko CAP-SMD_BD8.0 (Tabellen: 180) - POLUNG in der Vorschau pruefen'),
+    (r'^CP_Elec_', 0, 'Pad-Vergleich mit EasyEDA-Elko CAP-SMD_BD8.0 (Tabellen: 180) - POLUNG in der Vorschau pruefen'),
     (r'^USB_C_Receptacle_HRO_TYPE-C-31-M-12', 0,
      'Pad-Vergleich USB-C_SMD-TYPE-C-31-M-12_1 (C165948); Tabellen: 180 - Oeffnung in der Vorschau pruefen'),
     (r'^Texas_HSOP-8', 270, 'ANNAHME wie ESOP-8_..._BL-EP (Pin 1 unten links) - in der Vorschau pruefen'),

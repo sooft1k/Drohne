@@ -11,7 +11,7 @@ import pcbnew
 import design
 import lcsc
 from gen_sch import uid
-from placement import PLACE, BOTTOM_TEXT, TOP_TEXT
+from placement import PLACE, BOTTOM_TEXT, TOP_TEXT, FRONT_ARROWS
 import prerouting
 
 PRJ = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -26,7 +26,8 @@ NETCLASSES = {
     'Motor': (0.25, 0.15, 0.6, 0.3, ['M1', 'M2', 'M3', 'M4']),
     'P3V3': (0.5, 0.15, 0.6, 0.3, ['+3V3', '+3V3A']),
     'P5V': (0.6, 0.2, 0.6, 0.3, ['+5V']),
-    'USB5V': (0.5, 0.15, 0.6, 0.3, ['VBUS', 'ESC_5V']),
+    'USB5V': (0.5, 0.15, 0.6, 0.3, ['VBUS']),
+    'P4V5': (0.4, 0.2, 0.6, 0.3, ['+4V5']),
     'VBAT': (1.0, 0.2, 0.6, 0.3, ['VBAT', 'VBAT_IN']),
     'GND': (0.5, 0.15, 0.6, 0.3, ['GND']),
     'Buck': (0.6, 0.2, 0.6, 0.3, ['BUCK_SW']),
@@ -156,6 +157,23 @@ class Builder:
         if mirror:
             t.SetMirrored(True)
         self.board.Add(t)
+
+    def arrow(self, u, v, length, head, layer=pcbnew.F_SilkS, shaft=0.3):
+        """Pfeil nach Norden (Spitze bei u, v): gefuelltes Dreieck + Schaft."""
+        hl = head * 0.9
+        tri = pcbnew.PCB_SHAPE(self.board, pcbnew.SHAPE_T_POLY)
+        tri.SetLayer(layer)
+        tri.SetWidth(mm(0.15))
+        tri.SetFilled(True)
+        pts = [P(u, v), P(u + head / 2, v + hl), P(u - head / 2, v + hl)]
+        tri.SetPolyPoints(pts)
+        self.board.Add(tri)
+        sh = pcbnew.PCB_SHAPE(self.board, pcbnew.SHAPE_T_SEGMENT)
+        sh.SetLayer(layer)
+        sh.SetWidth(mm(shaft))
+        sh.SetStart(P(u, v + hl - 0.1))
+        sh.SetEnd(P(u, v + length))
+        self.board.Add(sh)
 
     # ------------------------------------------------------------- Zonen
     def zone(self, net, layer, poly, priority=0, name=None, thermal=0.4, clearance=0.25,
@@ -331,6 +349,8 @@ def build(out=None, with_zones=True):
         bd.text(s, u, v, pcbnew.F_SilkS, size, ang)
     for s, u, v, size, ang in BOTTOM_TEXT:
         bd.text(s, u, v, pcbnew.B_SilkS, size, ang, mirror=True)
+    for a in FRONT_ARROWS:
+        bd.arrow(*a)
 
     # Vorverdrahtung: Abblockkondensatoren, Massevias, Waermevias
     prerouting.apply(bd)

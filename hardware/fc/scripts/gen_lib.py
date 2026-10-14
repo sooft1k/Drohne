@@ -93,7 +93,7 @@ def power_symbol(newname):
 def write_symbols():
     lib = [Sym('kicad_symbol_lib'), [Sym('version'), 20220914],
            [Sym('generator'), Sym('kicad_symbol_editor')],
-           icm42688(), power_symbol('VBAT'), power_symbol('+3V3A')]
+           icm42688(), power_symbol('VBAT'), power_symbol('+3V3A'), power_symbol('+4V5')]
     with open(os.path.join(PRJ, 'fc_custom.kicad_sym'), 'w') as f:
         f.write(dump(lib) + '\n')
 

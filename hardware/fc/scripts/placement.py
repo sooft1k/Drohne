@@ -12,7 +12,7 @@ PLACE = {
     'C9': (4.5, 15.65, 270, T),    # VCAP1
     'C4': (8.5, 2.6, 90, T),        # VDD Pin 48
     'C10': (9.6, 2.6, 90, T),      # VCAP2
-    'C6': (5.6, -6.3, 0, T),     # 4,7 uF
+    'C6': (5.6, -6.3, 0, T),     # 10 uF/25 V
     'C7': (-5.85, 10.0, 90, T),    # VDDA 100 nF direkt an Pin 13 (VDDA) / 12 (VSSA)
     'C8': (-6.3, 12.9, 0, T),      # VDDA 1 uF
     'FB1': (-8.5, 12.4, 270, T),
@@ -44,7 +44,7 @@ PLACE = {
     'Q1': (9.6, 17.6, 0, T),
     'R9': (5.0, 17.5, 180, T),
     'D1': (6.0, 19.05, 0, T),      # Koerper >= 0,8 mm von der Suedkante (Nutzentrennrand)
-    'C21': (-5.0, -14.2, 0, T),
+    'C21': (-7.0, -14.2, 0, T),    # 47 uF 6,3x5,4; Pluspol (West) am Akkuteiler R4
     'C22': (9.45, -18.0, 180, T),  # Eingangs-Keramik: Masse-Pad direkt an U4 Pin 1 (PGND)
     # ---------------------------------------------------------- 5-V-Regler
     'U4': (4.4, -15.2, 270, T),
@@ -66,7 +66,8 @@ PLACE = {
     # ---------------------------------------------------------- USB
     'J1': (17.85, 6.0, 90, T),
     'U6': (10.27, 6.3, 0, T),
-    'D2': (10.0, 11.6, 90, T),
+    'D2': (10.0, 11.6, 90, T),     # USB -> 4,5 V (Kathode Sued)
+    'D7': (10.0, 10.4, 90, B),     # 5 V -> 4,5 V, Unterseite unter D2 (Kathode Sued, frei von J2)
     'R12': (11.55, 2.45, 0, T),     # CC1: Pad 1 west (Via), Pad 2 GND
     'R13': (11.63, 3.65, 180, T),   # CC2: Pad 1 ost (zur Buchse), Pad 2 GND
     'C33': (11.1, 0.9, 180, T),     # VBUS-Pad ost (zur Buchse)
@@ -100,7 +101,6 @@ PLACE = {
     'J3': (-17.7, 7.875, 270, T),     # ELRS
     # Unterseite
     'J2': (4.0, 17.2, 0, B),          # ESC, Suedrand
-    'JP2': (10.2, 12.0, 90, B),       # >= 4 mm von der Massebohrung H2
     'J6': (-6.9, 17.2, 0, B),         # VTX, Suedrand West
     'J11': (-9.0, -17.2, 180, B),     # Piepser, Nordrand West
     'J9': (-2.1, -17.2, 180, B),      # UART, Nordrand Mitte (westlich der Waermevias von U4)
@@ -134,6 +134,11 @@ TOP_TEXT = [
     ('I2C', -13.75, 0.0, 1.0, 90),
     ('ELRS', -13.75, 5.9, 1.0, 90),
 ]
+# Flugrichtung: Nordkante = vorn. Pfeile (gefuellte Dreiecke mit Schaft) links und rechts der
+# Aufschrift VORNE an der Nordkante der Oberseite: (Spitze u, Spitze v, Laenge, Kopfbreite)
+FRONT_ARROWS = [(-8.3, -19.9, 1.9, 1.4), (0.3, -19.9, 1.9, 1.4)]
+TOP_TEXT.append(('VORNE', -4.0, -18.95, 1.2, 0))
+
 BOTTOM_TEXT = [
     ('BUZ', -9.0, -13.2, 1.0, 0),
     ('UART', -2.1, -13.2, 1.0, 0),
@@ -142,5 +147,4 @@ BOTTOM_TEXT = [
     ('SWD', 13.6, -5.0, 1.0, 90),
     ('VTX', -6.9, 13.2, 1.0, 0),
     ('ESC', 4.0, 13.2, 1.0, 0),
-    ('5V ESC', 10.2, 9.3, 1.0, 0),
 ]

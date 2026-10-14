@@ -53,7 +53,8 @@ def sync_texts(board):
     importlib.reload(placement)
     import gen_pcb
     for d in list(board.GetDrawings()):
-        if d.Type() == pcbnew.PCB_TEXT_T:
+        if d.Type() == pcbnew.PCB_TEXT_T or (d.Type() == pcbnew.PCB_SHAPE_T and
+                                            d.GetLayer() in (pcbnew.F_SilkS, pcbnew.B_SilkS)):
             board.Delete(d)
     bd = gen_pcb.Builder.__new__(gen_pcb.Builder)
     bd.board = board
@@ -61,6 +62,8 @@ def sync_texts(board):
         bd.text(t, u, v, pcbnew.F_SilkS, size, ang)
     for t, u, v, size, ang in placement.BOTTOM_TEXT:
         bd.text(t, u, v, pcbnew.B_SilkS, size, ang, mirror=True)
+    for a in getattr(placement, 'FRONT_ARROWS', []):
+        bd.arrow(*a)
 
 
 def set_origin(board):

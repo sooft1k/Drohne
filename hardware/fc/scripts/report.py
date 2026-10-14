@@ -15,7 +15,8 @@ for t in b.GetTracks():
         length[n] += pcbnew.ToMM(t.GetLength())
         widths[n].add(round(pcbnew.ToMM(t.GetWidth()), 2))
 for n in ['USB_DP', 'USB_DM', 'SPI1_SCK', 'SPI1_MISO', 'SPI1_MOSI', 'GYRO_CS', 'GYRO_INT1',
-          'M1', 'M2', 'M3', 'M4', 'OSC_IN', 'OSC_OUT', 'XTAL_OUT', 'VBUS', '+5V', '+3V3', 'GND', 'VBAT']:
+          'M1', 'M2', 'M3', 'M4', 'CURR_IN', 'CURR_SENSE', 'OSC_IN', 'OSC_OUT', 'XTAL_OUT', 'VBUS',
+          '+4V5', '+5V', '+3V3', 'GND', 'VBAT', 'VBAT_IN']:
     print('%-10s Laenge %6.1f mm  Vias %3d  Breiten %s' % (n, length[n], vias[n], sorted(widths[n])))
 # Vias unter dem Gyro?
 g = b.FindFootprintByReference('U2')

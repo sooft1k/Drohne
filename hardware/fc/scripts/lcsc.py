@@ -12,9 +12,9 @@
 #               fehlen, nur Momentaufnahmen aus der Websuche (ohne Datum, "unbestaetigt").
 #
 # Die Platine wird beidseitig bestueckt (Steckverbinder oben und unten) und braucht deshalb die
-# Standard-Bestueckung. Dort kostet jede Extended- und auch jede Preferred-Teilenummer eine
-# Ruestgebuehr (Feeder Loading Fee); nur Basic-Teile sind ohne. Bei der (nur einseitigen)
-# Economic-Bestueckung waeren Preferred-Teile frei.
+# Standard-Bestueckung. Dort kostet jede Teilenummer eine Ruestgebuehr (Feeder Loading Fee),
+# auch Basic-Teile (JLCPCB-Hilfe "PCB Assembly Price"). Nur bei der (einseitigen)
+# Economic-Bestueckung waeren Basic- und Preferred-Teile frei.
 
 PARTS = {
     # LCSC: (Hersteller-Nr., Hersteller, Kurzbeschreibung, Typ, Bestand, Bestand-Stand/Quelle)
@@ -26,8 +26,9 @@ PARTS = {
     'C45783':   ('CL21A226MAQNNNE', 'Samsung', '22 uF 25 V X5R 0805', 'Basic', None, ''),
     'C17498688': ('CL32B106KBJZW6E', 'Samsung', '10 uF 50 V X7R 1210', 'Extended', 483,
                   'jlcparts 25.09.2026'),
-    'C48615113': ('JVE35V470M10X10', 'jieerrui', '470 uF 35 V Elko 10x10,5, 150 mOhm/670 mA @100 kHz',
-                  'Extended', 11128, 'jlcparts 10.10.2026'),
+    'C48970990': ('RVE35V47M6X5', 'k. A. (Katalog ohne Herstellerangabe)',
+                  '47 uF 35 V Elko 6,3x5,4, 850 mOhm @100 kHz, 140 mA @120 Hz', 'Extended', 14480,
+                  'jlcparts 10.10.2026'),
     'C25744':   ('0402WGF1002TCE', 'UNI-ROYAL', '10 kOhm 1 % 0402', 'Basic', None, ''),
     'C11702':   ('0402WGF1001TCE', 'UNI-ROYAL', '1 kOhm 1 % 0402', 'Basic', None, ''),
     'C25117':   ('0402WGF4700TCE', 'UNI-ROYAL', '470 Ohm 1 % 0402', 'Basic', None, ''),
@@ -89,10 +90,10 @@ for lcsc, refs in {
     'C52923': 'C8 C25', 'C12530': 'C9 C10 C17', 'C1549': 'C12 C13',
     # 10 uF/25 V statt 4,7 uF/16 V (C6) und 10 uF/10 V (C29/C33): eine Teilenummer weniger
     'C96446': 'C6 C29 C33', 'C45783': 'C26 C27 C31', 'C17498688': 'C22',
-    'C48615113': 'C21',
+    'C48970990': 'C21',
     'C25744': 'R1 R2 R5 R7 R8 R18', 'C11702': 'R6 R14 R15 R17', 'C25117': 'R16', 'C25741': 'R4 R9',
     'C25779': 'R10', 'C25924': 'R11', 'C25905': 'R12 R13 R19 R20', 'C17168': 'R3',
-    'C2286': 'D3', 'C72038': 'D4', 'C72043': 'D5', 'C2128': 'D6', 'C19077448': 'D1', 'C2480': 'D2',
+    'C2286': 'D3', 'C72038': 'D4', 'C72043': 'D5', 'C2128': 'D6', 'C19077448': 'D1', 'C2480': 'D2 D7',
     'C20917': 'Q2', 'C146287': 'Q1',
     'C15742': 'U1', 'C1850418': 'U2', 'C97521': 'U3', 'C544370': 'U4', 'C6186': 'U5', 'C7519': 'U6',
     'C20617566': 'Y1', 'C7509833': 'FB1', 'C6937839': 'L1', 'C165948': 'J1',

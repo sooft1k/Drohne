@@ -328,12 +328,12 @@ def build():
             sh.label(net, x, fy + 5.08, (0, 1))
     notes = [
         'Hinweise:',
-        '- Pinbelegung MCU siehe README.md (verbindlich: TIM3 Motoren PB0/PB1/PA6/PA7, PC0 Akku, PA13/PA14 SWD, PA11/PA12 USB).',
+        '- Pinbelegung MCU siehe README.md (verbindlich: TIM3 Motoren M1 PB0, M2 PB1, M3 PA6, M4 PA7; PA4 Strom; PC0 Akku).',
         '- Q1: Si2319CDS (40 V / +-20 V) statt SI2301 (nur 20 V / +-8 V, fuer 6S ungeeignet). Gleicher SOT-23-Footprint.',
         '- U4: LMR33630B (36 V Eingang) statt MP1584/TPS54331 (28 V, zu knapp fuer 6S).',
-        '- J2 ESC: Pinfolge 1 VBAT, 2 GND, 3 CURR, 4 5V, 5-8 M1-M4 - vor dem Bestellen mit dem ESC-Kabel vergleichen!',
-        '- JP2 offen: ESC-5V-Pin ist nicht mit dem FC-5V verbunden (verhindert zwei Regler gegeneinander).',
-        '- U2 Pin 2/3 RESV laut Referenzdesign frei, 7/10/11 an GND. C19 an Pin 2 nur wegen der Spezifikation.',
+        '- J2 ESC (B-Cube 4in1): 1 GND, 2 VBAT, 3-6 M1-M4, 7 Strom, 8 NC (unbeschaltet); 1:1-Kabel.',
+        '- +4V5: USB (D2) oder 5-V-Regler (D7) -> AMS1117, ELRS, GPS. +5V (VTX, Kamera, Piepser) nur aus dem Regler.',
+        '- U2 Pin 2/3 RESV laut Referenzdesign frei, 7/10/11 an GND.',
     ]
     for i, n in enumerate(notes):
         sh.text(n, snap(margin + 200), fy - 8 + i * 4, size=1.5, bold=(i == 0))

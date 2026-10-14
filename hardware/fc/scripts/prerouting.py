@@ -176,7 +176,7 @@ def apply(bd):
 
     # ------------------------------------------------ Akkuteiler R4 direkt am Elko-Pluspol
     r4p1 = P('R4', '1')
-    T('VBAT', [r4p1, (r4p1[0], r4p1[1] - 1.45)], 0.4)
+    T('VBAT', [r4p1, (r4p1[0], P('C21', '1')[1])], 0.4)
 
     # ------------------------------------------------ LEDs (oestlich des Gyros): Vorwiderstaende
     # an die 3,3-V-Leitung vom AMS1117 (Via bei u = 7,6), Widerstand -> Anode senkrecht
@@ -280,17 +280,8 @@ def apply(bd):
     T('+3V3', [fb1p1, (fb1p1[0], fb1p1[1] - 0.97)], 0.3)
     V('+3V3', fb1p1[0], fb1p1[1] - 0.97)
 
-    # ------------------------------------------------ Motorsignale M3/M4 (kreuzen sich): kurz
-    # senkrecht vom Prozessor nach Sueden, je ein Via, unten in den ESC-Stecker
-    m3, m4 = P('U1', '22'), P('U1', '23')
-    j2m3, j2m4 = P('J2', '7'), P('J2', '8')
-    T('M4', [m4, (m4[0], 16.43)], 0.25)
-    V('M4', m4[0], 16.43)
-    T('M4', [(m4[0], 16.43), (m4[0], j2m4[1] + 0.25)], 0.25, layer=B_CU)
-    T('M3', [m3, (m3[0], 16.11), (m3[0] - 0.08, 16.19), (m3[0] - 0.08, 17.2)], 0.25)
-    V('M3', m3[0] - 0.08, 17.2)
-    T('M3', [(m3[0] - 0.08, 17.2), (0.8, 17.2), (j2m3[0] - 0.17, 16.67),
-             (j2m3[0] - 0.17, j2m3[1] + 0.17)], 0.25, layer=B_CU)
+    motorsignale(bd)
+    schiene_4v5(bd)
 
     # ------------------------------------------------ Akkueingang ESC -> Verpolschutz (Drain)
     j2p1 = [bd.pad_pos_obj(p) for p in bd.fps['J2'].Pads() if p.GetNetname() == 'VBAT_IN'][0]
@@ -307,8 +298,8 @@ def apply(bd):
 def steckverbinder(bd):
     """Versorgungspins der JST-SH-Buchsen, deren Pads ausserhalb der passenden Innenlagen-Flaeche
     liegen: kurze Bahn auf der Bestueckungsseite der Buchse zu einem Via im richtigen Bereich.
-    (GPS/ELRS oben und VTX/CAM/ESC unten liegen mit ihrem 5-V-Pin ueber der 5-V-Flaeche; diese
-    Pads bekommen ihr Via in fanout.py.)"""
+    (VTX/CAM unten liegen mit ihrem 5-V-Pin ueber der 5-V-Flaeche und bekommen ihr Via in
+    fanout.py; ELRS/GPS-Pin 3 ist +4V5 ohne Flaeche und wird als Leiterbahn verlegt.)"""
     P = bd.pad_pos
     T = bd.track
     V = bd.via
@@ -343,3 +334,25 @@ def steckverbinder(bd):
     T('+3V3', [j8, (14.4, j8[1])], 0.3, layer=B_CU)
     V('+3V3', 14.4, j8[1])
     T('+3V3', [(14.4, j8[1]), (13.6, j8[1])], 0.3)
+
+
+def motorsignale(bd):
+    """Motorsignale und Strommessung zum ESC-Stecker J2 (Unterseite, direkt suedlich des Prozessors).
+    Prozessor (West -> Ost): PA4 Strom, PA6 M3, PA7 M4, PB0 M1, PB1 M2 (wie in der Firmware);
+    J2 (West -> Ost): NC, Strom, M4, M3, M2, M1. Verlegt der Autorouter (je ein Via)."""
+    pass
+
+
+def schiene_4v5(bd):
+    """4,5-V-Schiene: Kathoden von D2 (oben, USB) und D7 (unten, 5 V) ueber zwei Vias verbunden;
+    AMS1117-Eingang mit C29/C30 auf der Oberseite."""
+    P = bd.pad_pos
+    T = bd.track
+    V = bd.via
+    d2k, d7k = P('D2', '1'), P('D7', '1')
+    for vv in (12.4, 13.2):
+        T('+4V5', [(d2k[0], vv), (11.6, vv)], 0.6)
+        T('+4V5', [(d7k[0], vv), (11.6, vv)], 0.6, layer=B_CU)
+        V('+4V5', 11.6, vv)
+    u5, c29, c30 = P('U5', '3'), P('C29', '1'), P('C30', '1')
+    T('+4V5', [u5, (18.3, -7.6), c29, c30], 0.4)

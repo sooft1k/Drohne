@@ -40,5 +40,6 @@ def apply(bd):
 def outer_gnd(bd):
     """Masseflaechen auf den Aussenlagen (fuellen Restflaechen, nach dem Routing)."""
     full = [(-W2, -H2), (W2, -H2), (W2, H2), (-W2, H2)]
-    bd.zone('GND', pcbnew.F_Cu, full, priority=0, name='GND oben', clearance=0.25)
-    bd.zone('GND', pcbnew.B_Cu, full, priority=0, name='GND unten', clearance=0.25)
+    # Mindestbreite 0,25 mm: keine schmalen Massezungen zwischen parallelen Bahnen (Kupfersplitter)
+    bd.zone('GND', pcbnew.F_Cu, full, priority=0, name='GND oben', clearance=0.25, min_width=0.25)
+    bd.zone('GND', pcbnew.B_Cu, full, priority=0, name='GND unten', clearance=0.25, min_width=0.25)

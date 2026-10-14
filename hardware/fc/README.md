@@ -8,7 +8,7 @@ Erstellt mit KiCad 7.0 (öffnet auch in KiCad 8/9; dabei wird einmalig konvertie
 | `fc.kicad_pro` | Projekt mit Designregeln und Netzklassen |
 | `fc.kicad_sch` | Schaltplan (ein A1-Blatt, nach Funktionsgruppen, Netzlabels + Versorgungssymbole) |
 | `fc.kicad_pcb` | Platine: 42 × 41 mm, 4 Lagen, platziert und vollständig geroutet |
-| `fc_custom.kicad_sym` | Projektsymbole: ICM-42688-P, Versorgungssymbole VBAT und +3V3A |
+| `fc_custom.kicad_sym` | Projektsymbole: ICM-42688-P, Versorgungssymbole VBAT, +3V3A und +4V5 |
 | `fc_custom.pretty` | LMR33630-Footprint ohne Kupfer auf der Unterseite (dort sitzen Steckverbinder); USB-C-Buchse mit an der Platinenkante gekürztem Bestückungsdruck |
 | `fertigung/` | Gerber + Bohrdateien (ZIP für JLCPCB), Stückliste und Bestückkoordinaten für beide Seiten, Prüfliste |
 | `docs/` | Schaltplan als PDF, Lagenbilder (oben, unten gespiegelt, Lage 2, Lage 3), 3D-Ansichten, DRC- und ERC-Bericht, Routing-Kennzahlen |
@@ -29,6 +29,12 @@ python3 scripts/run_drc.py fc.kicad_pcb build/drc.rpt
 python3 scripts/report.py fc.kicad_pcb build/fc.net   # Kennzahlen + Abgleich Platine/Schaltplan
 python3 scripts/sync_fields.py  # nur Werte/LCSC-Nummern in die geroutete Platine uebernehmen
 python3 scripts/fab.py          # Gerber, Bohrdaten, ZIP, JLCPCB-BOM/CPL (beide Seiten), Pruefliste
+# Doku (docs/)
+cp build/drc.rpt docs/fc_drc_bericht.txt
+python3 scripts/report.py fc.kicad_pcb build/fc.net > docs/fc_routing_kennzahlen.txt
+python3 scripts/kontur.py > docs/fc_aussenkontur.txt
+python3 scripts/render.py fc.kicad_pcb docs/fc top,bot,in1,in2
+kicad-cli sch export pdf -o docs/fc_schaltplan.pdf fc.kicad_sch
 ```
 
 ERC mit KiCad 9 (kicad-cli 7 kann keine ERC):
@@ -48,7 +54,7 @@ neuer Lauf ergibt ein anderes, ebenfalls zu prüfendes Routing. Maßgeblich ist 
 |---|---|
 | 1 F.Cu | Bauteile, Signale, Restfläche GND |
 | 2 In1.Cu | durchgehende GND-Fläche (nur Via-Durchbrüche, keine Leiterbahnen, keine Schlitze) |
-| 3 In2.Cu | Versorgung: +3V3 (Mitte unter MCU/Gyro/Flash), +5V (Ost, Süd, West), VBAT (Ring am Rand: Nordband zum Regler, schmale Streifen West/Süd zum Verpolschutz) |
+| 3 In2.Cu | Versorgung: +3V3 (Mitte unter MCU/Gyro/Flash), +5V (Ost, Süd, West), VBAT (Ring am Rand: Nordband zum Regler, schmale Streifen West/Süd zum Verpolschutz). Die 4,5-V-Schiene (+4V5) hat keine Fläche, sie ist als Leiterbahn (0,4 mm, am Diodenknoten 0,6 mm) auf F.Cu/B.Cu verlegt |
 | 4 B.Cu | Steckverbinder (JST-SH, außer ELRS/I²C/GPS), Signale, Restfläche GND |
 
 Keine Leiterbahn auf Lage 2 und 3 – dort liegen nur Flächen. Montagebohrungen M3
@@ -56,16 +62,27 @@ Keine Leiterbahn auf Lage 2 und 3 – dort liegen nur Flächen. Montagebohrungen
 verbunden, die anderen drei sind nicht durchkontaktiert und haben 3,3 mm Kupfer-Sperrkreis
 für die Abstandshalter.
 
+## Flugrichtung
+
+**Vorn ist die Nordkante.** Sie ist auf der Oberseite mit „VORNE“ und zwei Pfeilen markiert.
+Von oben gesehen, vorn oben: der ESC-Stecker J2 liegt hinten (Unterseite, Südkante), USB-C
+rechts (Ostkante), ELRS/I²C/GPS links (Westkante). Alle Lageangaben in dieser Datei
+(Nord/Süd/Ost/West, oben/unten im Bild) beziehen sich auf diese Ansicht.
+
 ## Pinbelegung STM32F405RGT6 (für die Firmware)
+
+Die Fallstricke für die Firmware stehen gesammelt im Abschnitt
+[Firmware-Hinweise](#firmware-hinweise) (NOVBUSSENS, DMA-Konflikt, Gyro-Ausrichtung).
+
 
 | Pin | Port | Netz | Funktion |
 |---|---|---|---|
-| 26 | PB0 | M1 | TIM3_CH3 – DShot per Timer-DMA belegt DMA1 S2/S4/S5/S7: dann UART5-TX (GPS) und USART2-RX (Debug) ohne DMA betreiben (Betaflight nutzt auf F4 ohnehin Bitbang) |
-| 27 | PB1 | M2 | TIM3_CH4 |
-| 22 | PA6 | M3 | TIM3_CH1 |
-| 23 | PA7 | M4 | TIM3_CH2 – alle vier Motoren auf TIM3 (wie bisher), DShot über DMA1 möglich |
-| 8 | PC0 | VBAT_SENSE | ADC1_IN10, Teiler 100 k / 10 k (11:1) |
-| 20 | PA4 | CURR_SENSE | ADC12_IN4, Stromsignal vom ESC über 1 k / 100 nF |
+| 26 | PB0 | M1 | TIM3_CH3 (wie bisher, `Sensors/motor.c`) – DMA-Konflikt siehe Firmware-Hinweise |
+| 27 | PB1 | M2 | TIM3_CH4 (wie bisher) |
+| 22 | PA6 | M3 | TIM3_CH1 (wie bisher) |
+| 23 | PA7 | M4 | TIM3_CH2 (wie bisher) |
+| 8 | PC0 | VBAT_SENSE | ADC123_IN10, Teiler 100 k / 10 k (11:1) |
+| 20 | PA4 | CURR_SENSE | **ADC12_IN4** (ADC1 oder ADC2, Kanal 4), Strommessausgang „C“ des ESC (J2 Pin 7) über 1 k / 100 nF – unverändert |
 | 55 | PB3 | SPI1_SCK | Gyro + Flash |
 | 56 | PB4 | SPI1_MISO | Gyro + Flash |
 | 57 | PB5 | SPI1_MOSI | Gyro + Flash |
@@ -73,7 +90,7 @@ für die Abstandshalter.
 | 52 | PC11 | GYRO_INT1 | EXTI11 (Data-Ready) |
 | 59 | PB7 | GYRO_INT2 | Gyro-Pin 9 (INT2/FSYNC/CLKIN), TIM4_CH2 → optional 32-kHz-CLKIN |
 | 51 | PC10 | FLASH_CS | 10 k Pull-up |
-| 42 | PA9 | ELRS_TX | USART1_TX (wie bisher) – PA9 ist zugleich der VBUS-Erkennungspin des USB-OTG: in der Firmware **NOVBUSSENS** setzen (VBUS ist an keinen Prozessorpin geführt) |
+| 42 | PA9 | ELRS_TX | USART1_TX (wie bisher) – **PA9 ist zugleich VBUS-Erkennung des USB: NOVBUSSENS setzen**, siehe Firmware-Hinweise |
 | 43 | PA10 | ELRS_RX | USART1_RX (wie bisher) |
 | 16 | PA2 | DBG_TX | USART2_TX (wie bisher) |
 | 17 | PA3 | DBG_RX | USART2_RX (wie bisher) |
@@ -90,7 +107,7 @@ für die Abstandshalter.
 | 2 | PC13 | LED_ARM | LED rot (Druck „A“), **aktiv-low** (Pin = 0 → LED an) |
 | 3 | PC14 | LED_ERR | LED gelb (Druck „E“), aktiv-low |
 | 4 | PC15 | LED_LINK | LED grün (Druck „L“), aktiv-low |
-| 14 | PA0 | BUZZER | TIM2_CH1/TIM5_CH1, high = Piepser an (N-FET AO3400A) |
+| 14 | PA0 | BUZZER | TIM5_CH1 (AF2) bzw. TIM2_CH1 (AF1), high = Piepser an (N-FET AO3400A). TIM2 ist in der Firmware der Regeltakt – für Ton-PWM TIM5 nehmen |
 | 9 | PC1 | GPIO1 | Buchse GPIO (J10) Pin 1 |
 | 10 | PC2 | GPIO2 | Pin 2 |
 | 11 | PC3 | GPIO3 | Pin 3 |
@@ -104,10 +121,103 @@ für die Abstandshalter.
 
 Frei: PA1, PA8, PA15, PB10–PB15, PC8, PC9.
 
-Gyro-Einbaulage: Der ICM-42688-P sitzt nahe der Platinenmitte und ist um **180° gedreht**
-(von oben gesehen, ESC-Stecker unten, USB-C rechts: Pin-1-Markierung unten rechts). Die
-Sensorachsen X und Y zeigen damit entgegen der Gehäuse-Normallage – in der Firmware
-„Ausrichtung CW180°" einstellen bzw. X und Y invertieren.
+Die Motorpins sind beim Umbau von J2 unverändert geblieben (passend zu `Sensors/motor.c`);
+umgebaut ist nur der Stecker. M3/M4 und M1/M2 kreuzen sich deshalb auf dem kurzen Weg zum
+ESC-Stecker (je ein Via).
+
+## Firmware-Hinweise
+
+### 1. USB: NOVBUSSENS setzen
+
+PA9 ist USART1_TX (ELRS) und zugleich der VBUS-Erkennungspin des USB-OTG-FS. VBUS ist auf
+dieser Platine an **keinen** Prozessorpin geführt. Die VBUS-Erkennung muss deshalb **aus**
+sein, sonst wartet der USB-Kern auf VBUS an PA9 (dort liegt das ELRS-Sendesignal) und der FC
+meldet sich am PC nicht an.
+
+- Register: `OTG_FS_GCCFG.NOVBUSSENS = 1`, `VBUSASEN = 0`, `VBUSBSEN = 0`
+- STM32Cube-HAL: `hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;` (setzt genau das).
+  Die Firmware im Repo nutzt USB noch nicht; der Hinweis gilt, sobald USB dazukommt.
+- Betaflight: Ziele mit UART1 auf PA9/PA10 laufen so; ein USB-Erkennungspin
+  (`USB_DETECT_PIN`) existiert auf dieser Platine nicht.
+
+### 2. DMA-Konflikt: DShot ↔ GPS-Senden ↔ Debug-Empfang
+
+Alle vier Motoren hängen an TIM3. DShot über die Kanal-DMA von TIM3 belegt vier Streams von
+DMA1 (Kanal 5). Zwei davon braucht auch Kanal 4 für UART5-TX (GPS) bzw. USART2-RX (Debug).
+Ein Stream kann immer nur einen Kanal bedienen (RM0090, Tabelle 42):
+
+| Motor | Pin | Timer | DMA1-Stream | Konflikt |
+|---|---|---|---|---|
+| M1 | PB0 | TIM3_CH3 | **Stream 7**, Kanal 5 | **UART5_TX** = GPS-Senden (Stream 7, Kanal 4) |
+| M2 | PB1 | TIM3_CH4 | Stream 2, Kanal 5 | – |
+| M3 | PA6 | TIM3_CH1 | Stream 4, Kanal 5 | – |
+| M4 | PA7 | TIM3_CH2 | **Stream 5**, Kanal 5 | **USART2_RX** = Debug-Empfang (Stream 5, Kanal 4) |
+
+Lösungen (eine genügt):
+- **DShot im Burst-Modus**: alle vier Kanäle über TIM3_UP auf DMA1 Stream 2 (Kanal 5). Dann
+  sind Stream 5 und 7 frei für Debug-Empfang und GPS-Senden.
+- **GPS-Senden und Debug-Empfang ohne DMA** (Interrupt). Zum GPS gehen nur
+  Konfigurationsbefehle, der Debug-Empfang ist langsam.
+- **Betaflight**: Mit den Standardwerten (`dshot_bitbang = AUTO`, `dshot_bidir = OFF`,
+  `dshot_burst = OFF`) nutzt Betaflight auf F4 die Kanal-DMA von TIM3, also genau den
+  Konfliktpfad. AUTO schaltet auf F4 nur bei `dshot_bidir = ON` auf Bitbang. Deshalb
+  `dshot_bitbang = ON` (Bitbang, keine TIM3-DMA) oder `dshot_burst = ON` setzen.
+
+Nicht betroffen: ELRS (USART1) und VTX (USART6) liegen auf DMA2. Die Firmware im Repo
+(Stand jetzt: Oneshot125 per Timer-Vergleichsregister, UART-Empfang per Interrupt, kein DMA)
+hat den Konflikt noch nicht – er entsteht erst beim Umstieg auf DShot mit Timer-DMA.
+
+### 3. Gyro-Ausrichtung: CW270
+
+Der ICM-42688-P (U2) ist um 180° gedreht eingebaut. Mit der Nordkante vorn zeigen die
+Sensorachsen so:
+
+| Sensorachse | zeigt nach |
+|---|---|
+| +X | links (Westkante) |
+| +Y | hinten (ESC-Stecker) |
+| +Z | oben |
+
+- **Betaflight bis 4.5**: `set gyro_1_sensor_align = CW270` (Konfigurator: Gyro-Ausrichtung
+  „CW 270°“), Board-Ausrichtung 0°.
+- **Betaflight ab 2025.12**: Die Gyro-Ausrichtung ist dort nicht mehr einstellbar, sie kommt aus
+  der Board-Konfiguration. In der eigenen Konfiguration `#define GYRO_1_ALIGN CW270_DEG`
+  setzen. Ersatzweise mit einer Konfiguration ohne diese Angabe (Vorgabe CW0):
+  `set align_board_yaw = 270` – rechnerisch dasselbe.
+- **Eigene Firmware** (Körperachsen X vorn, Y links, Z oben):
+  `x = −y_chip`, `y = +x_chip`, `z = +z_chip`. Für X vorn, Y rechts, Z unten:
+  `x = −y_chip`, `y = −x_chip`, `z = −z_chip`. Gilt für Drehrate und Beschleunigung.
+- Kontrolle im Konfigurator (3D-Modell): Nase nach unten kippen → Modell kippt nach vorn;
+  rechte Seite nach unten → Modell rollt nach rechts.
+
+### 4. Strommessung und Akkuspannung
+
+| Messung | Pin | ADC-Kanal | Beschaltung |
+|---|---|---|---|
+| Strom (ESC-Pin „C“, J2 Pin 7) | **PA4** (LQFP-Pin 20) | **ADC12_IN4** (ADC1 oder ADC2, Kanal 4) | 1 k in Reihe, 100 nF nach GND |
+| Akkuspannung | PC0 (LQFP-Pin 8) | ADC123_IN10 | Teiler 100 k / 10 k (11:1) |
+
+Skalierung des Stromsignals (mV/A, Offset) aus dem Datenblatt des B-Cube 4in1 übernehmen.
+
+### 5. Versorgung an USB
+
+An USB allein (kein Akku) laufen: Prozessor, Gyro, Flash, LEDs, alle 3,3-V-Pins (I²C, UART,
+GPIO, SWD) sowie **ELRS (J3) und GPS (J5)** über die 4,5-V-Schiene. **Nicht** versorgt sind
+VTX (J6), Kamera (J7) und Piepser (J11) – sie hängen an +5 V, und das kommt nur aus dem
+Schaltregler (D7 sperrt Richtung +5 V). Mit Akku liegt die 4,5-V-Schiene bei etwa 4,6 V
+(5,0 V minus Schottky-Diode), an USB bei etwa 4,5–4,7 V. Der AMS1117 braucht etwa 1,1 V über
+sich: unter etwa 4,4 V am Eingang (schwacher USB-Port, langes Kabel) sinkt die 3,3-V-Schiene
+leicht ab, der Prozessor läuft trotzdem.
+
+Mit Akku und ohne USB misst man an VBUS (USB-C-Buchse, C33) bis zu etwa 4,5 V: Der Sperrstrom
+von D2 (µA) lädt C33/C34 auf, weil VBUS keinen Ableitwiderstand hat. Das ist keine
+Rückspeisung (kein Strom), nur eine hochohmige Spannung.
+
+### 6. LEDs und Piepser
+
+LEDs PC13–PC15 aktiv-low (Pin = 0 → LED an), Piepser PA0 aktiv-high (N-FET). Der Piepser hängt
+an +5 V und bleibt an USB stumm. Für einen Ton per PWM TIM5_CH1 verwenden: TIM2 ist in der
+Firmware schon die 1-kHz-Zeitbasis des Regeltakts (`Core/Src/main.c`).
 
 ## Steckverbinder (JST-SH 1,0 mm, seitlich steckbar)
 
@@ -115,20 +225,21 @@ Alle Buchsen sind JST-SH-kompatibel (SMxxB-SRSS-TB, bestückt wird Megastar ZX-S
 werden von JLCPCB mitbestückt. Passende Gegenstecker: JST SHR-0xV-S bzw. die üblichen
 „JST-SH 1,0 mm“-Kabel. **ELRS, I²C und GPS sitzen oben** an der Westkante (beim Entwickeln oft
 gesteckt, im verschraubten Stack erreichbar), alle übrigen auf der Unterseite (vor dem
-Verschrauben einstecken). Lageangaben von oben gesehen, USB-C rechts (Ost), ESC-Stecker unten
-(Süd); genaue Maße für den Rahmen in `docs/fc_aussenkontur.txt` (`scripts/kontur.py`).
+Verschrauben einstecken). Lageangaben von oben gesehen, vorn (Nord) oben, USB-C rechts (Ost),
+ESC-Stecker hinten (Süd); genaue Maße für den Rahmen in `docs/fc_aussenkontur.txt`
+(`scripts/kontur.py`).
 
 | Ref | Name | Seite, Lage, Steckrichtung | Pin 1 → n |
 |---|---|---|---|
-| J5 | GPS, 4-polig | **oben**, Westkante Nord, von Westen | 1 TX · 2 RX · 3 5V · 4 GND |
+| J5 | GPS, 4-polig | **oben**, Westkante Nord, von Westen | 1 TX · 2 RX · 3 4,5 V (auch an USB) · 4 GND |
 | J4 | I2C, 4-polig | **oben**, Westkante Mitte, von Westen | 1 SDA · 2 SCL · 3 3V3 · 4 GND |
-| J3 | ELRS, 4-polig | **oben**, Westkante Süd, von Westen | 1 TX · 2 RX · 3 5V · 4 GND |
-| J2 | ESC, 8-polig | unten, Südrand Mitte, von Süden | 1 VBAT · 2 GND · 3 CURR · 4 5V (über JP2, offen) · 5 M1 · 6 M2 · 7 M3 · 8 M4 – **passt nicht zum UAngel, wird umgebaut** |
-| J6 | VTX, 4-polig | unten, Südrand West, von Süden | 1 TX · 2 RX · 3 5V · 4 GND |
+| J3 | ELRS, 4-polig | **oben**, Westkante Süd, von Westen | 1 TX · 2 RX · 3 4,5 V (auch an USB) · 4 GND |
+| J2 | ESC (B-Cube 4in1), 8-polig | unten, Südrand Mitte (hinten), von Süden | 1 GND · 2 VBAT · 3 M1 · 4 M2 · 5 M3 · 6 M4 · 7 Strom (C) · 8 NC (unbeschaltet) – Lage von oben siehe unten |
+| J6 | VTX, 4-polig | unten, Südrand West, von Süden | 1 TX · 2 RX · 3 5V (nur mit Akku) · 4 GND |
 | J11 | Piepser, 2-polig | unten, Nordrand West, von Norden | 1 +5V · 2 BZ− (Drain) |
 | J9 | UART (Debug), 4-polig | unten, Nordrand Mitte, von Norden | 1 TX · 2 RX · 3 3V3 · 4 GND |
 | J10 | GPIO, 8-polig | unten, Westrand, von Westen | 1–6 GPIO1–6 · 7 3V3 · 8 GND |
-| J7 | CAM, 3-polig | unten, Westrand, von Westen | 1 5V · 2 VIDEO · 3 GND (VIDEO zusätzlich auf Lötpad TP5) |
+| J7 | CAM, 3-polig | unten, Westrand, von Westen | 1 5V (nur mit Akku) · 2 VIDEO · 3 GND (VIDEO zusätzlich auf Lötpad TP5) |
 | J8 | SWD, 5-polig | unten, Ostrand, von Osten | 1 SWDIO · 2 SWCLK · 3 NRST · 4 3V3 · 5 GND |
 | J1 | USB-C | oben, Ostrand (steht 0,5 mm über) | |
 
@@ -139,17 +250,56 @@ Buchsen am Rand sitzen 0,7 mm hinter der Platinenkante (Kupferabstand 0,5 mm).
 
 TX/RX jeweils aus Sicht des FC (FC-TX an Empfänger-RX anschließen).
 
-**J2 vor dem ersten Anstecken prüfen.** Die Spezifikation nennt nur die Signale des
-ESC-Steckers, nicht ihre Reihenfolge; die Belegung oben ist gewählt, nicht vom ESC
-übernommen. Für den UAngel 4in1 60A BLHeli_S war keine Pinbelegung auffindbar (Handbuch
-verweist nur allgemein auf das FC-Handbuch), und die Reihenfolge der 8-poligen Stecker ist
-herstellerabhängig. Vorgehen: Beschriftung am ESC-Stecker ablesen bzw. mit dem Multimeter
-Durchgang messen (Akku+ und Akku− gegen die großen Lötpads, M1–M4 gegen die Signalpads),
-dann mit der Tabelle vergleichen. Kritisch sind vor allem Pin 1/2 (Akku+/GND): vertauscht
-liegt die Akkuspannung an der Masse des FC. Weicht die Reihenfolge ab, entweder das Kabel
-umpinnen (JST-SH-Kontakte lassen sich aus dem Gehäuse ziehen) oder J2 im Projekt anpassen.
-BLHeli_S liefert keine Telemetrie; ein TLM- oder 5-V-Pin des ESC landet an Pin 4, der über
-die offene Lötbrücke JP2 nicht angeschlossen ist.
+### ESC-Stecker J2 (B-Cube 4in1)
+
+Belegung nach der Messung am ESC: Beschriftung auf dessen bestückter Oberseite, Öffnung vom
+Betrachter weg, links → rechts **NC · C · M4 · M3 · M2 · M1 · V · G**. Bei einer normalen
+JST-SH-Buchse liegt in dieser Ansicht Kontakt 1 rechts, also am ESC 1 G, 2 V, 3 M1, 4 M2, 5 M3,
+6 M4, 7 C, 8 NC. J2 ist genauso belegt, damit ein **1:1-Kabel** (Kontakt n ↔ Kontakt n) passt.
+
+**J2 von oben auf den FC gesehen** (vorn = Nordkante oben, USB-C rechts): Die Buchse sitzt
+darunter an der Hinterkante, ihre Öffnung zeigt nach hinten zum Betrachter. Von links nach
+rechts:
+
+```
+            vorn
+   ┌──────────────────────┐
+   │                      │
+   │       FC (oben)      │ USB-C
+   │                      │
+   │ NC  C  M4 M3 M2 M1 V  G   ← J2 auf der Unterseite, Öffnung nach hinten
+   └──────────────────────┘
+            hinten
+```
+
+G liegt rechts außen (neben der Massebohrung H2), NC links außen.
+
+**Achtung beim Gegenhalten:** Diese Reihenfolge gleicht der ESC-Beschriftung nur, weil die
+Blickrichtungen verschieden sind (am ESC Öffnung vom Betrachter weg, am FC zum Betrachter).
+Liegen FC und ESC in Einbaulage übereinander, beide Oberseiten oben und beide Öffnungen nach
+hinten, dann ist die Reihenfolge von oben gesehen **spiegelbildlich**: am ESC G links, an J2 G
+rechts. Das ist beim 1:1-Kabel richtig, weil J2 kopfüber auf der Unterseite sitzt.
+**J2 deshalb nicht spiegeln.** Gespiegelt läge die Akkuspannung über das Kabel an PA4.
+
+Annahme dabei: Die Buchse sitzt am ESC auf der Oberseite (Seite mit „B-Cube 4in1 ESC“). Sitzt
+sie auf der Unterseite, kehrt sich die Zählung um. Die Prüfung unten erkennt das.
+
+- **NC (Pin 8)** ist auf dem FC unbeschaltet: kein Netz, keine Leiterbahn, nur das Lötpad.
+  Vorher lag dort M4.
+- **Strommessung C (Pin 7)** führt über R6 (1 k) und C15 (100 nF) an **PA4 = ADC12_IN4**
+  (LQFP-Pin 20), derselbe ADC-Pin wie vorher.
+- **5 V vom ESC:** Der B-Cube hat keinen 5-V-Pin. Die Lötbrücke **JP2** und das Netz ESC_5V
+  sind **entfernt**. Am früheren 5-V-Pin (Pin 4) liegt jetzt M2.
+- **Kabel:** Die Belegung setzt ein 1:1-Kabel voraus (Kontakt n auf Kontakt n). Bitte vor
+  dem Bestellen prüfen.
+- **Vor dem ersten Akku** (Kabel zwischen FC und ESC gesteckt, kein Akku, **Stack noch nicht
+  verschraubt** – Metallschrauben würden G und H2 auch ohne Kabel verbinden): Durchgang vom
+  G-Pad des ESC zur Massebohrung H2 bzw. TP4 (GND) muss piepen. Im Diodentest vom V-Pad
+  des ESC (rote Spitze) zu TP3 (VBAT, schwarze Spitze) zeigt das Messgerät die Body-Diode des
+  Verpolschutz-FET, etwa 0,4–0,7 V (der Wert kann kurz wandern, solange sich die
+  Kondensatoren aufladen). Umgekehrt gemessen zeigt es OL oder einen deutlich höheren Wert
+  (über 1,5 V). Entscheidend ist der Vorwärtswert. Zeigt sich etwas anderes, ist das Kabel
+  nicht 1:1 oder verdreht – dann keinen Akku anstecken.
 
 ## Footprints
 
@@ -157,11 +307,11 @@ die offene Lötbrücke JP2 nicht angeschlossen ist.
 |---|---|---|
 | C1, C2, C3, C4, C5, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, C17, C18, C20, C23, C24, C25, C28, C30, C32, C34 | `Capacitor_SMD:C_0402_1005Metric` | 100nF (alle 50 V), 18pF, 1uF, 2.2uF |
 | C6, C29, C33 | `Capacitor_SMD:C_0603_1608Metric` | 10uF/25V |
-| C21 | `Capacitor_SMD:CP_Elec_10x10.5` | 470uF/35V |
+| C21 | `Capacitor_SMD:CP_Elec_6.3x5.4` | 47uF/35V |
 | C22 | `Capacitor_SMD:C_1210_3225Metric` | 10uF/50V |
 | C26, C27, C31 | `Capacitor_SMD:C_0805_2012Metric` | 22uF, 22uF/16V |
 | D1, D6 | `Diode_SMD:D_SOD-323` | 1N4148WS, BZT52C15S |
-| D2 | `Diode_SMD:D_SMA` | SS14 |
+| D2, D7 | `Diode_SMD:D_SMA` | SS14 (D7 auf der Unterseite) |
 | D3, D4, D5 | `LED_SMD:LED_0603_1608Metric` | gelb, gruen, rot |
 | FB1 | `Inductor_SMD:L_0402_1005Metric` | 600R@100MHz |
 | FID1, FID2, FID3 | `Fiducial:Fiducial_1mm_Mask2mm` | Fiducial |
@@ -173,7 +323,7 @@ die offene Lötbrücke JP2 nicht angeschlossen ist.
 | J7 | `Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal` | CAM |
 | J8 | `Connector_JST:JST_SH_SM05B-SRSS-TB_1x05-1MP_P1.00mm_Horizontal` | SWD |
 | J11 | `Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal` | BUZZER |
-| JP1, JP2 | `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm` | BOOT0, ESC_5V |
+| JP1 | `Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm` | BOOT0 |
 | L1 | `Inductor_SMD:L_Coilcraft_XAL4040-XXX` | 3.3uH |
 | Q1, Q2 | `Package_TO_SOT_SMD:SOT-23` | Si2319CDS, AO3400A |
 | R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20 | `Resistor_SMD:R_0402_1005Metric` | 0R, 470R, 1k, 5.1k, 8.2k, 10k, 33k, 100k |
@@ -202,14 +352,16 @@ die offene Lötbrücke JP2 nicht angeschlossen ist.
 | Akku-Spannungsteiler | – | 100 k / 10 k statt 10 k / 1 k | gleiches Verhältnis 11:1; der obere 0402-Widerstand nimmt bei 6S nur noch 5 mW statt 52 mW (84 % der Nennleistung) auf |
 | Piepser-FET | 2N7002 oder BSS138 | **AO3400A** | Schwellspannung max. 1,45 V: an 3,3 V sicher durchgeschaltet (2N7002 bis 2,5 V) |
 | Akku+ Leiterbreite | ≥ 3 mm bzw. Fläche | Fläche auf Lage 3 (Streifen ≥ 2,5 mm), Zuleitungen 0,8 mm mit je zwei Vias | der FC-Eingangsstrom ist durch den JST-SH-Kontakt (1 A) begrenzt; bei 2S höchstens ≈ 1,2 A an 5 V entnehmen (siehe unten) |
-| ESC-Pin „5 V" | 5 V | über **Lötbrücke JP2 (offen)** | verhindert, dass ein BEC im ESC gegen den FC-Regler arbeitet; nur schließen, wenn der ESC 5 V vom FC braucht |
+| ESC-Stecker | VBAT, GND, CURR, 5V, M1–M4 | **Reihenfolge des B-Cube 4in1**: 1 GND · 2 VBAT · 3–6 M1–M4 · 7 CURR · 8 NC; kein 5-V-Pin, **JP2 entfällt** | gemessen am ESC; 1:1-Kabel statt Umpinnen |
+| USB-Versorgung | VBUS über SS14 auf +5V | **getrennte 4,5-V-Schiene** (wie Matek): VBUS → D2 → +4V5, +5V → D7 → +4V5; an +4V5 hängen AMS1117 (3,3 V), ELRS und GPS | an USB laufen VTX, Kamera und Piepser nicht mit (D7 sperrt); der USB-Anschluss wird nicht rückgespeist (D2 sperrt) |
+| Eingangs-Elko C21 | 470 µF/35 V | **47 µF/35 V**, 6,3 × 5,4 mm, 850 mΩ | kleinerer Einschaltstrom beim Anstecken; die großen Elkos sitzen am ESC |
 | Piepser | Treiber | zusätzlich 2-polige Buchse J11 (+5 V / BZ−) | in der Spezifikation fehlt ein Anschluss für den Summer |
 | Kamera-Video | Pin am CAM-Stecker | zusätzlich Lötpad **TP5 VIDEO** | das Videosignal hat in der Spezifikation kein Ziel (kein OSD, VTX-Stecker ohne Video) |
 | VTX-Versorgung | 5 V oder 9 V | nur 5 V | kein 9-V-Regler vorgesehen |
 | PB2/BOOT1 | – | 10 k nach GND | sonst startet DFU (BOOT0 gebrückt) je nach Zufall aus dem SRAM |
 | 5-V-Leitungen | 1 mm | Fläche auf Lage 3, Ausgang Spule → C26 **0,8 mm**, Stichleitungen Pad → Via **0,4 mm** | die Pads der JST-SH-Buchsen sind nur 0,6 mm breit; Ströme der Abgänge < 1 A |
 | 5-V-Rückführung | – | R10/R11 = **33 k / 8,2 k** (5,02 V) statt 100 k / 24,9 k | 24,9 k gibt es nur als Extended-Teil; 33 k (Basic) und 8,2 k (Preferred) ergeben dieselbe Spannung |
-| LED grün | – | Vorwiderstand R16 **470 Ω** statt 1 kΩ | die gewählte Preferred-LED ist InGaN (Uf ≈ 2,7 V); mit 1 kΩ an 3,3 V wäre sie zu dunkel. Strom ≈ 1,3 mA (PC15 darf max. 3 mA) |
+| LED grün | – | Vorwiderstand R16 **470 Ω** statt 1 kΩ | die gewählte LED (C72043) ist InGaN (Uf ≈ 2,7 V); mit 1 kΩ an 3,3 V wäre sie zu dunkel. Strom ≈ 1,3 mA (PC15 darf max. 3 mA) |
 | Quarz | – | 8 MHz, **CL 12 pF** (YXC, C20617566) mit 2 × 18 pF | passend zu den vorhandenen 18-pF-Lastkondensatoren |
 | GPIO4 | – | **PC5** (Pin 25) statt PA1 | das PA1-Pad liegt zwischen BUZZER und DBG_TX eingeklemmt und ließ sich nicht entflechten |
 | Kupfer außen | 70 µm (2 oz) | **35 µm (1 oz) bestellen** | JLCPCB verlangt bei 2 oz außen mind. 0,2 mm Breite/Abstand – der Gyro-Footprint hat 0,15 mm Padabstand. Die Motorströme fließen ohnehin nicht über den FC (nur ~1 A über das JST-SH-Kabel) |
@@ -239,11 +391,11 @@ Bohrdaten und Bestückkoordinaten beziehen sich alle auf den Bohr-/Bestückungsu
 
 | Datei | Zweck |
 |---|---|
-| `fertigung/jlcpcb_bom.csv` | Stückliste aller bestückten Teile (oben 74, unten 7) im JLCPCB-Format mit **LCSC-Nummern**, 39 Teilenummern |
+| `fertigung/jlcpcb_bom.csv` | Stückliste aller bestückten Teile (oben 74, unten 8) im JLCPCB-Format mit **LCSC-Nummern**, 39 Teilenummern |
 | `fertigung/jlcpcb_cpl.csv` | Bestückkoordinaten beider Seiten (Spalte Layer Top/Bottom), Drehung bereits für JLCPCB umgerechnet |
 | `fertigung/jlcpcb_pruefliste.csv` | je Bauteil: Seite, LCSC-Typ, Bestand mit Datum/Quelle, Drehung KiCad → CPL mit Quelle der Korrektur, **Lage von Pin 1 bzw. Kathode/Pluspol** |
 
-Nicht bestückt werden die Testpunkte TP1–TP5, die Lötbrücken JP1/JP2, Bohrungen und Fiducials.
+Nicht bestückt werden die Testpunkte TP1–TP5, die Lötbrücke JP1, Bohrungen und Fiducials.
 
 **Bestellart: Standard PCBA, beidseitig.** Economic PCBA bestückt nur eine Seite. Folgen:
 - Einrichtgebühr für zwei Seiten (laut JLCPCB-Preisliste 50 USD statt 25 USD), zweite Schablone.
@@ -261,7 +413,7 @@ Nicht bestückt werden die Testpunkte TP1–TP5, die Lötbrücken JP1/JP2, Bohru
 **Extended-Teile, 18 Teilenummern** (bei Standard-Bestückung kostet ohnehin jede Teilenummer
 gleich viel; die Einteilung zählt nur für die Verfügbarkeit): STM32F405RGT6 (C15742), ICM-42688-P (C1850418),
 LMR33630BDDAR (C544370), USBLC6-2SC6 (C7519), Si2319CDS (C146287), USB-C TYPE-C-31-M-12
-(C165948), Spule XGL4020-332MEC (C6937839), Elko 470 µF/35 V (C48615113), die fünf JST-SH-
+(C165948), Spule XGL4020-332MEC (C6937839), Elko 47 µF/35 V (C48970990), die fünf JST-SH-
 Buchsen ZX-SH1.0-2/3/4/5/8PWT (C7430444, C7430445, C7430446, C7430447, C7430450) – diese gibt
 es gar nicht als Basic/Preferred. Nur wegen des Footprints Extended sind Quarz 8 MHz 3225
 (C20617566), Ferrit 0402 (C7509833) und 10 µF/50 V 1210 (C17498688). Die gelbe und die grüne
@@ -298,12 +450,16 @@ In der JLCPCB-Vorschau **besonders prüfen**:
 - **J1** USB-C: Die Steckeröffnung muss über die Ostkante zeigen.
 - **J2–J11** JST-SH: Öffnung jeder Buchse zur Platinenkante. Das Landemuster der
   Megastar-Buchse liegt 0,3 mm anders als das JST-Original; die Pads überlappen trotzdem.
+- **D7** (Unterseite, neu): Kathodenstrich von unten gesehen (USB-C links) **unten**, also zur
+  Hinterkante. Verdreht bekäme die 4,5-V-Schiene mit Akku keine Spannung (Prozessor aus), und
+  an USB liefen VTX, Kamera und Piepser mit.
 
 Außerdem für jedes IC, jede Diode und den Elko kontrollieren, dass Pin-1-Punkt bzw.
 Kathodenstrich/Pluspol auf der Seite liegt, die in der Prüfliste steht (Oberseite von oben
 mit USB-C rechts, Unterseite von unten mit USB-C links), z. B. U1 Pin 1 links oben, U2 Pin 1
 rechts unten, U3/U4 Pin 1 rechts oben, U5 Pin 1 rechts unten, U6/Q1/Q2 Pin 1 links oben,
-Y1 Pin 1 rechts oben, D1 Kathode links, D2–D6 Kathode unten, C21 Pluspol links.
+Y1 Pin 1 rechts oben, D1 Kathode links, D2–D6 Kathode unten, D7 (Unterseite) Kathode unten,
+C21 Pluspol links.
 
 ### Bestellablauf (jlcpcb.com)
 
@@ -318,21 +474,24 @@ Y1 Pin 1 rechts oben, D1 Kathode links, D2–D6 Kathode unten, C21 Pluspol links
 
 ## Routing
 
-**Von Hand vorverlegt und gesperrt** (`scripts/prerouting.py`, 393 von 1001 Kupferobjekten):
+**Von Hand vorverlegt und gesperrt** (`scripts/prerouting.py`, 385 von 1120 Kupferobjekten):
 alle Abblockkondensatoren mit kurzem Weg zum Pin und Via direkt daneben (STM32 VDD/VSS,
 VCAP1/2, VDDA über FB1, Gyro VDD/VDDIO, Flash), Gyro-Masse ohne Vias unter dem Chip,
 Schaltregler-Leistungskreis (C23 an VIN/GND, Schaltknoten 0,8 mm zur Spule, Bootstrap,
 VCC, Rückführung, Wärmevias), 3,3-V-Ausgang des AMS1117, Akkueingang ESC → Verpolschutz,
 USB D+/D− vom Prozessor zum USBLC6, VBUS (beide Buchsen-Pads, Diode, C33/C34), CC1/CC2,
-das SPI-Bündel zwischen Gyro und Prozessor, Via-Fluchten für ELRS und GYRO_CS, die
-Motorsignale M3/M4 (kreuzen sich auf kurzem Weg zum ESC-Stecker) und die Versorgungspins der
-JST-SH-Buchsen, die außerhalb ihrer Fläche auf Lage 3 liegen (I2C, UART, GPIO, Piepser, SWD).
+das SPI-Bündel zwischen Gyro und Prozessor, Via-Fluchten für ELRS und GYRO_CS, der Knoten der
+4,5-V-Schiene (Kathoden von D2 oben und D7 unten über zwei Vias), getrennt davon der
+AMS1117-Eingang mit C29/C30, und die Versorgungspins der JST-SH-Buchsen, die außerhalb ihrer
+Fläche auf Lage 3 liegen (I2C, UART, GPIO, Piepser, SWD). Die Verbindung Diodenknoten →
+AMS1117 → ELRS/GPS legt der Autorouter (0,4 mm).
 Danach setzt `fanout.py` jedem übrigen Versorgungspad ein Via in die passende Fläche.
 
 **Autorouter**: alle übrigen Signale (Freerouting, F.Cu und B.Cu; Lage 2 und 3 sind als
-Flächen gesperrt). Kennzahlen (`docs/fc_routing_kennzahlen.txt`): 214 Vias, 0 Vias unter dem
-Gyro, 0 Leiterbahnen auf Lage 2/3, kleinste Bahnbreite 0,2 mm, USB D+ 9,6 mm / D− 9,2 mm,
-nächster Motorleitungs-Endpunkt 14,7 mm vom Gyro.
+Flächen gesperrt). Kennzahlen (`docs/fc_routing_kennzahlen.txt`): 206 Vias, 0 Vias unter dem
+Gyro, 0 Leiterbahnen auf Lage 2/3, kleinste Bahnbreite 0,2 mm, USB D+ 8,1 mm / D− 9,2 mm,
+Motorleitungen M1–M4 4,7–8,7 mm mit je einem Via, nächster Motorleitungs-Endpunkt 13,9 mm vom
+Gyro.
 
 ## Designregelprüfung (DRC)
 
@@ -344,7 +503,7 @@ Editor, Zonen frisch gefüllt) – Bericht in `docs/fc_drc_bericht.txt`:
 | DRC-Verstöße (Abstände, Breiten, Bohrungen, Rand, Courtyards, Sperrflächen, Silk) | **0** |
 | nicht verbundene Pads | **0** |
 | Footprint-Fehler / Abweichung zur Bibliothek | **0** |
-| Schaltplan ↔ `design.py` (`check_netlist.py`) | 292 Knoten, 0 Fehler |
+| Schaltplan ↔ `design.py` (`check_netlist.py`) | 291 Knoten, 0 Fehler |
 | Platine ↔ Schaltplan-Netzliste (`report.py`) | 319 Pads, 0 Abweichungen |
 
 **ERC** (KiCad 9.0.3, `kicad-cli sch erc --severity-all`, Bericht `docs/fc_erc_bericht.txt`):
@@ -361,7 +520,7 @@ Das ist beabsichtigt: im normalen SPI-Betrieb müssen /WP und /HOLD dauerhaft hi
    beschädigtem Lötstopplack).
 2. **CC1** läuft auf B.Cu in einem Bogen östlich um die USB-Bauteile (12 mm, zwei Vias) –
    elektrisch unkritisch, aber ein Umweg.
-3. **37 Vias unter dem Prozessorgehäuse** (Versorgung und Signal-Fluchten, u. a. SPI-SCK,
+3. **30 Vias unter dem Prozessorgehäuse** (Versorgung und Signal-Fluchten, u. a. SPI-SCK,
    GYRO_CS, ELRS). Tented, Standard bei LQFP, aber nicht unter jedem Fertiger erwünscht.
 4. **SPI-SCK** wechselt direkt unterhalb der Via-Sperrfläche des Gyros auf B.Cu (0,05 mm
    Reserve zur Sperrfläche) und kommt innerhalb des Prozessor-Pinrings wieder hoch; SCK,
@@ -379,14 +538,20 @@ Das ist beabsichtigt: im normalen SPI-Betrieb müssen /WP und /HOLD dauerhaft hi
    reicht das; Motorstrom fließt nicht über den FC.
 8. **USB D+/D−** ohne definierte Impedanz (Full-Speed 12 MBit/s, 10 mm – unkritisch).
 9. **Autorouter-Bahnen** sind funktional, aber nicht schön: viele Vias und einige Umwege
-   (Leiterbahnlänge F.Cu 683 mm, B.Cu 705 mm). Wer nachbessern will, kann im KiCad-Editor
+   (Leiterbahnlänge F.Cu 711 mm, B.Cu 702 mm). Wer nachbessern will, kann im KiCad-Editor
    einzelne Netze neu verlegen; die gesperrte Handverdrahtung bleibt dabei liegen.
-10. **ESC-Belegung (J2)**: Die Belegung oben passt nicht zum UAngel-ESC (Messung des Nutzers:
-    Beschriftung C 4 3 2 1 V G plus ein unbeschrifteter Kontakt). J2 wird auf die echte
-    Reihenfolge umgebaut, **vorher nicht bestellen**.
+10. **ESC-Belegung (J2)**: J2 folgt der gemessenen Reihenfolge des B-Cube 4in1 und setzt ein
+    **1:1-Kabel** voraus. Das Kabel ist noch nicht geprüft – **vorher nicht bestellen**, und vor
+    dem ersten Akku die beiden Messungen aus dem Abschnitt „ESC-Stecker J2“ machen.
 11. **Buchsen nahe den Bohrungen**: Zwischen den Randbuchsen und den Montagebohrungen bleiben
     ≥ 3,35 mm (Courtyard) – bei dicken Gummidämpfern oder Muttern prüfen, ob der Stecker frei
     bleibt.
 12. **Strom über den ESC-Stecker**: Akku+ und GND laufen über je einen JST-SH-Kontakt
     (Nennstrom 1 A). Bei 4S–6S und üblicher Last passt das; bei 2S/3S die 5-V-Entnahme auf
     etwa 1,2 A (2S) bzw. 1,7 A (3S) begrenzen.
+13. **4,5-V-Schiene als Leiterbahn**: +4V5 ist 87 mm lang (0,4 mm, 6 Vias). Sie läuft vom
+    Diodenknoten D2/D7 (Südost) zum AMS1117 (Nordost) und auf B.Cu quer über die Platine zu GPS
+    und ELRS an der Westkante. Für ≤ 0,5 A reicht das (Spannungsabfall < 50 mV).
+14. **Strommessung CURR_SENSE**: Die Leitung von R6/C15 zu PA4 macht einen Umweg (24 mm,
+    zwei Vias). Unkritisch, weil C15 (100 nF) den Knoten niederohmig hält. Für ein sauberes
+    Messsignal ein Mittelwert in der Firmware.
