@@ -280,15 +280,37 @@ rechts:
 
 G liegt rechts außen (neben der Massebohrung H2), NC links außen.
 
-**Achtung beim Gegenhalten:** Diese Reihenfolge gleicht der ESC-Beschriftung nur, weil die
-Blickrichtungen verschieden sind (am ESC Öffnung vom Betrachter weg, am FC zum Betrachter).
-Liegen FC und ESC in Einbaulage übereinander, beide Oberseiten oben und beide Öffnungen nach
-hinten, dann ist die Reihenfolge von oben gesehen **spiegelbildlich**: am ESC G links, an J2 G
-rechts. Das ist beim 1:1-Kabel richtig, weil J2 kopfüber auf der Unterseite sitzt.
-**J2 deshalb nicht spiegeln.** Gespiegelt läge die Akkuspannung über das Kabel an PA4.
+**Beide Stecker in Einbaulage zum Gegenhalten beim Zusammenbau.** FC über dem ESC, beide
+Oberseiten oben. Beide Buchsen jeweils **von oben** angesehen, die **Öffnung zeigt zu dir**.
+In Klammern steht die Kontaktnummer:
 
-Annahme dabei: Die Buchse sitzt am ESC auf der Oberseite (Seite mit „B-Cube 4in1 ESC“). Sitzt
-sie auf der Unterseite, kehrt sich die Zählung um. Die Prüfung unten erkennt das.
+```
+  FC – J2 (auf der FC-Unterseite, kopfüber)
+  ┌────────────────────────────────────────────────┐
+  │  NC    C     M4    M3    M2    M1    V     G   │
+  │ (8)   (7)   (6)   (5)   (4)   (3)   (2)   (1)  │
+  └────────────────────────────────────────────────┘
+                   Öffnung zu dir ↓
+
+  ESC – Buchse (auf der ESC-Oberseite)
+  ┌────────────────────────────────────────────────┐
+  │  G     V     M1    M2    M3    M4    C     NC  │
+  │ (1)   (2)   (3)   (4)   (5)   (6)   (7)   (8)  │
+  └────────────────────────────────────────────────┘
+                   Öffnung zu dir ↓
+
+  Kabel 1:1:  FC (1) ↔ ESC (1)  …  FC (8) ↔ ESC (8)
+              G↔G, V↔V, M1↔M1, M2↔M2, M3↔M3, M4↔M4, C↔C, NC↔NC
+```
+
+Von oben gesehen ist die Reihenfolge **spiegelbildlich** (am FC G rechts, am ESC G links). Das
+ist richtig so, weil J2 kopfüber auf der Unterseite sitzt. **J2 und das Kabel nicht
+spiegeln.** Gespiegelt läge die Akkuspannung über das Kabel an PA4.
+
+Am ESC steht die Beschriftung in dieser Ansicht auf dem Kopf. Mit der Öffnung von dir weg ist
+sie lesbar, dann liest du dort NC · C · M4 · M3 · M2 · M1 · V · G. Die ESC-Buchse sitzt auf der
+Oberseite, auf derselben Seite wie die Aufschrift „B-Cube 4in1 ESC“ und die Motorlötpads; das
+hast du bestätigt.
 
 - **NC (Pin 8)** ist auf dem FC unbeschaltet: kein Netz, keine Leiterbahn, nur das Lötpad.
   Vorher lag dort M4.
@@ -303,14 +325,24 @@ sie auf der Unterseite, kehrt sich die Zählung um. Die Prüfung unten erkennt d
   TP4 GND in der Nordhälfte rechts der Mitte, TP1 3V3 links daneben in derselben Reihe,
   TP2 5V unter der USB-C-Buchse, TP5 VIDEO südlich der Mitte. GND auch am Kupferring der
   Bohrung H2 (hinten rechts).
-- **Vor dem ersten Akku** (Kabel zwischen FC und ESC gesteckt, kein Akku, **Stack noch nicht
-  verschraubt** – Metallschrauben würden G und H2 auch ohne Kabel verbinden): Durchgang vom
-  G-Pad des ESC zur Massebohrung H2 bzw. TP4 (GND) muss piepen. Im Diodentest vom V-Pad
-  des ESC (rote Spitze) zu TP3 (VBAT, schwarze Spitze) zeigt das Messgerät die Body-Diode des
-  Verpolschutz-FET, etwa 0,4–0,7 V (der Wert kann kurz wandern, solange sich die
-  Kondensatoren aufladen). Umgekehrt gemessen zeigt es OL oder einen deutlich höheren Wert
-  (über 1,5 V). Entscheidend ist der Vorwärtswert. Zeigt sich etwas anderes, ist das Kabel
-  nicht 1:1 oder verdreht – dann keinen Akku anstecken.
+
+#### Prüfung vor dem ersten Akku (Pflicht)
+
+**Bedingungen:** Kabel zwischen FC und ESC gesteckt · **kein Akku** angeschlossen · **vor dem
+Verschrauben des Stacks**: noch keine Schrauben und Abstandshalter zwischen FC und ESC, weil
+Metallschrauben G und H2 auch ohne Kabel verbinden würden.
+
+1. **Durchgang:** Vom G-Pad des ESC (Akku-Minus) zum Kupferring der Massebohrung H2 (hinten
+   rechts) oder zu TP4 (GND). **Soll: piept** bzw. nahe 0 Ω.
+2. **Diodentest:** Rote Spitze auf das V-Pad des ESC (Akku-Plus), schwarze Spitze auf TP3
+   (VBAT). **Soll: etwa 0,4–0,7 V.** Das ist die Body-Diode des Verpolschutz-FET. Der Wert
+   kann kurz wandern, solange sich die Kondensatoren aufladen. Umgekehrt gemessen zeigt das
+   Gerät OL oder einen deutlich höheren Wert (über 1,5 V); entscheidend ist der Vorwärtswert.
+
+**Weicht eine der beiden Messungen ab:** Keinen Akku anstecken und den Stack nicht
+verschrauben. Dann melden, welche Messung abweicht und was das Messgerät angezeigt hat (Wert
+und Richtung). Wahrscheinliche Ursache ist ein Kabel, das nicht 1:1 ist oder verdreht steckt –
+das wird erst geklärt, bevor Strom drauf kommt.
 
 ## Footprints
 
@@ -562,7 +594,8 @@ Das ist beabsichtigt: im normalen SPI-Betrieb müssen /WP und /HOLD dauerhaft hi
    einzelne Netze neu verlegen; die gesperrte Handverdrahtung bleibt dabei liegen.
 10. **ESC-Belegung (J2)**: J2 folgt der gemessenen Reihenfolge des B-Cube 4in1 und setzt ein
     **1:1-Kabel** voraus. Das Kabel ist noch nicht geprüft – **vorher nicht bestellen**, und vor
-    dem ersten Akku die beiden Messungen aus dem Abschnitt „ESC-Stecker J2“ machen.
+    dem ersten Akku die „Prüfung vor dem ersten Akku“ im Abschnitt „ESC-Stecker J2“ machen
+    (bei Abweichung keinen Akku anstecken, sondern melden).
 11. **Buchsen nahe den Bohrungen**: Zwischen den Randbuchsen und den Montagebohrungen bleiben
     ≥ 3,35 mm (Courtyard) – bei dicken Gummidämpfern oder Muttern prüfen, ob der Stecker frei
     bleibt.
