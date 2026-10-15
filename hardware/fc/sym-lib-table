@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "fc_custom")(type "KiCad")(uri "${KIPRJMOD}/fc_custom.kicad_sym")(options "")(descr "Projektbibliothek FC"))
+)
