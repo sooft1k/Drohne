@@ -1,8 +1,0 @@
-# KiCad-Sicherungen und lokale Einstellungen
-*-backups/
-*.kicad_prl
-fp-info-cache
-\#auto_saved_files#
-*.bak
-scripts/__pycache__/
-build/
