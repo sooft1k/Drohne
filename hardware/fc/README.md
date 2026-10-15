@@ -408,6 +408,7 @@ das wird erst geklärt, bevor Strom drauf kommt.
 | Quarz | – | 8 MHz, **CL 12 pF** (YXC, C20617566) mit 2 × 18 pF | passend zu den vorhandenen 18-pF-Lastkondensatoren |
 | GPIO4 | – | **PC5** (Pin 25) statt PA1 | das PA1-Pad liegt zwischen BUZZER und DBG_TX eingeklemmt und ließ sich nicht entflechten |
 | Kupfer außen | 70 µm (2 oz) | **35 µm (1 oz) bestellen** | JLCPCB verlangt bei 2 oz außen mind. 0,2 mm Breite/Abstand – der Gyro-Footprint hat 0,15 mm Padabstand. Die Motorströme fließen ohnehin nicht über den FC (nur ~1 A über das JST-SH-Kabel) |
+| Kupfer innen | 35 µm (1 oz) | **17,5 µm (0,5 oz) bestellen** (Standardaufbau JLC04161H-7628); 1 oz bleibt möglich (JLC041611-7628) | 1 oz innen kostet rund 17 USD Aufpreis. Lage 2 ist reine GND-Fläche. Auf Lage 3 sind die engsten VBAT-Streifen ≥ 2,15 mm breit (an einem Via 1,55 mm, kurz); bei 4S–6S fließt dort < 1 A, nach IPC-2221 (Innenlage, konservativ) gibt das < 10 K Erwärmung. Nur bei 2S mit voller 5-V-Last (≈ 1,5 A) wären es etwa 15 K – dann lieber 1 oz |
 | Massebohrung | eine | H2 (Südost) | direkt am ESC-GND; die Südwest-Ecke hätte mit ihrem Massering die 5-V-Fläche auf Lage 3 zerteilt |
 
 ## Fertigung (JLCPCB)
@@ -419,8 +420,8 @@ das wird erst geklärt, bevor Strom drauf kommt.
 | Lagen | 4 |
 | Abmessung | 42 × 41 mm |
 | Dicke | 1,6 mm |
-| Lagenaufbau | JLC04161H-7628 (Standard) |
-| Kupfer außen / innen | 1 oz / 1 oz (wie Spezifikation innen; 0,5 oz innen würde auch reichen) |
+| Lagenaufbau | JLC04161H-7628 (Standard; das „H“ steht für 0,5 oz innen) |
+| Kupfer außen / innen | 1 oz / **0,5 oz** (Standard). 1 oz innen wie in der Spezifikation geht auch: Aufbau dann **JLC041611-7628**, im Angebot von Sept. 2026 rund 17 USD Aufpreis (siehe Abweichungen) |
 | Min. Leiterbahn / Abstand | 0,15 / 0,15 mm (eingehalten) |
 | Min. Via | 0,3 mm Bohrung / 0,6 mm Pad |
 | Oberfläche | ENIG empfohlen (0,5-mm-Raster, LGA-Gyro) |
@@ -441,17 +442,27 @@ Bohrdaten und Bestückkoordinaten beziehen sich alle auf den Bohr-/Bestückungsu
 Nicht bestückt werden die Testpunkte TP1–TP5, die Lötbrücke JP1, Bohrungen und Fiducials.
 
 **Bestellart: Standard PCBA, beidseitig.** Economic PCBA bestückt nur eine Seite. Folgen:
-- Einrichtgebühr für zwei Seiten (laut JLCPCB-Preisliste 50 USD statt 25 USD), zweite Schablone.
+- Einrichtgebühr für zwei Seiten (JLCPCB-Preisliste, Stand 09/2026: 25,56 USD je Seite, also 51,12 USD)
+  und zwei Schablonen (je 8,21 USD; die Schablonen bleiben bei JLCPCB).
 - Rüstgebühr (Feeder Loading Fee) für **jede** Teilenummer, auch für Basic-Teile (laut JLCPCB-Preisliste
   ca. 1,53 USD je Teilenummer, bei 39 Teilenummern ≈ 60 USD). Deshalb sind gleichwertige Werte
   zusammengelegt (siehe Abweichungen).
 - Standard PCBA verlangt **Nutzentrennränder (Edge Rails) und Fiducials** und eine
   Mindestgröße von 70 × 70 mm. Die Platine (42 × 41 mm) ist kleiner und hat Bauteile direkt an
   der Kante: beim Bestellen „Edge Rails/Fiducials: Added by JLCPCB“ wählen bzw. JLCPCB den
-  Nutzen machen lassen (bei PCBA mit gefrästem Spalt und Stegen, kein V-Cut). Als Bemerkung
-  dazuschreiben: „USB-C connector overhangs the east edge by 0.5 mm, please keep a routed gap
-  there. C21 is polarized: + (pad 1) must be on the west side (left, USB-C right).“ Die Ränder werden mitgeliefert und lassen sich abbrechen (kein Löten nötig); die
-  Stegreste an der Kante mit einer Feile glätten.
+  Nutzen machen lassen (bei PCBA mit gefrästem Spalt und Stegen, kein V-Cut). JLCPCB vergrößert
+  die Platine dafür auf etwa 70 × 71 mm und rechnet den Platinenpreis mit dieser Größe.
+  Bemerkungen, getrennt nach Abschnitt, damit Platinenfertigung und Bestückung je ihren Hinweis
+  bekommen:
+  - **PCB Remark:** „USB-C connector overhangs the east edge by 0.5 mm, please keep a routed gap
+    there.“
+  - **Assembly remark:** „C21 is polarized: + (pad 1) must be on the west side (left, USB-C
+    right). D7 on bottom side: cathode band toward the rear edge.“
+
+  Die Ränder lässt man am besten von JLCPCB abtrennen („Depanel boards & edge rail before
+  delivery“, im Sept. 2026 rund 2,30 USD bei 2 Platinen): Kondensatoren, USB-C und JST-Buchsen
+  sitzen direkt an der Kante, Abbrechen von Hand belastet sie. Ohne diese Option kommen die
+  Ränder mit und werden abgebrochen; die Stegreste an der Kante mit einer Feile glätten.
 
 **Extended-Teile, 18 Teilenummern** (bei Standard-Bestückung kostet ohnehin jede Teilenummer
 gleich viel; die Einteilung zählt nur für die Verfügbarkeit): STM32F405RGT6 (C15742), ICM-42688-P (C1850418),
@@ -510,14 +521,62 @@ C21 Pluspol links.
 
 ### Bestellablauf (jlcpcb.com)
 
-1. `fertigung/fc_jlcpcb_gerber.zip` hochladen, Parameter wie in der Tabelle oben
-   (4 Lagen, 1,6 mm, JLC04161H-7628, 1 oz/1 oz, ENIG, Tented Vias), Edge Rails wie oben.
-2. „PCB Assembly“ einschalten: **Standard**, Seite **Both Sides**, Anzahl wählen.
-3. `fertigung/jlcpcb_bom.csv` und `fertigung/jlcpcb_cpl.csv` hochladen, Teilezuordnung und
-   Bestand prüfen (alle 39 Positionen müssen ein Teil haben).
+1. `fertigung/fc_jlcpcb_gerber.zip` unter jlcpcb.com/quote hochladen. JLCPCB muss „4 layer
+   board of 41x42mm“ erkennen. Felder der Platine (Stand Okt. 2026, nicht genannte Felder auf
+   dem Standardwert bzw. No):
+
+   | Feld | Wert |
+   |---|---|
+   | Base Material / Layers / High Precision PCB | FR-4 / 4 / No |
+   | PCB Qty, Product Type, Different Design | 5, Industrial/Consumer electronics, 1 |
+   | Delivery Format | Single PCB (die Ränder kommen über die Bestückung, siehe oben) |
+   | PCB Thickness / Color / Silkscreen | 1.6 / Green / White |
+   | Surface Finish / Gold Thickness | ENIG / 1 U″ |
+   | Outer / Inner Copper Weight | 1 oz / 0.5 oz |
+   | Specify Layer Sequence / Specify Stackup / Layer Stackup / Impedance Control | No / Yes / JLC04161H-7628 / No |
+   | Via Covering / Via Plating Method | Tented / Not Specified |
+   | Min via hole size/diameter | 0.3mm/(0.4/0.45mm) (alle 205 Vias 0,3/0,6 mm) |
+   | Board Outline Tolerance / Electrical Test | ±0.2mm (Regular) / Flying Probe Fully Test |
+   | Confirm Production file | Yes |
+   | Mark on PCB | Remove Mark (bis 6 Lagen kostenlos), sonst Standardwert |
+   | Gold Fingers, Castellated Holes, Press-Fit Hole, Edge Plating, Blind Slots, UL Marking, Backdrill, Humidity Indicator Card | No |
+   | Advanced Options (4-Wire Kelvin, Paper between PCBs, Appearance Quality, Silkscreen Technology, Package Box, Inspection Report) | No bzw. Standardwert (IPC Class 2) |
+   | PCB Remark | siehe oben |
+   | Stencil („Order together with PCB“) | aus – die Schablone ist in der Bestückung enthalten |
+
+   Via Covering: Im Wärmepad von U4 liegen 12 Vias. Bei
+   „Tented“ bleiben sie oben offen und ziehen etwas Lot, das ist für Wärmevias üblich. „Plugged“
+   geht bei Vias im Pad nicht; „Epoxy Filled & Capped“ wäre sauberer, gilt aber für alle Vias und
+   kostet bei 4 Lagen Aufpreis.
+2. „PCB Assembly“ einschalten:
+
+   | Feld | Wert |
+   |---|---|
+   | Assemble top side / bottom side | beide |
+   | PCBA Type / Assembly Side | **Standard** / **Both Sides** |
+   | PCBA Qty | 2–5 (mindestens 2; die übrigen Platinen kommen unbestückt) |
+   | Edge Rails/Fiducials | Added by JLCPCB |
+   | Confirm Parts Placement | **Yes** |
+   | Stencil Storage / Fixture Storage | No / No |
+   | Parts Selection | By Customer (Self-Service) – die BOM hat LCSC-Nummern |
+   | Depanel boards & edge rail before delivery | Yes (siehe oben) |
+   | Solder Paste | Standardwert (High temp., SAC305) |
+   | Bake Components, Photo Confirmation, Board Cleaning, Conformal Coating, Special stencil, Flying Probe Test, Nitrogen reflow, Function test | No |
+   | Packaging | Standardwert |
+   | Assembly remark | siehe oben |
+
+3. „Next“ (ab hier mit Konto), dann `fertigung/jlcpcb_bom.csv` und `fertigung/jlcpcb_cpl.csv`
+   hochladen. Warnungen zu TP1–TP5 und JP1 (nicht bestückt) übergehen. Teilezuordnung und
+   Bestand prüfen: alle 39 Positionen müssen ein Teil haben, keine Fehlmenge (gelbe und grüne
+   LED besonders ansehen, siehe oben).
 4. In der Platzierungsvorschau Ober- und Unterseite mit der Prüfliste abgleichen (Liste oben),
    falsch gedrehte Teile dort korrigieren.
-5. Bestellen; JLCPCB prüft die Daten (DFM) und meldet sich bei Rückfragen per E-Mail.
+5. „Save to Cart“: Erst hier steht der Gesamtpreis mit Bauteilen. Warenkorb und Entwurf sind
+   unverbindlich, bezahlt wird erst an der Kasse.
+6. Beim echten Bestellen „Review Before Payment“ wählen, und in den Dialogen zu Confirm
+   Production file / Confirm Parts Placement **„Do not confirm automatically“** anhaken – sonst
+   startet die Fertigung nach Ablauf der Frist ohne Freigabe. Beides dann in der Bestellhistorie
+   selbst prüfen und freigeben.
 
 ## Routing
 
