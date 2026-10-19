@@ -27,6 +27,10 @@ ArmCheck_t Arming_Check(void);
  * Bei Misserfolg wird der Grund fuer die naechste Terminal-Ausgabe gemerkt. */
 ArmCheck_t Arming_Arm(void);
 
+/* Zahl der erfolgreichen Arm-Vorgaenge seit dem Start - damit erkennt
+ * command.c, ob der aktuelle Arm-Zustand noch vom Terminal stammt. */
+uint32_t Arming_ArmCount(void);
+
 /* Motoren aus, Gas-Sollwert auf 0, Arm-Schalter muss erst wieder runter. */
 void Arming_Disarm(void);
 

@@ -12,6 +12,7 @@ extern MPU6050_Data_t sensor;
 extern uint8_t mpu_ok;
 
 static volatile ArmCheck_t pending = ARM_OK; /* noch nicht ausgegebener Ablehnungsgrund */
+static uint32_t arm_count = 0;                /* erfolgreiche Arm-Vorgaenge seit dem Start */
 
 ArmCheck_t Arming_Check(void)
 {
@@ -54,7 +55,13 @@ ArmCheck_t Arming_Arm(void)
     setpoint.throttle = 0.0f;
     Control_Reset();
     Motor_Arm();
+    arm_count++;
     return ARM_OK;
+}
+
+uint32_t Arming_ArmCount(void)
+{
+    return arm_count;
 }
 
 void Arming_Reject(ArmCheck_t r)

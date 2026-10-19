@@ -260,6 +260,9 @@ int main(void)
         /* Funkempfang auswerten: Sollwerte, Failsafe, Arming */
         RC_Update(dt);
 
+        /* Terminal-Arm: ohne Zeichen vom Terminal nach 1 s aus */
+        Command_ArmWatchdog();
+
         float out_roll, out_pitch, out_yaw;
         Control_Update(&sensor, dt, Mixer_IsSaturated(), &out_roll, &out_pitch, &out_yaw);
 

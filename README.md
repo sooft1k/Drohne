@@ -157,6 +157,47 @@ sie in dieser Zeit sicher auf Low.
 | Keramikkondensator X7R | 100 nF | 2 | C1 an PC0, C2 an PA4 |
 | optional Widerstand | 10 kΩ + 20 kΩ | je 1 | Teiler am Strom, falls > 3,0 V |
 
+## ESC einstellen (BLHeli_S)
+
+**Vor dem ersten Motortest einstellen.** BLHeli_S nimmt ab Werk nur
+1148–1832 µs als Gasbereich an, bei Oneshot125 geteilt durch 8, also
+143,5–229 µs. Die Firmware gibt aber 125–250 µs aus. Mit den
+Werkseinstellungen:
+
+- liegt der Leerlauf (15 % = 143,75 µs) genau an der Anlaufschwelle – ein
+  Motor kann im Leerlauf stehen bleiben;
+- tut sich über 229 µs (83 % Ausgang) nichts mehr – bei viel Gas fehlt der
+  Regelung der Stellweg nach oben, die Drohne lässt sich nicht mehr halten.
+
+Einstellungen (für alle vier ESCs gleich):
+
+| Einstellung | Wert | Warum |
+|---|---|---|
+| PPM Min Throttle | 1040 µs (= 130 µs bei Oneshot125) | Stopp-Puls 125 µs liegt darunter, Leerlauf 15 % sicher darüber |
+| PPM Max Throttle | 2000 µs (= 250 µs) | voller Ausgangsbereich nutzbar |
+| Programming by TX | aus | kein versehentlicher Programmiermodus beim Einschalten |
+| Motor Direction | je Motor passend | siehe Kipptest Schritt 15 |
+| Rest | Werkseinstellung | |
+
+So kommst du an die ESCs: Die eigene Flugsteuerung kann kein
+BLHeli-Passthrough. Du brauchst eine 1-Wire-Schnittstelle, die an die
+Motorsignal-Pads (M1–M4) und GND des ESC kommt:
+
+- einen fertigen USB-Linker für BLHeli (z. B. „BLHeli USB Linker“), oder
+- einen Arduino Nano/Uno mit der 4-Way-Interface-Firmware aus BLHeliSuite, oder
+- vorübergehend eine Betaflight-Flugsteuerung, dann über
+  [esc-configurator.com](https://esc-configurator.com) (Chrome/Edge).
+
+Programmiert wird mit Akku am ESC, aber ohne Propeller. Danach die
+Signalleitungen wieder an PB0/PB1/PA6/PA7.
+
+**Danach den Leerlauf prüfen** (Kipptest Schritt 15): Alle vier Motoren
+müssen im Leerlauf sicher und gleichmäßig drehen. Die 15 % in
+`MIXER_IDLE_PERCENT` (`Sensors/mixer.h`) wurden mit den Werkseinstellungen
+gemessen; mit Min Throttle 1040 drehen sie etwas schneller. Laufen sie
+deutlich zu schnell, den Wert in kleinen Schritten senken (nicht unter die
+Stelle, an der ein Motor stockt).
+
 ## Bauen und Flashen
 
 ```sh
@@ -343,6 +384,36 @@ Funke lehnt das Terminal `arm` ab. Kommt die Funke dazu, hat sie Vorrang:
 Steht der Arm-Schalter unten oder wurde nicht über die Funke gearmt,
 schaltet die Firmware ab.
 
+**Terminal-Arm braucht ein Lebenszeichen.** Solange über das Terminal
+gearmt ist, muss mindestens jede Sekunde ein fehlerfreies Zeichen ankommen
+(`COMMAND_KEEPALIVE_MS` in `Sensors/command.h`), sonst disarmt die Firmware
+sofort. Abgezogenes USB-Kabel, abgestürztes Terminalprogramm oder
+eingeschlafener Laptop schalten so die Motoren ab. Als Lebenszeichen reicht
+ein Enter (leere Zeile) alle 0,5 s – im Terminalprogramm „zyklisch senden“
+einstellen (z. B. HTerm: `\r` mit Wiederholung 500 ms) oder dieses kleine
+Python-Skript benutzen (`pip install pyserial`, Port anpassen):
+
+```python
+import serial, threading, time
+s = serial.Serial("COM5", 115200, timeout=0.1)   # Linux: "/dev/ttyUSB0"
+def keepalive():
+    while True:
+        s.write(b"\r"); time.sleep(0.5)
+def lesen():
+    while True:
+        print(s.read(200).decode(errors="replace"), end="", flush=True)
+threading.Thread(target=keepalive, daemon=True).start()
+threading.Thread(target=lesen, daemon=True).start()
+while True:
+    s.write((input() + "\r").encode())
+```
+
+Beendest du das Skript, gehen die Motoren nach 1 s aus. Nach dem Disarm
+meldet das Terminal `DISARMED - laenger als 1000 ms kein Zeichen vom
+Terminal.` Über den Arm-Schalter gearmt gilt das nicht, dort wacht der
+Funk-Failsafe. Der Terminal-Arm ist trotzdem nur für den Prüfstand ohne
+Propeller gedacht.
+
 ## Regelung
 
 - Kaskade: Winkelregler (nur P) gibt die Soll-Drehrate vor, der
@@ -391,7 +462,8 @@ nicht eindeutig – dann kann ein zu leerer Akku als „OK“ durchgehen
 
 `arm` im Terminal fragt zusätzlich nach: Erst nach `ja` innerhalb von 5 s
 wird gearmt, die Prüfungen laufen dabei noch einmal. `t <gas>` geht nur,
-wenn gearmt ist.
+wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
+(siehe „Failsafe“).
 
 ## Sensorausfall, Watchdog und Fehler
 
@@ -475,7 +547,7 @@ einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 
 | Befehl | Wirkung |
 |---|---|
-| `arm`, dann `ja` | Motoren scharf, nur ohne Funk und mit Sicherheitsabfragen |
+| `arm`, dann `ja` | Motoren scharf, nur ohne Funk und mit Sicherheitsabfragen. Gearmt mindestens jede Sekunde ein Zeichen senden (Enter alle 0,5 s), sonst aus |
 | `disarm` (`stop`) | Motoren aus. Danach armt der Arm-Schalter erst wieder, wenn er einmal unten war |
 | `status` | Zustand, Sensorfehler und ob Armen gerade erlaubt wäre |
 | `bat` | Spannung, Zellen, Strom, verbrauchte mAh, Gasgrenze |

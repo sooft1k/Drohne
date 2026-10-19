@@ -31,6 +31,12 @@ static volatile uint8_t kipp_on = 0;
 static uint8_t arm_confirm = 0;     /* 1 = 'arm' gesendet, wartet auf 'ja' */
 static uint32_t arm_confirm_ms = 0; /* Zeitpunkt des 'arm' */
 
+/* Abschaltung fuer den Terminal-Arm */
+static volatile uint32_t last_rx_ms = 0; /* letztes fehlerfreies Zeichen, HAL_GetTick() */
+static uint8_t term_armed = 0;           /* 1 = ueber das Terminal gearmt */
+static uint32_t term_arm_count = 0;      /* Arming_ArmCount() beim Terminal-Arm */
+static uint8_t keepalive_report = 0;     /* Abschaltung noch nicht gemeldet */
+
 void Command_Init(UART_HandleTypeDef *huart)
 {
     cmd_uart = huart;
@@ -52,6 +58,12 @@ uint8_t Command_KippOn(void)
 void Command_RxByte(void)
 {
     char c = (char)rx_char;
+
+    /* Nur fehlerfreie Zeichen halten den Terminal-Arm am Leben. Bei Rahmen-,
+     * Rausch- oder Ueberlauffehlern setzt die HAL ErrorCode, bevor sie das
+     * Zeichen zustellt - z.B. Stoerungen auf einer offenen Leitung. */
+    if (cmd_uart->ErrorCode == HAL_UART_ERROR_NONE)
+        last_rx_ms = HAL_GetTick();
 
     if (c == '\r' || c == '\n')
     {
@@ -85,8 +97,35 @@ void Command_RxError(void)
     HAL_UART_Receive_IT(cmd_uart, &rx_char, 1);
 }
 
+void Command_ArmWatchdog(void)
+{
+    /* Disarmt, oder seitdem anders neu gearmt (Arm-Schalter): dann gilt
+     * die Abschaltung nicht mehr - beim Funk wacht der Failsafe. */
+    if (!Motor_IsArmed() || Arming_ArmCount() != term_arm_count)
+        term_armed = 0;
+    if (!term_armed)
+        return;
+
+    /* Zeitstempel zuerst lesen, dann die Zeit (wie CRSF_AgeMs): kommt genau
+     * dazwischen ein Zeichen, wird die Differenz sonst negativ = riesig. */
+    const uint32_t last = last_rx_ms;
+    if (HAL_GetTick() - last > COMMAND_KEEPALIVE_MS)
+    {
+        Arming_Disarm();
+        term_armed = 0;
+        keepalive_report = 1;
+    }
+}
+
 void Command_Process(void)
 {
+    if (keepalive_report && !Motor_IsArmed())
+    {
+        keepalive_report = 0;
+        printf(">> DISARMED - laenger als %d ms kein Zeichen vom Terminal.\r\n",
+               COMMAND_KEEPALIVE_MS);
+    }
+
     if (!line_ready)
         return;
 
@@ -145,7 +184,11 @@ void Command_Process(void)
             if (r == ARM_OK)
             {
                 printf(">> ARMED - Terminal-Ausgaben aus bis 'disarm'.\r\n");
-                (void)Arming_Arm();
+                printf(">> Mindestens jede Sekunde ein Zeichen senden (z.B. Enter alle 0,5 s),\r\n");
+                printf(">> sonst gehen die Motoren aus.\r\n");
+                last_rx_ms = HAL_GetTick();
+                term_armed = (Arming_Arm() == ARM_OK) ? 1 : 0;
+                term_arm_count = Arming_ArmCount();
             }
             else
             {
