@@ -1,4 +1,5 @@
 #include "control.h"
+#include "mixer.h"
 #include <stdio.h>
 
 PID_t pid_rate_roll;
@@ -81,7 +82,11 @@ void Control_Update(MPU6050_Data_t *s, float dt, uint8_t saturated,
 {
     /* I-Anteil nur bei anliegendem Gas - sonst laeuft der Integrator
      * am Boden voll und die Drohne springt beim Armen weg. */
-    uint8_t integrate = (setpoint.throttle > 10.0f) ? 1 : 0;
+    /* Erst integrieren, wenn die Drohne fliegt (Airmode an, also Gas seit
+     * dem Armen schon ueber 25 %). Am Boden zwischen 10 und 25 % Gas wuerde
+     * der I-Anteil sonst gegen die Schraeglage aufladen und beim Abheben
+     * mit einem Ruck wirken. */
+    uint8_t integrate = (Mixer_AirmodeActive() && setpoint.throttle > 10.0f) ? 1 : 0;
 
     float rate_sp_roll;
     float rate_sp_pitch;

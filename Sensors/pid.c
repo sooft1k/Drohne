@@ -82,8 +82,13 @@ float PID_Update(PID_t *pid, float setpoint, float measured, float dt,
         const uint8_t at_limit = (out_try > pid->out_limit && i_new > pid->i_term) ||
                                  (out_try < -pid->out_limit && i_new < pid->i_term);
 
-        if (!at_limit && !(saturated && grows))
-            pid->i_term = i_new;
+        if (!at_limit)
+        {
+            if (!(saturated && grows))
+                pid->i_term = i_new;
+            else if (i_new * pid->i_term < 0.0f)
+                pid->i_term = 0.0f; /* Vorzeichenwechsel: bis 0 abbauen ist erlaubt */
+        }
     }
 
     /* --- Summe und Begrenzung --- */

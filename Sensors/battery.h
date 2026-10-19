@@ -17,7 +17,9 @@
 /* Zellenzahl. 0 = automatisch beim Anstecken erkennen.
  * Die Erkennung ist bei teilentladenen 5S/6S-Akkus nicht eindeutig
  * (ein 6S mit 3,5 V/Zelle sieht aus wie ein voller 5S) - wer immer
- * denselben Akkutyp fliegt, traegt die Zellenzahl hier fest ein. */
+ * denselben Akkutyp fliegt, traegt die Zellenzahl hier fest ein.
+ * Erkannt werden 3,3..4,38 V pro Zelle (auch HV-LiPo voll). Hoeher
+ * geht nicht: ein leerer 4S (3,3 V) saehe sonst aus wie ein voller 3S. */
 #define BAT_CELLS_DEFAULT 0
 
 /* Warnschwellen pro Zelle */
@@ -74,7 +76,7 @@ float Battery_ThrottleCap(void);
 
 /* Kalibrieren, falls die Widerstaende nicht exakt sind:
  * echte Spannung am Akku messen und hier eintragen. */
-void  Battery_Calibrate(float real_volt);
+uint8_t Battery_Calibrate(float real_volt); /* 1 = uebernommen, 0 = > 20 % daneben */
 float Battery_GetScale(void);
 
 /* Strom: Nullpunkt jetzt setzen (Motoren aus) bzw. mit bekanntem Strom

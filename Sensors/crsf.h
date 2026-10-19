@@ -11,7 +11,8 @@
  *   [Adresse][Laenge][Typ][Daten ...][CRC]
  *   Laenge zaehlt Typ + Daten + CRC.
  *
- * Uns interessiert nur Typ 0x16: 16 Kanaele zu je 11 Bit in 22 Bytes. */
+ * Empfangen wird nur Typ 0x16: 16 Kanaele zu je 11 Bit in 22 Bytes.
+ * Gesendet wird ueber dieselbe UART die Akku-Telemetrie (Typ 0x08, 5 Hz). */
 
 #define CRSF_BAUD             420000
 #define CRSF_CHANNELS         16

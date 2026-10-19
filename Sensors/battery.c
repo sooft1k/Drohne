@@ -21,6 +21,8 @@ static float cur_mv = 0.0f;      /* gefilterte Pinspannung, mV */
 static float amps = 0.0f;        /* gefilterter Strom */
 static float mah = 0.0f;         /* verbrauchte Kapazitaet */
 static float zero_acc = 0.0f;    /* automatischer Nullabgleich beim Anstecken */
+static float zero_min = 0.0f, zero_max = 0.0f;
+static uint16_t zero_wait = 0;   /* Messungen seit dem Anstecken */
 static uint8_t zero_n = 0;
 
 static float timer = 0.0f;
@@ -41,6 +43,11 @@ static uint8_t settle = 0; /* Zaehler, bis die Zellenerkennung greift */
 #define BAT_SETTLE_COUNT 50
 /* Messungen fuer den automatischen Strom-Nullabgleich (0,5 s) */
 #define CURR_ZERO_COUNT 50
+/* Erst so lange nach dem Anstecken messen (3 s): vorher laufen Startpiepser
+ * des ESC und Einschaltstroeme */
+#define CURR_ZERO_WAIT 300
+/* Streuen die Messungen staerker, war es nicht ruhig - neu messen */
+#define CURR_ZERO_MAX_SPREAD_MV 5.0f
 
 static void adc_init(ADC_HandleTypeDef *h, ADC_TypeDef *inst, uint32_t channel)
 {
@@ -182,6 +189,7 @@ void Battery_Update(float dt)
         cur_mv = (mv_cur >= 0.0f) ? mv_cur : 0.0f;
         zero_acc = 0.0f;
         zero_n = 0;
+        zero_wait = 0;
     }
     else
     {
@@ -195,27 +203,54 @@ void Battery_Update(float dt)
         const float ac = step / (CURR_TAU + step);
         cur_mv += ac * (mv_cur - cur_mv);
 
-        /* Nullabgleich in der ersten halben Sekunde nach dem Anstecken,
-         * nur disarmed - dann stehen die Motoren. */
+        /* Nullabgleich 3 s nach dem Anstecken ueber 0,5 s, nur disarmed -
+         * dann stehen die Motoren. Streut es zu stark, neu anfangen.
+         * Was FC, Empfaenger und Kamera dauerhaft ziehen, zaehlt dabei als 0 A. */
         if (zero_n < CURR_ZERO_COUNT && !Motor_IsArmed())
         {
-            zero_acc += mv_cur;
-            zero_n++;
-            if (zero_n == CURR_ZERO_COUNT)
-                cur_zero_mv = zero_acc / (float)CURR_ZERO_COUNT;
+            if (zero_wait < CURR_ZERO_WAIT)
+            {
+                zero_wait++;
+            }
+            else
+            {
+                if (zero_n == 0)
+                {
+                    zero_acc = 0.0f;
+                    zero_min = zero_max = mv_cur;
+                }
+                zero_acc += mv_cur;
+                if (mv_cur < zero_min)
+                    zero_min = mv_cur;
+                if (mv_cur > zero_max)
+                    zero_max = mv_cur;
+                zero_n++;
+                if (zero_max - zero_min > CURR_ZERO_MAX_SPREAD_MV)
+                    zero_n = 0; /* unruhig - nochmal */
+                else if (zero_n == CURR_ZERO_COUNT)
+                    cur_zero_mv = zero_acc / (float)CURR_ZERO_COUNT;
+            }
         }
 
-        float i = (cur_mv - cur_zero_mv) / cur_mv_per_a;
-        if (i < 0.0f)
-            i = 0.0f;
-        amps = i;
-        mah += amps * step / 3.6f; /* A * s -> mAh */
+        if (zero_n >= CURR_ZERO_COUNT)
+        {
+            float i = (cur_mv - cur_zero_mv) / cur_mv_per_a;
+            if (i < 0.0f)
+                i = 0.0f;
+            amps = i;
+            mah += amps * step / 3.6f; /* A * s -> mAh */
+        }
+        else
+        {
+            amps = 0.0f; /* ohne Nullpunkt keine Strommessung */
+        }
     }
 
     /* ---------- Zellenzahl ----------
      * Einmal nach dem Anstecken bestimmen, danach bleibt sie fest - sonst
      * wuerde die Erkennung bei leerem Akku auf eine Zelle weniger springen.
-     * Eine Zelle liegt zwischen 3,3 und 4,3 V. */
+     * Eine Zelle liegt zwischen 3,3 und 4,38 V (HV-LiPo voll 4,35 V, plus
+     * etwas Messtoleranz). */
     if (cells == 0)
     {
         if (BAT_CELLS_DEFAULT > 0)
@@ -232,7 +267,7 @@ void Battery_Update(float dt)
             for (uint8_t c = 2; c <= 6; c++)
             {
                 const float cv = volt / c;
-                if (cv >= 3.30f && cv <= 4.30f)
+                if (cv >= 3.30f && cv <= 4.38f)
                 {
                     cells = c;
                     break;
@@ -311,13 +346,20 @@ const char *Battery_StateText(void)
     }
 }
 
-void Battery_Calibrate(float real_volt)
+uint8_t Battery_Calibrate(float real_volt)
 {
     if (!(real_volt >= 5.0f) || volt < 5.0f)
-        return;
+        return 0;
+    /* Mehr als 20 % Abweichung ist kein Toleranzfehler mehr, sondern ein
+     * Tippfehler oder falsche Widerstaende - sonst koennte eine falsche
+     * Eingabe den Akkuschutz aushebeln. */
+    const float k = real_volt / volt;
+    if (k < 0.8f || k > 1.25f)
+        return 0;
     /* aktuellen Messwert auf den echten Wert ziehen */
-    scale *= (real_volt / volt);
+    scale *= k;
     volt = real_volt;
+    return 1;
 }
 
 float Battery_GetScale(void) { return scale; }

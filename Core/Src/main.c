@@ -109,7 +109,9 @@ int main(void)
     printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Strom: PA4 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
-    printf("         angle | rate | stream on/off | kipp | t <gas>\r\n");
+    printf("         angle | rate | stream on/off | kipp | t <gas> | ja |\r\n");
+    printf("         rrp/arp <wert> | glpf | alpf | tau | batcal | curzero | curcal\r\n");
+    printf("Arm-Schalter: Kanal 5 (AUX1)\r\n");
 
     if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST))
         printf("!! Letzter Neustart durch den Watchdog - die Software hing !!\r\n");
@@ -170,6 +172,7 @@ int main(void)
     printf(">> Bereit.\r\n");
 
     uint32_t cyc_last = DWT->CYCCNT; /* Zeitstempel des letzten Regelzyklus */
+    float imu_dt = 0.0f;             /* Zeit seit der letzten gueltigen Sensormessung */
 
     uint32_t stream_div = 0; /* 1000 Hz / 20 = 50 Hz Ausgabe */
     uint32_t kipp_div = 0;   /* 1000 Hz / 200 = 5 Hz Ausgabe */
@@ -210,8 +213,8 @@ int main(void)
         loop_count++;
 
         /* Zeit seit dem letzten Regelzyklus messen statt 1 ms anzunehmen.
-         * Filter, Lagewinkel und PID rechnen damit richtig, auch wenn einmal
-         * ein Zyklus ausfaellt. Taktzaehler: 168 MHz, laeuft nach 25 s ueber,
+         * Filter, Lagewinkel und PID rechnen damit richtig, auch wenn ein
+         * Takt ausfaellt. Taktzaehler: 168 MHz, laeuft nach 25 s ueber,
          * die vorzeichenlose Differenz stimmt trotzdem. */
         const uint32_t cyc = DWT->CYCCNT;
         float dt = (float)(cyc - cyc_last) / (float)SystemCoreClock;
@@ -223,10 +226,16 @@ int main(void)
 
         /* ===== REGELZYKLUS - nichts Blockierendes hineinschreiben ===== */
 
+        /* Die Lagewinkel bekommen die Zeit seit der letzten GUELTIGEN Messung -
+         * faellt ein Lesevorgang aus, geht die Drehung dazwischen nicht verloren. */
+        imu_dt += dt;
+        if (imu_dt > DT_MAX)
+            imu_dt = DT_MAX;
         if (imu == 1)
         {
-            MPU6050_Convert(&sensor, dt);
-            MPU6050_UpdateAngles(&sensor, dt);
+            MPU6050_Convert(&sensor, imu_dt);
+            MPU6050_UpdateAngles(&sensor, imu_dt);
+            imu_dt = 0.0f;
         }
         if (mpu_ok)
         {
@@ -289,11 +298,17 @@ int main(void)
         }
 
         /* LED als Lebenszeichen: blinkt mit 2 Hz, bei Akku-Warnung schnell
-         * (5 Hz), bei kritischem Akku sehr schnell (12,5 Hz). */
+         * (5 Hz), bei kritischem Akku sehr schnell (12,5 Hz). Ohne Sensor
+         * (fehlt oder Kalibrierung gescheitert) leuchtet sie dauernd -
+         * dann laesst sich nicht armen. */
         const uint32_t led_period = (Battery_State() == BAT_CRITICAL) ? 40
                                     : (Battery_State() == BAT_WARN)   ? 100
                                                                       : 250;
-        if (++led_div >= led_period)
+        if (!mpu_ok)
+        {
+            HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); /* aktiv-low: an */
+        }
+        else if (++led_div >= led_period)
         {
             led_div = 0;
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);

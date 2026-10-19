@@ -91,11 +91,11 @@ void Command_Process(void)
         return;
 
     /* Gearmt sind die Terminal-Ausgaben aus (siehe _write in main.c).
-     * Dann wirken nur disarm/stop und t - Abstimmen, Filter und Anzeigen
-     * gehen nur disarmed. */
+     * Dann wirken nur disarm/stop, t und curcal (braucht Strom, also laufende
+     * Motoren) - Abstimmen, Filter und Anzeigen gehen nur disarmed. */
     if (Motor_IsArmed() &&
         !(strcmp(line, "disarm") == 0 || strcmp(line, "stop") == 0 ||
-          (line[0] == 't' && line[1] == ' ')))
+          (line[0] == 't' && line[1] == ' ') || strncmp(line, "curcal ", 7) == 0))
     {
         line_len = 0;
         line_ready = 0;
@@ -207,8 +207,10 @@ void Command_Process(void)
     else if (strncmp(line, "batcal ", 7) == 0)
     {
         float v = strtof(line + 7, 0);
-        Battery_Calibrate(v);
-        printf(">> Kalibriert auf %.2f V (Faktor %.4f)\r\n", Battery_Volt(), Battery_GetScale());
+        if (Battery_Calibrate(v))
+            printf(">> Kalibriert auf %.2f V (Faktor %.4f)\r\n", Battery_Volt(), Battery_GetScale());
+        else
+            printf(">> Abgelehnt: Akku nicht erkannt oder mehr als 20 %% Abweichung\r\n");
     }
 
     /* ---------- Strommessung kalibrieren ----------

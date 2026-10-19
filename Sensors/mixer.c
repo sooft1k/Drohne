@@ -190,6 +190,11 @@ void Mixer_GetOutputs(float *m1, float *m2, float *m3, float *m4)
     *m4 = out[3];
 }
 
+uint8_t Mixer_AirmodeActive(void)
+{
+    return airmode;
+}
+
 uint8_t Mixer_IsSaturated(void)
 {
     return saturated;

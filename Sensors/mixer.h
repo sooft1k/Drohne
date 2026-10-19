@@ -60,4 +60,7 @@ void Mixer_GetOutputs(float *m1, float *m2, float *m3, float *m4);
  * und wurden gestaucht. */
 uint8_t Mixer_IsSaturated(void);
 
+/* 1 = Airmode an, die Drohne hat seit dem Armen schon Gas gegeben (fliegt) */
+uint8_t Mixer_AirmodeActive(void);
+
 #endif /* MIXER_H */

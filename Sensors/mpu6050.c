@@ -341,6 +341,12 @@ MPU6050_CalResult_t MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *d
     const double lim2 = lim * lim;
     if (qx / n - mx * mx > lim2 || qy / n - my * my > lim2 || qz / n - mz * mz > lim2)
         return MPU6050_CAL_BEWEGT;
+    /* Eine langsame, gleichmaessige Drehung streut nicht - aber ein Offset
+     * ueber 40 Grad/s ist mehr, als der MPU6050 ab Werk hat (bis 20 Grad/s).
+     * Ganz langsame Drehungen darunter lassen sich nicht erkennen. */
+    const double mlim = 40.0 * GYRO_LSB_PER_DPS;
+    if (mx > mlim || mx < -mlim || my > mlim || my < -mlim || mz > mlim || mz < -mlim)
+        return MPU6050_CAL_BEWEGT;
 
     data->gyro_x_offset = (float)mx;
     data->gyro_y_offset = (float)my;

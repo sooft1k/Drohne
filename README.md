@@ -14,6 +14,12 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 
 Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 
+> **Umstellung:** Der Arm-Schalter liegt seit Block 5 auf **Kanal 5 (AUX1)**,
+> vorher war es Kanal 8. Am Sender im Mischer den Schalter auf Kanal 5 legen
+> und vor dem ersten Flug Schritt 20 des Kipptests (Arm-Schalter) prüfen.
+> Mit Funk zeigt `rc` die Kanäle; Kanal 5 muss beim Umlegen zwischen etwa
+> 1000 und 2000 wechseln.
+
 ## Bauen und Flashen
 
 ```sh
@@ -213,14 +219,16 @@ schaltet die Firmware ab.
 - I-Anteil: begrenzt wird der I-Anteil selbst (Drehrate ±100 von ±400 =
   25 % Stellbereich), unabhängig von Ki. Er wächst nicht weiter, solange der
   Reglerausgang am Limit steht oder der Mixer die Korrekturen stauchen muss
-  (Anti-Windup). Integriert wird erst ab 10 % Gas.
+  (Anti-Windup). Integriert wird erst, wenn die Drohne fliegt: Airmode an
+  (Gas seit dem Armen einmal über 25 %) und Gas über 10 %. Am Boden lädt
+  sich der I-Anteil so nicht gegen eine Schräglage auf.
 - Moduswechsel Angle/Rate setzt nur den Winkelregler zurück, der I-Anteil
   des Drehratenreglers bleibt.
 - Gyro-Messbereich ±2000 °/s, Accel ±4 g.
 
 **Solange gearmt ist, schweigt das Terminal.** Eine Textzeile kostet bei
 115200 Baud mehrere Millisekunden und würde den Regeltakt stören. Gearmt
-wirken nur `disarm`/`stop` und `t <gas>`, alle anderen Befehle (Anzeigen,
+wirken nur `disarm`/`stop`, `t <gas>` und `curcal <ampere>`, alle anderen Befehle (Anzeigen,
 PID-Werte, Filter, `stream`, `kipp`) gehen nur disarmed.
 
 ## Sicherheitsabfragen beim Armen
@@ -271,7 +279,7 @@ wenn gearmt ist.
 
 **Spannung:** Teiler 11:1 an PC0, 100 Messungen pro Sekunde, Tiefpass 0,5 s.
 Der Filter startet beim Anstecken mit dem ersten Messwert. Nach 0,5 s wird
-die Zellenzahl bestimmt (3,3–4,3 V pro Zelle) und bleibt dann fest. Bei
+die Zellenzahl bestimmt (3,3–4,38 V pro Zelle, also auch HV-LiPo voll) und bleibt dann fest. Bei
 teilentladenen 5S/6S-Akkus ist das nicht eindeutig (ein 6S mit 3,5 V/Zelle
 sieht aus wie ein voller 5S). Wer immer denselben Akkutyp fliegt, trägt die
 Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein.
@@ -283,6 +291,7 @@ Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein.
 | OK | ab 3,50 V | 100 % | blinkt mit 2 Hz |
 | Warnung | unter 3,50 V | 80 % | blinkt mit 5 Hz |
 | Kritisch | unter 3,30 V | 60 % | blinkt mit 12,5 Hz |
+| Sensor fehlt / Kalibrierung gescheitert | – | Armen gesperrt | leuchtet dauernd |
 
 Gearmt zählt ein Zustand erst, wenn die Spannung 2 s lang unter der
 Schwelle bleibt (Spannungseinbrüche bei Vollgas lösen nichts aus), und er
@@ -305,15 +314,23 @@ Die Skalierung ist für den B-Cube-4in1 nicht gesichert. Voreingestellt sind
 12,75 mV/A (`CURR_MV_PER_A_DEFAULT`, Angabe von B-Cube für den AM32-4in1),
 üblich sind 12–40 mV/A. Deshalb kalibrieren:
 
-1. Nullpunkt: Wird beim Anstecken des Akkus automatisch gemessen
-   (disarmed, Motoren stehen). Von Hand: `curzero`.
-2. Skalierung: Zangen- oder Leistungsmesser in die Akkuleitung, Motoren mit
-   gleichmäßigem Strom laufen lassen (mindestens 1 A, besser 5–10 A), dann
-   `curcal <ampere>` mit dem abgelesenen Wert.
-3. Kontrolle über die Kapazität: Nach einem Flug die mAh aus `bat` mit der
-   Menge vergleichen, die das Ladegerät wieder hineinlädt.
+1. Nullpunkt: Wird automatisch gemessen, 3 s nach dem Anstecken des Akkus
+   über 0,5 s (disarmed, Motoren stehen; vorher piepst der ESC). Streuen die
+   Werte um mehr als 5 mV, misst die Firmware neu. Bis dahin zeigt sie 0 A
+   und zählt keine mAh. Was Flugsteuerung, Empfänger und Kamera dauerhaft
+   ziehen, zählt als 0 A. Von Hand: `curzero`.
+2. Skalierung über die Kapazität (Hauptweg, ohne Zusatzgeräte): Akku voll
+   laden, fliegen bzw. ohne Propeller laufen lassen, danach `bat` ablesen und
+   mit der Menge vergleichen, die das Ladegerät wieder hineinlädt.
+   Neuer Wert: `CURR_MV_PER_A_DEFAULT × angezeigte mAh / geladene mAh`.
+3. Alternativ mit Zangen- oder Leistungsmesser in der Akkuleitung: über
+   `arm`/`ja` und `t <gas>` im Terminal (ohne Propeller, ohne Funk) einen
+   gleichmäßigen Strom einstellen (mindestens 1 A, besser 5–10 A), dann
+   `curcal <ampere>` – das geht auch gearmt. Gearmt antwortet das Terminal
+   nicht; nach `disarm` zeigt `bat` den neuen mV/A-Wert.
 
-Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
+`batcal` nimmt nur Werte an, die höchstens 20 % von der Messung abweichen
+(sonst Tippfehler oder falsche Widerstände). Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
 einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 `CURR_MV_PER_A_DEFAULT` eintragen.
 
