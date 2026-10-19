@@ -28,6 +28,12 @@ volatile uint32_t loop_missed = 0; /* Zyklen, die nicht rechtzeitig fertig wurde
 volatile uint32_t loop_count = 0;  /* fuer die Frequenzmessung */
 uint32_t loop_hz = 0;              /* gemessene Ist-Frequenz, von command.c gelesen */
 
+/* Gemessene Zykluszeit wird auf diesen Bereich begrenzt (Sekunden).
+ * Normal sind 0,001 s. Laengere Pausen gibt es nur disarmed, wenn das
+ * Terminal schreibt. */
+#define DT_MIN 0.0002f
+#define DT_MAX 0.020f
+
 /* Spaetestens so lange nach dem Takt muss der Sensor geantwortet haben.
  * Ein Lesevorgang dauert bei 400 kHz etwa 0,4 ms. */
 #define IMU_DEADLINE_US 800
@@ -46,15 +52,21 @@ static void DWT_Init(void);
 static HAL_StatusTypeDef I2C1_Setup(void);
 static void I2C1_Recover(void);
 
+/* Terminal-Ausgabe. Solange gearmt ist, wird nichts gesendet:
+ * HAL_UART_Transmit wartet bei 115200 Baud rund 87 us pro Zeichen, eine
+ * Zeile kostet mehrere Millisekunden - das wuerde den Regeltakt verzoegern. */
 int __io_putchar(int ch)
 {
-    HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    if (!Motor_IsArmed())
+        HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
     return ch;
 }
 
 int _write(int file, char *ptr, int len)
 {
-    HAL_UART_Transmit(&huart2, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+    (void)file;
+    if (!Motor_IsArmed())
+        HAL_UART_Transmit(&huart2, (uint8_t *)ptr, (uint16_t)len, HAL_MAX_DELAY);
     return len;
 }
 
@@ -110,7 +122,7 @@ int main(void)
 
         if (MPU6050_Init(&hi2c1) == HAL_OK)
         {
-            printf("MPU6050 init OK (Gyro +-500 dps, Accel +-4g, DLPF 188 Hz)\r\n");
+            printf("MPU6050 init OK (Gyro +-2000 dps, Accel +-4g, DLPF 188 Hz)\r\n");
             printf("Kalibriere Gyro... NICHT bewegen!\r\n");
             MPU6050_Calibrate(&hi2c1, &sensor, 1000);
             printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
@@ -137,7 +149,7 @@ int main(void)
 
     printf(">> Bereit.\r\n");
 
-    const float DT = 0.001f; /* 1 ms, fest vom Timer vorgegeben */
+    uint32_t cyc_last = DWT->CYCCNT; /* Zeitstempel des letzten Regelzyklus */
 
     uint32_t stream_div = 0; /* 1000 Hz / 20 = 50 Hz Ausgabe */
     uint32_t kipp_div = 0;   /* 1000 Hz / 200 = 5 Hz Ausgabe */
@@ -151,7 +163,8 @@ int main(void)
         {
             /* Leerlaufzeit: hier laufen die nicht-zeitkritischen Sachen */
             Command_Process();
-            Arming_PrintPending();
+            if (!Motor_IsArmed())
+                Arming_PrintPending();
             if (imu_fail_report && !Motor_IsArmed())
             {
                 imu_fail_report = 0;
@@ -175,12 +188,24 @@ int main(void)
         loop_flag = 0;
         loop_count++;
 
+        /* Zeit seit dem letzten Regelzyklus messen statt 1 ms anzunehmen.
+         * Filter, Lagewinkel und PID rechnen damit richtig, auch wenn einmal
+         * ein Zyklus ausfaellt. Taktzaehler: 168 MHz, laeuft nach 25 s ueber,
+         * die vorzeichenlose Differenz stimmt trotzdem. */
+        const uint32_t cyc = DWT->CYCCNT;
+        float dt = (float)(cyc - cyc_last) / (float)SystemCoreClock;
+        cyc_last = cyc;
+        if (dt < DT_MIN)
+            dt = DT_MIN;
+        if (dt > DT_MAX)
+            dt = DT_MAX;
+
         /* ===== REGELZYKLUS - nichts Blockierendes hineinschreiben ===== */
 
         if (imu == 1)
         {
-            MPU6050_Convert(&sensor, DT);
-            MPU6050_UpdateAngles(&sensor, DT);
+            MPU6050_Convert(&sensor, dt);
+            MPU6050_UpdateAngles(&sensor, dt);
         }
         if (mpu_ok)
         {
@@ -203,14 +228,14 @@ int main(void)
         }
 
         /* Funkempfang auswerten: Sollwerte, Failsafe, Arming */
-        RC_Update(DT);
+        RC_Update(dt);
 
         float out_roll, out_pitch, out_yaw;
-        Control_Update(&sensor, DT, &out_roll, &out_pitch, &out_yaw);
+        Control_Update(&sensor, dt, Mixer_IsSaturated(), &out_roll, &out_pitch, &out_yaw);
 
         Mixer_Update(setpoint.throttle, out_roll, out_pitch, out_yaw);
 
-        Battery_Update(DT);
+        Battery_Update(dt);
 
         /* Lebenszeichen fuer den Watchdog - nur wenn der Regelzyklus laeuft */
         HAL_IWDG_Refresh(&hiwdg);
@@ -218,7 +243,7 @@ int main(void)
         /* ===== ENDE REGELZYKLUS ===== */
 
         /* Ausgabe stark gedrosselt und nur disarmed - printf blockiert, eine
-         * Zeile kostet rund 7 ms und wuerde gearmt den Regeltakt fressen.
+         * Zeile kostet rund 7 ms. Gearmt sendet _write ohnehin nichts.
          * Alle Werte in Koerperachsen, Vorzeichen siehe mixer.c. */
         if (Command_StreamOn() && !Motor_IsArmed() && ++stream_div >= 20)
         {

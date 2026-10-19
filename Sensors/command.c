@@ -90,6 +90,18 @@ void Command_Process(void)
     if (!line_ready)
         return;
 
+    /* Gearmt sind die Terminal-Ausgaben aus (siehe _write in main.c).
+     * Dann wirken nur disarm/stop und t - Abstimmen, Filter und Anzeigen
+     * gehen nur disarmed. */
+    if (Motor_IsArmed() &&
+        !(strcmp(line, "disarm") == 0 || strcmp(line, "stop") == 0 ||
+          (line[0] == 't' && line[1] == ' ')))
+    {
+        line_len = 0;
+        line_ready = 0;
+        return;
+    }
+
     /* ---------- Motorsteuerung ----------
      * 'arm' geht nur ohne Funk (mit Funk entscheidet der Arm-Schalter).
      * Es prueft wie der Arm-Schalter Sensor, Neigung und Akku und will
@@ -128,11 +140,17 @@ void Command_Process(void)
         {
             arm_confirm = 0;
             /* nochmal pruefen, seit dem 'arm' koennen 5 s vergangen sein.
-             * Bei Ablehnung gibt Arming_PrintPending den Grund aus. */
-            if (Arming_Arm() == ARM_OK)
-                printf(">> ARMED\r\n");
+             * Die Meldung kommt vor dem Armen - danach ist das Terminal stumm. */
+            ArmCheck_t r = Arming_Check();
+            if (r == ARM_OK)
+            {
+                printf(">> ARMED - Terminal-Ausgaben aus bis 'disarm'.\r\n");
+                (void)Arming_Arm();
+            }
             else
-                Arming_PrintPending();
+            {
+                printf(">> Arming abgelehnt: %s\r\n", Arming_Text(r));
+            }
         }
     }
     else if (strcmp(line, "disarm") == 0 || strcmp(line, "stop") == 0)

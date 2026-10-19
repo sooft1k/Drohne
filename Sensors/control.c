@@ -16,9 +16,9 @@ FlightMode_t flight_mode = MODE_ANGLE; /* Start im gutmuetigen Modus */
 #define RATE_KP 0.8f
 #define RATE_KI 0.0f /* zuletzt dazunehmen */
 #define RATE_KD 0.0f /* nach Kp */
-#define RATE_ILIM 50.0f
+#define RATE_ILIM 100.0f    /* I-Anteil hoechstens 100 von 400 = 25 % Stellbereich */
 #define RATE_OUTLIM 400.0f
-#define RATE_DLPF 0.85f
+#define RATE_D_LPF_HZ 25.0f /* D-Tiefpass, entspricht dem frueheren Faktor 0,85 bei 1 kHz */
 
 /* ---- Startwerte aeusserer Kreis (Winkel) ----
  * Braucht praktisch nur P. I fuehrt zu traegem Nachlaufen,
@@ -26,9 +26,9 @@ FlightMode_t flight_mode = MODE_ANGLE; /* Start im gutmuetigen Modus */
 #define ANGLE_KP 4.0f
 #define ANGLE_KI 0.0f
 #define ANGLE_KD 0.0f
-#define ANGLE_ILIM 20.0f
+#define ANGLE_ILIM 50.0f    /* I-Anteil hoechstens 50 Grad/s Soll-Drehrate */
 #define ANGLE_OUTLIM 250.0f /* max. Soll-Drehrate in Grad/s */
-#define ANGLE_DLPF 0.0f
+#define ANGLE_D_LPF_HZ 0.0f
 
 /* Begrenzung der Neigung im Angle-Modus */
 #define MAX_ANGLE 35.0f /* Grad */
@@ -36,17 +36,17 @@ FlightMode_t flight_mode = MODE_ANGLE; /* Start im gutmuetigen Modus */
 void Control_Init(void)
 {
     PID_Init(&pid_rate_roll, RATE_KP, RATE_KI, RATE_KD,
-             RATE_ILIM, RATE_OUTLIM, RATE_DLPF);
+             RATE_ILIM, RATE_OUTLIM, RATE_D_LPF_HZ);
     PID_Init(&pid_rate_pitch, RATE_KP, RATE_KI, RATE_KD,
-             RATE_ILIM, RATE_OUTLIM, RATE_DLPF);
+             RATE_ILIM, RATE_OUTLIM, RATE_D_LPF_HZ);
     /* Yaw braucht mehr P und kein D */
     PID_Init(&pid_rate_yaw, 1.2f, RATE_KI, 0.0f,
-             RATE_ILIM, RATE_OUTLIM, RATE_DLPF);
+             RATE_ILIM, RATE_OUTLIM, RATE_D_LPF_HZ);
 
     PID_Init(&pid_angle_roll, ANGLE_KP, ANGLE_KI, ANGLE_KD,
-             ANGLE_ILIM, ANGLE_OUTLIM, ANGLE_DLPF);
+             ANGLE_ILIM, ANGLE_OUTLIM, ANGLE_D_LPF_HZ);
     PID_Init(&pid_angle_pitch, ANGLE_KP, ANGLE_KI, ANGLE_KD,
-             ANGLE_ILIM, ANGLE_OUTLIM, ANGLE_DLPF);
+             ANGLE_ILIM, ANGLE_OUTLIM, ANGLE_D_LPF_HZ);
 
     setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
     setpoint.throttle = 0.0f;
@@ -68,11 +68,15 @@ void Control_SetMode(FlightMode_t mode)
     if (mode != flight_mode)
     {
         flight_mode = mode;
-        Control_Reset(); /* Integratoren loeschen beim Umschalten */
+        /* Nur den aeusseren Kreis neu starten. Der innere Kreis (Drehrate)
+         * laeuft in beiden Modi gleich weiter - sein I-Anteil traegt
+         * Trimmung und Schwerpunktfehler und soll nicht wegspringen. */
+        PID_Reset(&pid_angle_roll);
+        PID_Reset(&pid_angle_pitch);
     }
 }
 
-void Control_Update(MPU6050_Data_t *s, float dt,
+void Control_Update(MPU6050_Data_t *s, float dt, uint8_t saturated,
                     float *out_roll, float *out_pitch, float *out_yaw)
 {
     /* I-Anteil nur bei anliegendem Gas - sonst laeuft der Integrator
@@ -98,8 +102,8 @@ void Control_Update(MPU6050_Data_t *s, float dt,
             sp_pitch = -MAX_ANGLE;
 
         /* Istwert ist der gefilterte Winkel aus dem Komplementaerfilter */
-        rate_sp_roll = PID_Update(&pid_angle_roll, sp_roll, s->roll, dt, integrate);
-        rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate);
+        rate_sp_roll = PID_Update(&pid_angle_roll, sp_roll, s->roll, dt, integrate, saturated);
+        rate_sp_pitch = PID_Update(&pid_angle_pitch, sp_pitch, s->pitch, dt, integrate, saturated);
     }
     else
     {
@@ -110,11 +114,11 @@ void Control_Update(MPU6050_Data_t *s, float dt,
 
     /* --- Innerer Kreis: Drehratenfehler -> Stellgroesse ---
      * Istwert ist immer der rohe Gyro. */
-    *out_roll = PID_Update(&pid_rate_roll, rate_sp_roll, s->gyro_x_dps, dt, integrate);
-    *out_pitch = PID_Update(&pid_rate_pitch, rate_sp_pitch, s->gyro_y_dps, dt, integrate);
+    *out_roll = PID_Update(&pid_rate_roll, rate_sp_roll, s->gyro_x_dps, dt, integrate, saturated);
+    *out_pitch = PID_Update(&pid_rate_pitch, rate_sp_pitch, s->gyro_y_dps, dt, integrate, saturated);
 
     /* Yaw laeuft immer im Rate-Modus */
-    *out_yaw = PID_Update(&pid_rate_yaw, setpoint.yaw, s->gyro_z_dps, dt, integrate);
+    *out_yaw = PID_Update(&pid_rate_yaw, setpoint.yaw, s->gyro_z_dps, dt, integrate, saturated);
 }
 
 uint8_t Control_SetGain(char loop, char axis, char term, float value)

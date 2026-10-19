@@ -39,7 +39,10 @@ extern FlightMode_t flight_mode;
 void Control_Init(void);
 void Control_Reset(void);
 
-void Control_Update(MPU6050_Data_t *s, float dt,
+/* dt: gemessene Zeit seit dem letzten Aufruf in Sekunden.
+ * saturated: Mixer konnte die Korrekturen im letzten Zyklus nicht voll
+ * umsetzen (Mixer_IsSaturated) - dann waechst kein I-Anteil weiter. */
+void Control_Update(MPU6050_Data_t *s, float dt, uint8_t saturated,
                     float *out_roll, float *out_pitch, float *out_yaw);
 
 void Control_SetMode(FlightMode_t mode);

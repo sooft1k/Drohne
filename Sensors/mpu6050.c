@@ -1,8 +1,9 @@
 #include "mpu6050.h"
 #include <math.h>
 
-#define ACCEL_SCALE 16384.0f /* LSB pro g   (+-2g)      */
-#define GYRO_SCALE 131.0f    /* LSB pro Grad/s (+-250)  */
+/* Empfindlichkeit passend zu den Bereichen aus MPU6050_Init (Datenblatt) */
+#define ACCEL_LSB_PER_G 8192.0f /* +-4 g          */
+#define GYRO_LSB_PER_DPS 16.4f  /* +-2000 Grad/s  */
 
 /* Einstellbare Filterparameter */
 static float gyro_lpf_hz = GYRO_LPF_DEFAULT_HZ;
@@ -105,9 +106,10 @@ HAL_StatusTypeDef MPU6050_InitTimeout(I2C_HandleTypeDef *hi2c, uint32_t timeout)
     if (status != HAL_OK)
         return status;
 
-    /* Gyro +-500 Grad/s. +-250 reicht fuer Angle, aber im Rate-Modus
-     * drehst du schneller, und dann wuerde der Sensor abschneiden. */
-    data = 0x08;
+    /* Gyro +-2000 Grad/s (FS_SEL = 3). Bei Flips und Stoessen dreht ein
+     * Quad schnell ueber 500 Grad/s - der Sensor wuerde abschneiden und der
+     * Lagewinkel danach nicht mehr stimmen. */
+    data = 0x18;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
                                I2C_MEMADD_SIZE_8BIT, &data, 1, timeout);
 
@@ -349,11 +351,8 @@ static void align(float cx, float cy, float cz, float *bx, float *by, float *bz)
 /* --- Rohwerte -> g und Grad/s, Achsen ausrichten, danach Tiefpass --- */
 void MPU6050_Convert(MPU6050_Data_t *data, float dt)
 {
-    /* Skalierung passend zu den Bereichen aus MPU6050_Init:
-     * Accel +-4g  -> halbe Empfindlichkeit
-     * Gyro  +-500 -> halbe Empfindlichkeit */
-    const float acc_s = ACCEL_SCALE / 2.0f; /* 8192 LSB pro g     */
-    const float gyr_s = GYRO_SCALE / 2.0f;  /* 65.5 LSB pro Grad/s */
+    const float acc_s = ACCEL_LSB_PER_G;
+    const float gyr_s = GYRO_LSB_PER_DPS;
 
     float ax, ay, az, gx, gy, gz;
     align(data->accel_x / acc_s, data->accel_y / acc_s, data->accel_z / acc_s,

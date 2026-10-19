@@ -195,6 +195,29 @@ Funke lehnt das Terminal `arm` ab. Kommt die Funke dazu, hat sie Vorrang:
 Steht der Arm-Schalter unten oder wurde nicht über die Funke gearmt,
 schaltet die Firmware ab.
 
+## Regelung
+
+- Kaskade: Winkelregler (nur P) gibt die Soll-Drehrate vor, der
+  Drehratenregler (PID) die Stellgröße. Im Rate-Modus entfällt der äußere
+  Kreis. Startwerte und Grenzen stehen oben in `Sensors/control.c`.
+- Die Zykluszeit `dt` wird mit dem Taktzähler des Prozessors gemessen
+  (normal 1 ms) und für Filter, Lagewinkel und PID verwendet.
+- D-Anteil auf den Messwert, Tiefpass 25 Hz, aus Grenzfrequenz und `dt`
+  berechnet. Nach einem Reset (Armen, Gainänderung) gibt es keinen
+  D-Ausschlag: Der erste Messwert gilt als Vorwert.
+- I-Anteil: begrenzt wird der I-Anteil selbst (Drehrate ±100 von ±400 =
+  25 % Stellbereich), unabhängig von Ki. Er wächst nicht weiter, solange der
+  Reglerausgang am Limit steht oder der Mixer die Korrekturen stauchen muss
+  (Anti-Windup). Integriert wird erst ab 10 % Gas.
+- Moduswechsel Angle/Rate setzt nur den Winkelregler zurück, der I-Anteil
+  des Drehratenreglers bleibt.
+- Gyro-Messbereich ±2000 °/s, Accel ±4 g.
+
+**Solange gearmt ist, schweigt das Terminal.** Eine Textzeile kostet bei
+115200 Baud mehrere Millisekunden und würde den Regeltakt stören. Gearmt
+wirken nur `disarm`/`stop` und `t <gas>`, alle anderen Befehle (Anzeigen,
+PID-Werte, Filter, `stream`, `kipp`) gehen nur disarmed.
+
 ## Sicherheitsabfragen beim Armen
 
 Gilt für den Arm-Schalter und für `arm` im Terminal (`Sensors/arming.c`):
