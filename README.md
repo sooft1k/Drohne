@@ -7,6 +7,7 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 | Gyro/Accel | MPU6050 an I2C1 (PB6 SCL, PB7 SDA), 400 kHz |
 | Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PA6, M4 = PA7 |
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
+| Kanäle | 1 Roll, 2 Pitch, 3 Gas, 4 Yaw, **5 Arm-Schalter (AUX1)**, 7 Modus Angle/Rate |
 | Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
 | Akkuspannung | PC0 (ADC1 Kanal 10), Teiler 11:1 |
 | Strom | PA4 (ADC2 Kanal 4), Stromausgang „C“ des ESC – höchstens 3,3 V! |
@@ -78,7 +79,10 @@ Vor jedem Erstflug und nach jeder Änderung an Sensor, Mixer oder Verkabelung.
 
 1. Flugsteuerung flach hinlegen, Nase nach vorne. Terminal an USART2 mit
    115200 Baud. Reset drücken und bis `>> Bereit.` nicht bewegen
-   (Gyro-Kalibrierung).
+   (Gyro-Kalibrierung). Wird sie bewegt, meldet die Firmware „Bewegung
+   erkannt“ und misst neu (bis zu 5 Versuche). Klappt keiner, bleibt Arming
+   bis zum Neustart gesperrt. Die Lagewinkel starten direkt mit dem Wert aus
+   dem Beschleunigungssensor.
 2. `stream on` eingeben. Flach liegend: `R` und `P` nahe 0, `Gx`, `Gy`, `Gz`
    nahe 0.
 3. Rechte Seite etwa 30° nach unten kippen: `R` wird positiv (ungefähr +30).

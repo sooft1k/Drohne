@@ -76,7 +76,18 @@ HAL_StatusTypeDef MPU6050_InitTimeout(I2C_HandleTypeDef *hi2c, uint32_t timeout)
 HAL_StatusTypeDef MPU6050_WhoAmI(I2C_HandleTypeDef *hi2c, uint8_t *id);
 HAL_StatusTypeDef MPU6050_ReadAll(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data);
 
-void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples);
+/* Gyro-Kalibrierung. Gilt als bewegt, wenn eine Achse staerker streut */
+#define MPU6050_CAL_MAX_STD_DPS 1.0f
+typedef enum
+{
+    MPU6050_CAL_OK = 0,
+    MPU6050_CAL_BEWEGT,     /* Drohne wurde bewegt */
+    MPU6050_CAL_LESEFEHLER  /* mehr als 10 % der Messungen nicht lesbar */
+} MPU6050_CalResult_t;
+MPU6050_CalResult_t MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples);
+
+/* Roll/Pitch aus dem Accel setzen (braucht umgerechnete Werte) */
+void MPU6050_InitAngles(MPU6050_Data_t *data);
 
 /* ===== Lesen im Regelbetrieb, per Interrupt =====
  * MPU6050_ReadAll oben blockiert und ist nur fuer Start und Kalibrierung. */

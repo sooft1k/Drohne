@@ -123,15 +123,35 @@ int main(void)
         if (MPU6050_Init(&hi2c1) == HAL_OK)
         {
             printf("MPU6050 init OK (Gyro +-2000 dps, Accel +-4g, DLPF 188 Hz)\r\n");
-            printf("Kalibriere Gyro... NICHT bewegen!\r\n");
-            MPU6050_Calibrate(&hi2c1, &sensor, 1000);
-            printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
-                   sensor.gyro_x_offset, sensor.gyro_y_offset, sensor.gyro_z_offset);
+            /* Kalibrieren, bis die Drohne dabei still lag - hoechstens 5 Versuche */
+            MPU6050_CalResult_t cal = MPU6050_CAL_BEWEGT;
+            for (int versuch = 1; versuch <= 5 && cal != MPU6050_CAL_OK; versuch++)
+            {
+                printf("Kalibriere Gyro (Versuch %d)... NICHT bewegen!\r\n", versuch);
+                cal = MPU6050_Calibrate(&hi2c1, &sensor, 1000);
+                if (cal == MPU6050_CAL_BEWEGT)
+                    printf("Bewegung erkannt - nochmal.\r\n");
+                else if (cal == MPU6050_CAL_LESEFEHLER)
+                    printf("Zu viele Lesefehler - nochmal.\r\n");
+            }
 
-            sensor.roll = 0.0f;
-            sensor.pitch = 0.0f;
-            sensor.yaw = 0.0f;
-            mpu_ok = 1;
+            if (cal == MPU6050_CAL_OK)
+            {
+                printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
+                       sensor.gyro_x_offset, sensor.gyro_y_offset, sensor.gyro_z_offset);
+
+                /* Lagewinkel gleich aus dem Accel, nicht ab 0 einschwingen */
+                if (MPU6050_ReadAll(&hi2c1, &sensor) == HAL_OK)
+                {
+                    MPU6050_Convert(&sensor, 0.001f);
+                    MPU6050_InitAngles(&sensor);
+                }
+                mpu_ok = 1;
+            }
+            else
+            {
+                printf("Kalibrierung fehlgeschlagen - Arming gesperrt. Neu starten.\r\n");
+            }
         }
         else
         {

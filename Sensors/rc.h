@@ -9,7 +9,8 @@
 #define RC_CH_PITCH 2
 #define RC_CH_THROTTLE 3
 #define RC_CH_YAW 4
-#define RC_CH_ARM 8  /* Schalter SC zum Scharfschalten */
+#define RC_CH_ARM 5  /* AUX1: ELRS sendet ihn mit jedem Paket, die anderen
+                      * Schalter nur reihum - deshalb Arm immer hier */
 #define RC_CH_MODE 7 /* Schalter SB: Angle / Rate */
 
 /* Totzone um die Mitte in Mikrosekunden.

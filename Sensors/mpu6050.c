@@ -304,24 +304,61 @@ uint8_t MPU6050_Healthy(void)
 }
 
 /* --- Gyro-Kalibrierung: misst Offsets im Ruhezustand --- */
-void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples)
+/* Misst die Offsets im Ruhezustand.
+ * Geteilt wird durch die Zahl der erfolgreich gelesenen Werte. Ausserdem
+ * wird geprueft, ob die Drohne still lag: Streut eine Achse staerker als
+ * MPU6050_CAL_MAX_STD_DPS, wurde sie bewegt und die Offsets taugen nichts.
+ * Die Offsets werden nur bei Erfolg uebernommen. */
+MPU6050_CalResult_t MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples)
 {
-    float sx = 0, sy = 0, sz = 0;
+    /* double: bei grossem Offset waere float fuer die Varianz zu ungenau.
+     * Laeuft nur beim Start, die Rechenzeit spielt keine Rolle. */
+    double sx = 0, sy = 0, sz = 0; /* Summen */
+    double qx = 0, qy = 0, qz = 0; /* Quadratsummen */
+    uint16_t n = 0;
     for (uint16_t i = 0; i < samples; i++)
     {
         if (MPU6050_ReadAll(hi2c, data) == HAL_OK)
         {
-            sx += data->gyro_x;
-            sy += data->gyro_y;
-            sz += data->gyro_z;
+            const double x = data->gyro_x, y = data->gyro_y, z = data->gyro_z;
+            sx += x;
+            sy += y;
+            sz += z;
+            qx += x * x;
+            qy += y * y;
+            qz += z * z;
+            n++;
         }
         HAL_Delay(2);
     }
-    data->gyro_x_offset = sx / samples;
-    data->gyro_y_offset = sy / samples;
-    data->gyro_z_offset = sz / samples;
 
+    if (n < samples * 9 / 10) /* mehr als 10 % Lesefehler */
+        return MPU6050_CAL_LESEFEHLER;
+
+    const double mx = sx / n, my = sy / n, mz = sz / n;
+    /* Varianz = Mittel der Quadrate - Quadrat des Mittels (in LSB^2) */
+    const double lim = MPU6050_CAL_MAX_STD_DPS * GYRO_LSB_PER_DPS;
+    const double lim2 = lim * lim;
+    if (qx / n - mx * mx > lim2 || qy / n - my * my > lim2 || qz / n - mz * mz > lim2)
+        return MPU6050_CAL_BEWEGT;
+
+    data->gyro_x_offset = (float)mx;
+    data->gyro_y_offset = (float)my;
+    data->gyro_z_offset = (float)mz;
     filt_primed = 0;
+    return MPU6050_CAL_OK;
+}
+
+/* Lagewinkel direkt aus dem Accel setzen - nach dem Start, sonst laeuft der
+ * Komplementaerfilter erst ueber 1-2 s von 0 auf den echten Winkel. */
+void MPU6050_InitAngles(MPU6050_Data_t *data)
+{
+    data->roll = atan2f(-data->accel_y_g, -data->accel_z_g) * 57.2958f;
+    data->pitch = atan2f(data->accel_x_g,
+                         sqrtf(data->accel_y_g * data->accel_y_g +
+                               data->accel_z_g * data->accel_z_g)) *
+                  57.2958f;
+    data->yaw = 0.0f;
 }
 
 /* Chip-Achsen -> Koerperachsen (X vorne, Y rechts, Z unten).

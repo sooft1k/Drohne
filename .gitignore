@@ -1,0 +1,12 @@
+# Build-Ausgaben
+build/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+
+# Python-Umgebung
+venv/
+__pycache__/
