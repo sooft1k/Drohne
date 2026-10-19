@@ -11,7 +11,8 @@ typedef enum
     MODE_ANGLE = 1    /* Knueppel = Winkel, richtet sich selbst auf */
 } FlightMode_t;
 
-/* Sollwerte.
+/* Sollwerte, Vorzeichen nach der Konvention in mixer.c
+ * (Roll + = rechts runter, Pitch + = Nase hoch, Yaw + = Nase nach rechts).
  * In MODE_ANGLE sind roll/pitch Winkel in Grad.
  * In MODE_RATE sind roll/pitch Drehraten in Grad/s.
  * yaw ist immer eine Drehrate - ohne Kompass gibt es keinen absoluten Gierwinkel. */

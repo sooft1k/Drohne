@@ -8,10 +8,48 @@ static uint8_t failsafe = 1;
 static uint8_t arm_latch = 0; /* verhindert Armen, solange der Schalter
                                * beim Einschalten schon oben steht */
 
+/* Failsafe-Gasrampe */
+static uint8_t fs_ramp = 0;       /* 1 = Rampe laeuft */
+static float fs_time = 0.0f;      /* seit Beginn der Rampe, Sekunden */
+static float fs_thr_start = 0.0f; /* Gas beim Signalverlust, % */
+
 void RC_Init(void)
 {
     failsafe = 1;
     arm_latch = 0;
+    fs_ramp = 0;
+}
+
+/* Ein Schritt der Failsafe-Rampe: Angle-Modus, waagrecht, kein Gieren,
+ * Gas linear in RC_FS_RAMP_S auf 0, danach disarmen.
+ * Laeuft immer bis zum Ende durch - auch wenn das Signal zwischendurch
+ * zurueckkommt. Danach muss der Arm-Schalter erst wieder runter. */
+static void failsafe_ramp(float dt)
+{
+    if (!Motor_IsArmed())
+    {
+        /* z.B. per Terminal disarmt - Rampe beenden */
+        fs_ramp = 0;
+        setpoint.throttle = 0.0f;
+        return;
+    }
+
+    Control_SetMode(MODE_ANGLE);
+    setpoint.roll = 0.0f;
+    setpoint.pitch = 0.0f;
+    setpoint.yaw = 0.0f;
+
+    fs_time += dt;
+    if (fs_time >= RC_FS_RAMP_S)
+    {
+        Motor_Disarm();
+        setpoint.throttle = 0.0f;
+        Control_Reset();
+        fs_ramp = 0;
+        return;
+    }
+
+    setpoint.throttle = fs_thr_start * (1.0f - fs_time / RC_FS_RAMP_S);
 }
 
 /* Knueppelwert in -1.0 bis +1.0 umrechnen, mit Totzone um die Mitte */
@@ -39,23 +77,39 @@ static float stick_norm(uint8_t ch)
 
 void RC_Update(float dt)
 {
-    (void)dt;
+    const uint8_t link = CRSF_LinkUp();
 
     /* ---------- Failsafe ---------- */
-    if (!CRSF_LinkUp())
+    if (!link && !failsafe)
     {
-        if (!failsafe)
-        {
-            /* Verbindung gerade verloren - sofort alles aus */
-            Motor_Disarm();
-            setpoint.throttle = 0.0f;
-            setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
-            Control_Reset();
-        }
+        /* Verbindung gerade verloren */
         failsafe = 1;
         arm_latch = 0; /* nach Failsafe muss der Schalter erst wieder runter */
+
+        if (Motor_IsArmed())
+        {
+            /* im Flug: Gas langsam herunterfahren statt abschalten */
+            fs_ramp = 1;
+            fs_time = 0.0f;
+            fs_thr_start = setpoint.throttle;
+        }
+        else
+        {
+            setpoint.throttle = 0.0f;
+            setpoint.roll = setpoint.pitch = setpoint.yaw = 0.0f;
+        }
+    }
+
+    if (fs_ramp)
+    {
+        failsafe_ramp(dt);
         return;
     }
+
+    /* Kein Signal: nichts vom Funk uebernehmen. Ohne Funk bleibt der
+     * Betrieb ueber das Terminal moeglich (arm, t). */
+    if (!link)
+        return;
     failsafe = 0;
 
     /* ---------- Gas ---------- */
@@ -99,9 +153,11 @@ void RC_Update(float dt)
         setpoint.throttle = 0.0f;
     }
 
-    /* ---------- Sollwerte ---------- */
+    /* ---------- Sollwerte ----------
+     * Vorzeichen nach der Konvention in mixer.c:
+     * Roll rechts = +, Pitch nach vorne = Nase runter = -, Yaw rechts = + */
     float r = stick_norm(RC_CH_ROLL);
-    float p = stick_norm(RC_CH_PITCH);
+    float p = -stick_norm(RC_CH_PITCH);
     float y = stick_norm(RC_CH_YAW);
 
     if (flight_mode == MODE_ANGLE)
@@ -123,10 +179,16 @@ uint8_t RC_IsFailsafe(void)
     return failsafe;
 }
 
+uint8_t RC_FailsafeRampActive(void)
+{
+    return fs_ramp;
+}
+
 void RC_PrintStatus(void)
 {
-    printf(">> Funk: %s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
+    printf(">> Funk: %s%s | Pakete: %lu | Fehler: %lu | letztes vor %lu ms\r\n",
            CRSF_LinkUp() ? "VERBUNDEN" : "KEIN SIGNAL",
+           fs_ramp ? " (FAILSAFE-RAMPE)" : "",
            CRSF_FrameCount(), CRSF_ErrorCount(),
            CRSF_LinkUp() ? CRSF_AgeMs() : 0);
     printf("   Roll %4u  Pitch %4u  Gas %4u  Yaw %4u\r\n",

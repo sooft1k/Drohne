@@ -22,6 +22,7 @@ static char line[CMD_BUF_SIZE];
 static uint8_t line_len = 0;
 static volatile uint8_t line_ready = 0;
 static volatile uint8_t stream_on = 0;
+static volatile uint8_t kipp_on = 0;
 
 void Command_Init(UART_HandleTypeDef *huart)
 {
@@ -34,6 +35,11 @@ void Command_Init(UART_HandleTypeDef *huart)
 uint8_t Command_StreamOn(void)
 {
     return stream_on;
+}
+
+uint8_t Command_KippOn(void)
+{
+    return kipp_on;
 }
 
 void Command_RxByte(void)
@@ -169,12 +175,31 @@ void Command_Process(void)
     else if (strcmp(line, "stream on") == 0)
     {
         stream_on = 1;
+        kipp_on = 0;
         printf(">> Stream AN (50 Hz Ausgabe)\r\n");
     }
     else if (strcmp(line, "stream off") == 0)
     {
         stream_on = 0;
         printf(">> Stream AUS\r\n");
+    }
+
+    /* ---------- Kipptest ohne Propeller ----------
+     * Zeigt 5x pro Sekunde, was der Mixer bei 50 % Gas aus der aktuellen
+     * Lage machen wuerde. Nur disarmed, die Motoren bleiben aus. */
+    else if (strcmp(line, "kipp") == 0)
+    {
+        kipp_on = !kipp_on;
+        if (kipp_on)
+        {
+            stream_on = 0;
+            printf(">> Kipptest AN (Vorschau bei 50 %% Gas, Motoren bleiben aus).\r\n");
+            printf(">> Nochmal 'kipp' zum Beenden.\r\n");
+        }
+        else
+        {
+            printf(">> Kipptest AUS\r\n");
+        }
     }
 
     /* ---------- PID-Werte setzen: rrp 1.2 / arp 4.0 ----------
@@ -291,7 +316,7 @@ void Command_Process(void)
         {
             printf(">> Unbekannt: '%s'\r\n", line);
             printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
-            printf(">> angle | rate | stream on/off | t <gas> | m1..m4 <wert> |\r\n");
+            printf(">> angle | rate | stream on/off | kipp | t <gas> | m1..m4 <wert> |\r\n");
             printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt>\r\n");
         }
     }

@@ -78,7 +78,7 @@ int main(void)
     printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
-    printf("         angle | rate | stream on/off | t <gas> | m1..m4 <wert>\r\n");
+    printf("         angle | rate | stream on/off | kipp | t <gas> | m1..m4 <wert>\r\n");
 
     who = 0;
     if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
@@ -116,6 +116,7 @@ int main(void)
     const float DT = 0.001f; /* 1 ms, fest vom Timer vorgegeben */
 
     uint32_t stream_div = 0; /* 1000 Hz / 20 = 50 Hz Ausgabe */
+    uint32_t kipp_div = 0;   /* 1000 Hz / 200 = 5 Hz Ausgabe */
     uint32_t led_div = 0;
     uint32_t hz_stamp = HAL_GetTick();
 
@@ -151,14 +152,27 @@ int main(void)
 
         /* ===== ENDE REGELZYKLUS ===== */
 
-        /* Ausgabe stark gedrosselt - printf blockiert und darf den Takt nicht fressen */
+        /* Ausgabe stark gedrosselt - printf blockiert und darf den Takt nicht fressen.
+         * Alle Werte in Koerperachsen, Vorzeichen siehe mixer.c. */
         if (Command_StreamOn() && ++stream_div >= 20)
         {
             stream_div = 0;
-            printf("R:%7.2f P:%7.2f | GX:%7.2f (roh %7.2f) GY:%7.2f (roh %7.2f)\r\n",
+            printf("R:%6.1f P:%6.1f | Gx:%7.2f Gy:%7.2f Gz:%7.2f | roh Gx:%7.2f Gy:%7.2f\r\n",
                    sensor.roll, sensor.pitch,
-                   sensor.gyro_x_dps, sensor.gyro_x_raw_dps,
-                   sensor.gyro_y_dps, sensor.gyro_y_raw_dps);
+                   sensor.gyro_x_dps, sensor.gyro_y_dps, sensor.gyro_z_dps,
+                   sensor.gyro_x_raw_dps, sensor.gyro_y_raw_dps);
+        }
+
+        /* Kipptest: was der Mixer bei 50 % Gas aus den aktuellen Reglerausgaben
+         * machen wuerde. Nur disarmed - die Motoren bleiben dabei aus. */
+        if (Command_KippOn() && !Motor_IsArmed() && ++kipp_div >= 200)
+        {
+            kipp_div = 0;
+            float m[4];
+            Mixer_Preview(50.0f, out_roll, out_pitch, out_yaw, m);
+            printf("R:%6.1f P:%6.1f Gz:%7.1f | M1 %5.1f  M2 %5.1f  M3 %5.1f  M4 %5.1f\r\n",
+                   sensor.roll, sensor.pitch, sensor.gyro_z_dps,
+                   m[0], m[1], m[2], m[3]);
         }
 
         /* LED blinkt mit ~2 Hz als Lebenszeichen */

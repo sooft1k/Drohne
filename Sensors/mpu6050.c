@@ -11,7 +11,7 @@ static float comp_tau_s = COMP_TAU_DEFAULT_S;
 
 /* Zustand der Tiefpaesse */
 static float gx_f = 0, gy_f = 0, gz_f = 0;
-static float ax_f = 0, ay_f = 0, az_f = 1.0f;
+static float ax_f = 0, ay_f = 0, az_f = -1.0f;
 static uint8_t filt_primed = 0;
 
 /* Tiefpass erster Ordnung (PT1).
@@ -148,7 +148,31 @@ void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t s
     filt_primed = 0;
 }
 
-/* --- Rohwerte -> g und Grad/s, danach Tiefpass --- */
+/* Chip-Achsen -> Koerperachsen (X vorne, Y rechts, Z unten).
+ * Der Chip liegt mit der Bauteilseite oben, also zeigt Chip-Z nach oben
+ * und Koerper-Z = -Chip-Z. Chip-Y liegt von oben gesehen 90 Grad gegen
+ * den Uhrzeigersinn neben Chip-X. Gilt fuer Drehrate und Beschleunigung. */
+static void align(float cx, float cy, float cz, float *bx, float *by, float *bz)
+{
+#if IMU_ALIGN == IMU_X_VORNE
+    *bx = cx;  /* Chip-X vorne, Chip-Y links  */
+    *by = -cy;
+#elif IMU_ALIGN == IMU_X_RECHTS
+    *bx = cy;  /* Chip-X rechts, Chip-Y vorne */
+    *by = cx;
+#elif IMU_ALIGN == IMU_X_HINTEN
+    *bx = -cx; /* Chip-X hinten, Chip-Y rechts */
+    *by = cy;
+#elif IMU_ALIGN == IMU_X_LINKS
+    *bx = -cy; /* Chip-X links, Chip-Y hinten */
+    *by = -cx;
+#else
+#error "IMU_ALIGN in mpu6050.h ist ungueltig"
+#endif
+    *bz = -cz;
+}
+
+/* --- Rohwerte -> g und Grad/s, Achsen ausrichten, danach Tiefpass --- */
 void MPU6050_Convert(MPU6050_Data_t *data, float dt)
 {
     /* Skalierung passend zu den Bereichen aus MPU6050_Init:
@@ -157,13 +181,13 @@ void MPU6050_Convert(MPU6050_Data_t *data, float dt)
     const float acc_s = ACCEL_SCALE / 2.0f; /* 8192 LSB pro g     */
     const float gyr_s = GYRO_SCALE / 2.0f;  /* 65.5 LSB pro Grad/s */
 
-    const float ax = data->accel_x / acc_s;
-    const float ay = data->accel_y / acc_s;
-    const float az = data->accel_z / acc_s;
-
-    const float gx = (data->gyro_x - data->gyro_x_offset) / gyr_s;
-    const float gy = (data->gyro_y - data->gyro_y_offset) / gyr_s;
-    const float gz = (data->gyro_z - data->gyro_z_offset) / gyr_s;
+    float ax, ay, az, gx, gy, gz;
+    align(data->accel_x / acc_s, data->accel_y / acc_s, data->accel_z / acc_s,
+          &ax, &ay, &az);
+    align((data->gyro_x - data->gyro_x_offset) / gyr_s,
+          (data->gyro_y - data->gyro_y_offset) / gyr_s,
+          (data->gyro_z - data->gyro_z_offset) / gyr_s,
+          &gx, &gy, &gz);
 
     /* ungefiltert mitfuehren, damit man im Stream vergleichen kann */
     data->gyro_x_raw_dps = gx;
@@ -200,11 +224,14 @@ void MPU6050_Convert(MPU6050_Data_t *data, float dt)
     data->accel_z_g = az_f;
 }
 
-/* --- Komplementaerfilter: Accel + Gyro -> Roll/Pitch --- */
+/* --- Komplementaerfilter: Accel + Gyro -> Roll/Pitch ---
+ * Der Accel misst im Stand die Gegenkraft zur Schwerkraft, sie zeigt nach
+ * oben, also in Koerperachsen (0, 0, -1 g). Rechte Seite runter -> die
+ * Kraft bekommt einen Anteil nach links (-Y), Nase hoch -> nach vorne (+X). */
 void MPU6050_UpdateAngles(MPU6050_Data_t *data, float dt)
 {
-    float accel_roll = atan2f(data->accel_y_g, data->accel_z_g) * 57.2958f;
-    float accel_pitch = atan2f(-data->accel_x_g,
+    float accel_roll = atan2f(-data->accel_y_g, -data->accel_z_g) * 57.2958f;
+    float accel_pitch = atan2f(data->accel_x_g,
                                sqrtf(data->accel_y_g * data->accel_y_g +
                                      data->accel_z_g * data->accel_z_g)) *
                         57.2958f;

@@ -24,13 +24,19 @@
 /* Schwelle, ab der ein Schalter als eingeschaltet gilt */
 #define RC_SWITCH_HIGH 1700
 
+/* Failsafe: Dauer der Gasrampe nach Signalverlust.
+ * Waehrend der Rampe: Angle-Modus, Roll/Pitch/Yaw = 0, Gas linear auf 0.
+ * Danach wird disarmt. Signalverlust gilt nach CRSF_TIMEOUT_MS (crsf.h). */
+#define RC_FS_RAMP_S 1.5f
+
 void RC_Init(void);
 
 /* Einmal pro Regelzyklus aufrufen. Setzt die Sollwerte,
- * uebernimmt Failsafe und Arming. */
+ * uebernimmt Failsafe und Arming. dt in Sekunden. */
 void RC_Update(float dt);
 
-uint8_t RC_IsFailsafe(void);
+uint8_t RC_IsFailsafe(void);         /* 1 = kein gueltiges Funksignal */
+uint8_t RC_FailsafeRampActive(void); /* 1 = Failsafe-Gasrampe laeuft gerade */
 void RC_PrintStatus(void);
 
 #endif /* RC_H */
