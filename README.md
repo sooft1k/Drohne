@@ -20,6 +20,143 @@ Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 > Mit Funk zeigt `rc` die Kanäle; Kanal 5 muss beim Umlegen zwischen etwa
 > 1000 und 2000 wechseln.
 
+## Verdrahtung (eigener Aufbau mit MPU6050)
+
+Alle Massen (GND) sind miteinander verbunden: Akku-Minus über den ESC, die
+Flugsteuerung, Empfänger, MPU6050 und der USB-Seriell-Adapter. **Beim Löten
+und Anstecken immer zuerst GND verbinden**, dann die Signale.
+
+### Übersicht
+
+| Von | An STM32 | Hinweis |
+|---|---|---|
+| ESC M1 / M2 / M3 / M4 | PB0 / PB1 / PA6 / PA7 | je 10 kΩ nach GND empfohlen (siehe unten) |
+| ESC GND | GND | gemeinsame Masse, Pflicht |
+| ESC Strom „C“/„CUR“ | PA4 über 4,7 kΩ, 100 nF nach GND | höchstens 3,3 V am Pin |
+| Akku+ (z. B. ESC-Pin „V“/„VBAT“) | PC0 über Teiler 10 kΩ / 1 kΩ, 100 nF | Teiler 11:1 |
+| ELRS TX | PA10 (USART1 RX) | |
+| ELRS RX | PA9 (USART1 TX) | für die Akku-Telemetrie |
+| ELRS 5V / GND | 5 V / GND | |
+| MPU6050 SCL / SDA | PB6 / PB7 | Breakout mit Pull-ups (GY-521: 4,7 kΩ) |
+| MPU6050 VCC / GND | 3,3 V / GND | Bauteilseite oben, X-Pfeil nach vorne |
+| USB-Seriell RX / TX | PA2 / PA3 (USART2) | 3,3-V-Pegel, 115200 Baud |
+
+### 1. Akkuspannung an PC0
+
+```
+ Akku+ (VBAT, bis 25,2 V)
+        │
+       ┌┴┐
+       │ │ R1  10 kΩ, 1 %, 0,25 W
+       └┬┘
+        │
+        ├──────────┬──────────── PC0  (ADC1, Kanal 10)
+        │          │
+       ┌┴┐       ──┴──
+       │ │ R2    ─────  C1  100 nF, Keramik X7R
+       └┬┘ 1 kΩ    │
+        │   1 %    │
+ GND ───┴──────────┴──────────── GND STM32 (= Akku-Minus über den ESC)
+```
+
+- **R1 = 10 kΩ, R2 = 1 kΩ**, Metallschicht, 1 %. Teilerfaktor 11:
+  25,2 V (6S voll) → 2,29 V an PC0, 16,8 V (4S) → 1,53 V.
+- Leistung in R1 bei 25,2 V: 25,2² / 11 kΩ ≈ 58 mW – 0,25-W-Widerstand reicht.
+- **C1 = 100 nF** direkt an PC0 nach GND, glättet Störungen der Motoren.
+- R2 und C1 möglichst nah am STM32-Pin löten, die lange Leitung kommt an R1.
+- Andere Widerstände gehen auch, dann aber `BAT_R_OBEN` und `BAT_R_UNTEN` in
+  `Sensors/battery.h` anpassen. PC0 darf nie mehr als 3,3 V sehen.
+- Nach dem ersten Anstecken mit einem Multimeter die Akkuspannung messen
+  und `batcal <volt>` eingeben.
+
+### 2. Stromeingang PA4 schützen
+
+```
+ ESC "C" / "CUR"
+        │
+       ┌┴┐
+       │ │ R3  4,7 kΩ
+       └┬┘
+        │
+        ├──────────────────────── PA4  (ADC2, Kanal 4)
+        │
+      ──┴──
+      ─────  C2  100 nF, Keramik X7R
+        │
+ GND ───┴──────────────────────── GND STM32
+```
+
+- **R3 = 4,7 kΩ in Reihe, C2 = 100 nF von PA4 nach GND**, beide direkt am Pin.
+  Zusammen ein Tiefpass mit etwa 340 Hz: Er glättet die PWM-Welligkeit des
+  ESC (24/48 kHz), und R3 begrenzt den Strom, falls der Ausgang doch über
+  3,3 V geht.
+- PA4 ist **nicht 5-V-fest**. Deshalb vorher messen (siehe Punkt 3). Kann
+  der Ausgang über 3,0 V gehen, statt R3 allein einen Teiler einbauen:
+
+```
+ ESC "C" ──[ 10 kΩ ]──┬── PA4
+                      ├──[ 20 kΩ ]── GND
+                      └──|| 100 nF ── GND
+```
+
+  Der Teiler macht aus 4,5 V dann 3,0 V. Danach `CURR_MV_PER_A_DEFAULT` in
+  `battery.h` mit 2/3 multiplizieren (bzw. einfach mit `curcal`
+  kalibrieren).
+
+### 3. Woher das Stromsignal kommt
+
+Der B-Cube-4in1 hat einen Stromsensor (Shunt mit Verstärker) für alle vier
+Motoren zusammen. Sein Ausgang liegt am 8-poligen Stecker zur Flugsteuerung,
+beschriftet mit **„C“, „CUR“ oder „CURR“**. Die Pin-Reihenfolge ist je nach
+Version verschieden. Aus der früheren Platinenplanung war sie
+`1 GND · 2 VBAT · 3 M1 · 4 M2 · 5 M3 · 6 M4 · 7 C · 8 frei` – **trotzdem am
+Aufdruck neben dem Stecker prüfen**, nicht dem Kabel vertrauen.
+
+Mit dem Multimeter (Akku dran, Propeller ab, Motoren aus):
+
+1. **GND:** Durchgang zum Akku-Minus.
+2. **VBAT:** zeigt die Akkuspannung.
+3. **C/CUR:** zeigt 0 V bis einige 10 mV. Nach dem Armen (Motoren im
+   Leerlauf) steigt der Wert leicht. Bei 12,75 mV/A macht 1 A nur 13 mV
+   aus.
+4. **Höchstwert:** Die Skalierung ist nicht bekannt (12–40 mV/A üblich). Bei
+   40 mV/A wären 3,3 V schon bei 82 A erreicht – das schafft ein 5-Zoll-Quad
+   bei Vollgas. Deshalb prüfen, woher der Verstärker seine Versorgung
+   bekommt: Ist auf der ESC-Platine nur eine 3,3-V-Schiene in der Nähe,
+   kann der Ausgang nicht über 3,3 V gehen. Ist es 5 V, den Teiler aus
+   Punkt 2 nehmen.
+
+Der Pin „TLM“ (falls vorhanden) bleibt frei – BLHeli_S sendet keine
+Telemetrie.
+
+### 4. Motorsignale
+
+```
+ PB0 ──┬──── ESC M1        (ebenso PB1→M2, PA6→M3, PA7→M4)
+       │
+      ┌┴┐
+      │ │ 10 kΩ nach GND (empfohlen)
+      └┬┘
+ GND ──┴──── ESC GND
+```
+
+Nach einem Reset sind die STM32-Pins einige Millisekunden lang offen. Liegt
+eine Signalleitung dabei länger als etwa 15 ms auf High, während der ESC
+startet, springt BLHeli_S in seinen Bootloader und reagiert nicht mehr, bis
+das Signal wieder läuft. Ein 10-kΩ-Widerstand nach GND an jeder Leitung hält
+sie in dieser Zeit sicher auf Low.
+
+### Bauteilliste
+
+| Bauteil | Wert | Anzahl | Wofür |
+|---|---|---|---|
+| Widerstand 1 %, 0,25 W | 10 kΩ | 1 | R1 Akkuteiler |
+| Widerstand 1 % | 1 kΩ | 1 | R2 Akkuteiler |
+| Widerstand | 4,7 kΩ | 1 | R3 Strom |
+| Widerstand | 10 kΩ | 4 | Pull-down Motorsignale |
+| Keramikkondensator X7R | 100 nF | 2 | C1 an PC0, C2 an PA4 |
+| optional Widerstand | 10 kΩ + 20 kΩ | je 1 | Teiler am Strom, falls > 3,0 V |
+
 ## Bauen und Flashen
 
 ```sh
@@ -307,8 +444,8 @@ Spezialfunktion einstellen.
 
 **Strom:** Stromausgang „C“ des 4in1-ESC an PA4. PA4 verträgt höchstens
 3,3 V – vor dem Anschließen am Ausgang messen (Akku dran, Motoren aus und
-unter Last). Ein Widerstand von 1–10 kΩ in Reihe und 100 nF nach Masse am
-Pin schützen ihn und glätten die PWM-Welligkeit des ESC.
+unter Last). Schutzbeschaltung (4,7 kΩ in Reihe, 100 nF nach Masse) siehe
+„Verdrahtung“, Punkt 2.
 
 Die Skalierung ist für den B-Cube-4in1 nicht gesichert. Voreingestellt sind
 12,75 mV/A (`CURR_MV_PER_A_DEFAULT`, Angabe von B-Cube für den AM32-4in1),
