@@ -27,8 +27,9 @@
 
 void CRSF_Init(UART_HandleTypeDef *huart);
 
-/* Wird aus dem USART1-Interrupt gerufen, nicht selbst aufrufen. */
+/* Werden aus den UART-Callbacks gerufen, nicht selbst aufrufen. */
 void CRSF_RxByte(void);
+void CRSF_RxError(void);
 
 /* Kanal 1..16, Rueckgabe in Mikrosekunden (988..2012). */
 uint16_t CRSF_Channel(uint8_t ch);

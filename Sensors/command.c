@@ -6,6 +6,7 @@
 #include "battery.h"
 #include "crsf.h"
 #include "rc.h"
+#include "arming.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@
 /* aus main.c */
 extern uint32_t loop_hz;
 extern volatile uint32_t loop_missed;
+extern uint8_t mpu_ok;
 
 static UART_HandleTypeDef *cmd_uart = 0;
 static uint8_t rx_char;
@@ -23,6 +25,11 @@ static uint8_t line_len = 0;
 static volatile uint8_t line_ready = 0;
 static volatile uint8_t stream_on = 0;
 static volatile uint8_t kipp_on = 0;
+
+/* Terminal-arm braucht eine Bestaetigung mit 'ja' innerhalb dieser Zeit */
+#define ARM_CONFIRM_MS 5000
+static uint8_t arm_confirm = 0;     /* 1 = 'arm' gesendet, wartet auf 'ja' */
+static uint32_t arm_confirm_ms = 0; /* Zeitpunkt des 'arm' */
 
 void Command_Init(UART_HandleTypeDef *huart)
 {
@@ -62,30 +69,76 @@ void Command_RxByte(void)
     HAL_UART_Receive_IT(cmd_uart, &rx_char, 1);
 }
 
+/* Bei Ueberlauf (ORE) beendet die HAL den Empfang - neu starten, sonst nimmt
+ * das Terminal keine Befehle mehr an (auch kein disarm). Bei Rahmen- oder
+ * Rauschfehlern laeuft der Empfang weiter, das kaputte Zeichen ist aber
+ * schon in der Zeile - die angefangene Zeile verwerfen. */
+void Command_RxError(void)
+{
+    if (!cmd_uart)
+        return;
+    if (!line_ready)
+        line_len = 0;
+    __HAL_UART_CLEAR_OREFLAG(cmd_uart);
+    __HAL_UART_CLEAR_NEFLAG(cmd_uart);
+    __HAL_UART_CLEAR_FEFLAG(cmd_uart);
+    HAL_UART_Receive_IT(cmd_uart, &rx_char, 1);
+}
+
 void Command_Process(void)
 {
     if (!line_ready)
         return;
 
-    /* ---------- Motorsteuerung ---------- */
-    if (strcmp(line, "arm") == 0 && CRSF_LinkUp())
+    /* ---------- Motorsteuerung ----------
+     * 'arm' geht nur ohne Funk (mit Funk entscheidet der Arm-Schalter).
+     * Es prueft wie der Arm-Schalter Sensor, Neigung und Akku und will
+     * dann eine Bestaetigung mit 'ja'. Die Motoren laufen danach sofort im
+     * Leerlauf. */
+    if ((strcmp(line, "arm") == 0 || strcmp(line, "ja") == 0) && CRSF_LinkUp())
     {
-        /* Mit Funk entscheidet der Arm-Schalter - ein Terminal-arm wuerde
-         * im naechsten Zyklus ohnehin wieder aufgehoben. */
+        /* Ein Terminal-arm wuerde im naechsten Zyklus ohnehin aufgehoben */
+        arm_confirm = 0;
         printf(">> Funk ist verbunden - bitte mit dem Arm-Schalter armen.\r\n");
     }
     else if (strcmp(line, "arm") == 0)
     {
-        setpoint.throttle = 0.0f; /* ein vorher gesetztes 't' nicht sofort anlegen */
-        Control_Reset();          /* Integratoren loeschen vor dem Scharfschalten */
-        Motor_Arm();
-        printf(">> ARMED\r\n");
+        ArmCheck_t r = Arming_Check();
+        if (r != ARM_OK)
+        {
+            arm_confirm = 0;
+            printf(">> Arming abgelehnt: %s\r\n", Arming_Text(r));
+        }
+        else
+        {
+            arm_confirm = 1;
+            arm_confirm_ms = HAL_GetTick();
+            printf(">> Propeller ab? Motoren laufen danach sofort im Leerlauf.\r\n");
+            printf(">> Bestaetigen mit 'ja' innerhalb von %d s.\r\n", ARM_CONFIRM_MS / 1000);
+        }
+    }
+    else if (strcmp(line, "ja") == 0)
+    {
+        if (!arm_confirm || HAL_GetTick() - arm_confirm_ms > ARM_CONFIRM_MS)
+        {
+            arm_confirm = 0;
+            printf(">> Nichts zu bestaetigen - erst 'arm' senden.\r\n");
+        }
+        else
+        {
+            arm_confirm = 0;
+            /* nochmal pruefen, seit dem 'arm' koennen 5 s vergangen sein.
+             * Bei Ablehnung gibt Arming_PrintPending den Grund aus. */
+            if (Arming_Arm() == ARM_OK)
+                printf(">> ARMED\r\n");
+            else
+                Arming_PrintPending();
+        }
     }
     else if (strcmp(line, "disarm") == 0 || strcmp(line, "stop") == 0)
     {
-        Motor_Disarm();
-        setpoint.throttle = 0.0f;
-        RC_BlockArm(); /* sonst armt der noch oben stehende Arm-Schalter sofort wieder */
+        arm_confirm = 0;
+        Arming_Disarm(); /* sperrt auch das Armen ueber den noch oben stehenden Schalter */
         printf(">> DISARMED - alle Motoren gestoppt.\r\n");
     }
 
@@ -99,6 +152,9 @@ void Command_Process(void)
                CRSF_LinkUp() ? "OK" : "KEIN SIGNAL");
         printf("   Stream: %s | Loop: %lu Hz | Motoren: %lu Hz\r\n",
                stream_on ? "AN" : "AUS", loop_hz, Motor_UpdateRateHz());
+        printf("   Sensor: %s | Lesefehler bisher: %lu | Arming: %s\r\n",
+               !mpu_ok ? "FEHLT" : (MPU6050_Failed() ? "AUSGEFALLEN" : (MPU6050_Healthy() ? "OK" : "nicht bereit")),
+               MPU6050_ErrorCount(), Arming_Text(Arming_Check()));
     }
     else if (strcmp(line, "loop") == 0)
     {
@@ -239,14 +295,19 @@ void Command_Process(void)
     }
 
     /* ---------- Gas setzen: t 20 ----------
-     * Nur zum Testen ohne Funke. Sobald die Funke verbunden ist,
-     * ueberschreibt RC_Update den Wert im naechsten Zyklus. */
+     * Nur zum Testen ohne Funke und nur gearmt - disarmed gesetztes Gas
+     * wuerde sonst beim Armen sofort anliegen. Sobald die Funke verbunden
+     * ist, ueberschreibt RC_Update den Wert im naechsten Zyklus. */
     else if (line[0] == 't' && line[1] == ' ')
     {
         char *end;
         float v = strtof(line + 2, &end);
 
-        if (end != line + 2)
+        if (!Motor_IsArmed())
+        {
+            printf(">> Gesperrt: Gas nur gearmt ('arm', dann 'ja').\r\n");
+        }
+        else if (end != line + 2)
         {
             if (!(v >= 0.0f)) /* auch NaN */
                 v = 0.0f;
@@ -293,4 +354,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         Command_RxByte();
     else if (huart->Instance == USART1)
         CRSF_RxByte();
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2)
+        Command_RxError();
+    else if (huart->Instance == USART1)
+        CRSF_RxError();
 }

@@ -165,16 +165,18 @@ uint8_t CRSF_LinkUp(void)
 uint32_t CRSF_FrameCount(void) { return frame_count; }
 uint32_t CRSF_ErrorCount(void) { return error_count; }
 
-/* Bei Rahmenfehlern bleibt der Interrupt sonst stehen. */
-void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+/* Bei Ueberlauf (ORE) beendet die HAL den Empfang - neu starten. Bei Rahmen-
+ * oder Rauschfehlern laeuft er weiter; das angefangene Paket wird verworfen
+ * (pos = 0), die CRC haette es ohnehin abgelehnt.
+ * Aufruf aus HAL_UART_ErrorCallback (command.c). */
+void CRSF_RxError(void)
 {
-    if (crsf_uart && huart->Instance == crsf_uart->Instance)
-    {
-        error_count++;
-        pos = 0;
-        __HAL_UART_CLEAR_OREFLAG(huart);
-        __HAL_UART_CLEAR_NEFLAG(huart);
-        __HAL_UART_CLEAR_FEFLAG(huart);
-        HAL_UART_Receive_IT(crsf_uart, &rx_byte, 1);
-    }
+    if (!crsf_uart)
+        return;
+    error_count++;
+    pos = 0;
+    __HAL_UART_CLEAR_OREFLAG(crsf_uart);
+    __HAL_UART_CLEAR_NEFLAG(crsf_uart);
+    __HAL_UART_CLEAR_FEFLAG(crsf_uart);
+    HAL_UART_Receive_IT(crsf_uart, &rx_byte, 1);
 }

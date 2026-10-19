@@ -2,6 +2,7 @@
 #include "crsf.h"
 #include "control.h"
 #include "motor.h"
+#include "arming.h"
 #include <stdio.h>
 
 static uint8_t failsafe = 1;
@@ -153,7 +154,10 @@ void RC_Update(float dt)
 
     /* ---------- Arming ----------
      * Bedingungen: Schalter oben UND Gas unter 5 % UND der Schalter
-     * war seit dem Einschalten mindestens einmal unten. */
+     * war seit dem Einschalten mindestens einmal unten UND die
+     * Sicherheitsabfragen in arming.c (Sensor, Neigung, Akku) sind ok.
+     * Scheitert eine davon, muss der Schalter erst wieder runter - sonst
+     * wuerde die Drohne von selbst armen, sobald z.B. die Neigung passt. */
     uint8_t sw_on = (CRSF_Channel(RC_CH_ARM) > RC_SWITCH_HIGH) ? 1 : 0;
 
     if (!sw_on)
@@ -161,29 +165,26 @@ void RC_Update(float dt)
 
     if (sw_on && arm_latch && !Motor_IsArmed())
     {
-        if (thr < 5.0f)
+        if (thr >= 5.0f)
         {
-            Control_Reset();
-            Motor_Arm();
-        }
-        else
-        {
-            /* Gas stand nicht unten - sperren bis der Schalter neu kommt */
+            Arming_Reject(ARM_GAS);
             arm_latch = 0;
+        }
+        else if (Arming_Arm() != ARM_OK)
+        {
+            arm_latch = 0; /* Grund merkt sich arming.c fuers Terminal */
         }
     }
     else if (!sw_on && Motor_IsArmed())
     {
-        Motor_Disarm();
-        setpoint.throttle = 0.0f;
+        Arming_Disarm();
     }
     else if (sw_on && !arm_latch && Motor_IsArmed())
     {
         /* Gearmt, aber nicht vom Funk (per Terminal ohne Funk). Sobald die
          * Funke da ist, entscheidet sie - und der Schalter stand schon oben,
          * ohne dass Gas-unten geprueft wurde. Also aus. */
-        Motor_Disarm();
-        setpoint.throttle = 0.0f;
+        Arming_Disarm();
     }
 
     /* ---------- Sollwerte ----------

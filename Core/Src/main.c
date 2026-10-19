@@ -7,6 +7,7 @@
 #include "battery.h"
 #include "crsf.h"
 #include "rc.h"
+#include "arming.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -15,6 +16,7 @@ UART_HandleTypeDef huart1; /* ELRS-Empfaenger, CRSF */
 UART_HandleTypeDef huart2; /* Debug-Monitor */
 TIM_HandleTypeDef htim2;   /* Regeltakt 1 kHz */
 TIM_HandleTypeDef htim3;   /* Motorsignal */
+IWDG_HandleTypeDef hiwdg;  /* Watchdog */
 
 uint8_t who = 0;
 uint8_t mpu_ok = 0;
@@ -26,12 +28,23 @@ volatile uint32_t loop_missed = 0; /* Zyklen, die nicht rechtzeitig fertig wurde
 volatile uint32_t loop_count = 0;  /* fuer die Frequenzmessung */
 uint32_t loop_hz = 0;              /* gemessene Ist-Frequenz, von command.c gelesen */
 
+/* Spaetestens so lange nach dem Takt muss der Sensor geantwortet haben.
+ * Ein Lesevorgang dauert bei 400 kHz etwa 0,4 ms. */
+#define IMU_DEADLINE_US 800
+
+static uint32_t imu_recover_ms = 0;  /* letzte Bus-Recovery, HAL_GetTick() */
+static uint8_t imu_fail_report = 0;  /* Sensorausfall noch nicht gemeldet */
+
 static void SystemClock_Config(void);
 static void GPIO_Init(void);
 static void I2C1_Init(void);
 static void USART1_Init(void);
 static void USART2_Init(void);
 static void TIM2_Loop_Init(void);
+static void IWDG_Init(void);
+static void DWT_Init(void);
+static HAL_StatusTypeDef I2C1_Setup(void);
+static void I2C1_Recover(void);
 
 int __io_putchar(int ch)
 {
@@ -53,6 +66,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         if (loop_flag)
             loop_missed++; /* vorheriger Zyklus war noch nicht fertig */
         loop_flag = 1;
+
+        /* Sensor fuer diesen Takt anstossen. Der Lesevorgang laeuft per
+         * Interrupt im Hintergrund, die Hauptschleife holt ihn ab. */
+        if (mpu_ok)
+            MPU6050_StartRead(&hi2c1);
     }
 }
 
@@ -61,6 +79,7 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     GPIO_Init();
+    DWT_Init();
     USART2_Init();
     I2C1_Init();
     Motor_Init(&htim3);
@@ -79,6 +98,10 @@ int main(void)
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
     printf("         angle | rate | stream on/off | kipp | t <gas>\r\n");
+
+    if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST))
+        printf("!! Letzter Neustart durch den Watchdog - die Software hing !!\r\n");
+    __HAL_RCC_CLEAR_RESET_FLAGS();
 
     who = 0;
     if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
@@ -100,15 +123,16 @@ int main(void)
         }
         else
         {
-            printf("MPU6050 init FAILED - laufe ohne Sensor weiter\r\n");
+            printf("MPU6050 init FAILED - Arming gesperrt\r\n");
         }
     }
     else
     {
-        printf("Kein MPU6050 erkannt - Motorbetrieb ohne Sensor moeglich\r\n");
+        printf("Kein MPU6050 erkannt - Arming gesperrt\r\n");
     }
 
-    /* Regeltakt erst starten wenn die Kalibrierung durch ist */
+    /* Watchdog und Regeltakt erst starten, wenn die Kalibrierung durch ist */
+    IWDG_Init();
     TIM2_Loop_Init();
 
     printf(">> Bereit.\r\n");
@@ -127,17 +151,55 @@ int main(void)
         {
             /* Leerlaufzeit: hier laufen die nicht-zeitkritischen Sachen */
             Command_Process();
+            Arming_PrintPending();
+            if (imu_fail_report && !Motor_IsArmed())
+            {
+                imu_fail_report = 0;
+                printf(">> SENSOR AUSGEFALLEN - Motoren aus. Fehler bisher: %lu\r\n",
+                       MPU6050_ErrorCount());
+            }
             continue;
+        }
+
+        /* --- Sensordaten dieses Takts abholen ---
+         * Der Lesevorgang laeuft seit dem TIM2-Interrupt (ca. 0,4 ms). Hier
+         * wird nur gewartet, bis er fertig ist - hoechstens bis
+         * IMU_DEADLINE_US nach dem Takt, dann zaehlt er als Fehler. */
+        int imu = -1;
+        if (mpu_ok)
+        {
+            while ((imu = MPU6050_ReadPoll(&sensor)) == 0 && TIM2->CNT < IMU_DEADLINE_US)
+            {
+            }
         }
         loop_flag = 0;
         loop_count++;
 
         /* ===== REGELZYKLUS - nichts Blockierendes hineinschreiben ===== */
 
-        if (mpu_ok && MPU6050_ReadAll(&hi2c1, &sensor) == HAL_OK)
+        if (imu == 1)
         {
             MPU6050_Convert(&sensor, DT);
             MPU6050_UpdateAngles(&sensor, DT);
+        }
+        if (mpu_ok)
+        {
+            /* Einzelne Fehler: die Regelung rechnet mit den letzten Werten
+             * weiter. Nach MPU6050_FAIL_LIMIT Fehlern in Folge gilt der
+             * Sensor als ausgefallen (siehe unten). */
+            MPU6050_ReportResult(imu == 1);
+            if (imu != 1 && MPU6050_FailRun() >= 3 && HAL_GetTick() - imu_recover_ms >= 20)
+            {
+                imu_recover_ms = HAL_GetTick();
+                I2C1_Recover();
+            }
+        }
+
+        /* Ohne funktionierenden Sensor gibt es keine Lageregelung: sofort aus */
+        if (Motor_IsArmed() && (!mpu_ok || MPU6050_Failed()))
+        {
+            Arming_Disarm();
+            imu_fail_report = 1;
         }
 
         /* Funkempfang auswerten: Sollwerte, Failsafe, Arming */
@@ -149,6 +211,9 @@ int main(void)
         Mixer_Update(setpoint.throttle, out_roll, out_pitch, out_yaw);
 
         Battery_Update(DT);
+
+        /* Lebenszeichen fuer den Watchdog - nur wenn der Regelzyklus laeuft */
+        HAL_IWDG_Refresh(&hiwdg);
 
         /* ===== ENDE REGELZYKLUS ===== */
 
@@ -241,6 +306,19 @@ static void GPIO_Init(void)
  * rund 1,4 ms und 1000 Hz waeren unmoeglich. */
 static void I2C1_Init(void)
 {
+    if (I2C1_Setup() != HAL_OK)
+        Error_Handler();
+
+    /* Gleiche Prioritaet wie der Regeltakt (TIM2): die beiden unterbrechen
+     * sich nicht gegenseitig, TIM2 startet die Lesevorgaenge. */
+    HAL_NVIC_SetPriority(I2C1_EV_IRQn, 4, 0);
+    HAL_NVIC_SetPriority(I2C1_ER_IRQn, 4, 0);
+    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+}
+
+static HAL_StatusTypeDef I2C1_Setup(void)
+{
     __HAL_RCC_I2C1_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
 
@@ -261,8 +339,83 @@ static void I2C1_Init(void)
     hi2c1.Init.OwnAddress2 = 0;
     hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
     hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-    if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-        Error_Handler();
+    return HAL_I2C_Init(&hi2c1);
+}
+
+/* Wartet us Mikrosekunden mit dem Taktzaehler. Nur fuer die Bus-Recovery. */
+static void delay_us(uint32_t us)
+{
+    const uint32_t start = DWT->CYCCNT;
+    const uint32_t n = us * (SystemCoreClock / 1000000U);
+    while (DWT->CYCCNT - start < n)
+    {
+    }
+}
+
+/* I2C-Bus und Peripherie neu aufsetzen, wenn das Lesen mehrmals scheitert.
+ * Typischer Fall: eine Uebertragung wurde mittendrin abgebrochen, der
+ * Sensor haelt SDA fest und das BUSY-Flag der Peripherie bleibt stehen.
+ * Dauert etwa 0,2 ms, disarmed zusaetzlich etwa 15 ms fuer MPU6050_Init
+ * (hoechstens 6 Transfers x 3 ms + 10 ms Pause - unter der Watchdog-Zeit). */
+static void I2C1_Recover(void)
+{
+    MPU6050_BlockReads(1);
+    HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
+    HAL_I2C_DeInit(&hi2c1);
+
+    /* SCL (PB6) und SDA (PB7) als Open-Drain-Ausgang. Haelt der Sensor SDA
+     * fest, mit bis zu 9 Takten auf SCL freitakten, danach ein STOP. */
+    GPIO_InitTypeDef g = {0};
+    g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    g.Mode = GPIO_MODE_OUTPUT_OD;
+    g.Pull = GPIO_PULLUP;
+    g.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6 | GPIO_PIN_7, GPIO_PIN_SET);
+    HAL_GPIO_Init(GPIOB, &g);
+    delay_us(5);
+
+    for (int i = 0; i < 9 && HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) == GPIO_PIN_RESET; i++)
+    {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+        delay_us(5);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+        delay_us(5);
+    }
+
+    /* STOP: SDA geht hoch, waehrend SCL hoch ist */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+    delay_us(5);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+    delay_us(5);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+    delay_us(5);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+    delay_us(5);
+
+    /* Peripherie komplett zuruecksetzen - das loescht auch ein haengendes
+     * BUSY-Flag - und neu einrichten (Pins wieder auf I2C) */
+    __HAL_RCC_I2C1_FORCE_RESET();
+    __HAL_RCC_I2C1_RELEASE_RESET();
+    (void)I2C1_Setup();
+
+    __HAL_I2C_CLEAR_FLAG(&hi2c1, I2C_FLAG_AF);
+    HAL_NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
+    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+
+    /* Hatte der Sensor die Spannung verloren, ist er wieder im Schlafmodus
+     * und muss neu eingestellt werden. Das blockiert kurz, deshalb nur
+     * disarmed und nur bei freiem Bus (sonst warten die HAL-Aufrufe je 25 ms). */
+    if (!Motor_IsArmed() && __HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY) == RESET)
+    {
+        HAL_IWDG_Refresh(&hiwdg);
+        (void)MPU6050_InitTimeout(&hi2c1, 3);
+        HAL_IWDG_Refresh(&hiwdg);
+    }
+
+    MPU6050_BlockReads(0);
 }
 
 /* USART1 fuer den ELRS-Empfaenger: PA9 = TX, PA10 = RX, 420000 Baud */
@@ -344,10 +497,33 @@ static void TIM2_Loop_Init(void)
     HAL_TIM_Base_Start_IT(&htim2);
 }
 
+/* Watchdog: setzt den Prozessor zurueck, wenn der Regelzyklus laenger als
+ * etwa 100 ms nicht laeuft (LSI 32 kHz / 32 = 1 kHz, 100 Schritte; wegen der
+ * LSI-Toleranz 17..47 kHz tatsaechlich 68..188 ms). Nach dem Neustart sind
+ * die Motoren aus (disarmed). Beim Debuggen haelt er mit dem Prozessor an. */
+static void IWDG_Init(void)
+{
+    __HAL_DBGMCU_FREEZE_IWDG();
+    hiwdg.Instance = IWDG;
+    hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
+    hiwdg.Init.Reload = 100;
+    if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+        Error_Handler();
+}
+
+/* Taktzaehler des Cortex-M4 fuer Mikrosekunden-Wartezeiten */
+static void DWT_Init(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
 void SysTick_Handler(void) { HAL_IncTick(); }
 
 void Error_Handler(void)
 {
+    Motor_EmergencyStop(); /* zuerst die Motoren */
     __disable_irq();
     while (1)
     {
@@ -361,6 +537,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
     (void)file;
     (void)line;
+    Motor_EmergencyStop();
     while (1)
     {
     }

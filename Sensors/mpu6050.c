@@ -54,10 +54,19 @@ HAL_StatusTypeDef MPU6050_WhoAmI(I2C_HandleTypeDef *hi2c, uint8_t *id)
 
 HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
 {
+    return MPU6050_InitTimeout(hi2c, 100);
+}
+
+/* Wie MPU6050_Init, aber mit waehlbarem Timeout pro I2C-Transfer (ms).
+ * Die Bus-Recovery nutzt kurze Timeouts, damit sie den Watchdog nicht
+ * ausloest. */
+HAL_StatusTypeDef MPU6050_InitTimeout(I2C_HandleTypeDef *hi2c, uint32_t timeout)
+{
     uint8_t check;
     HAL_StatusTypeDef status;
 
-    status = MPU6050_WhoAmI(hi2c, &check);
+    status = HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, MPU6050_WHO_AM_I,
+                              I2C_MEMADD_SIZE_8BIT, &check, 1, timeout);
     if (status != HAL_OK)
         return status;
     if (check != 0x68)
@@ -67,7 +76,7 @@ HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
      * (stabiler, empfiehlt InvenSense selbst) */
     uint8_t data = 0x01;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_PWR_MGMT_1,
-                               I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+                               I2C_MEMADD_SIZE_8BIT, &data, 1, timeout);
     if (status != HAL_OK)
         return status;
     HAL_Delay(10);
@@ -77,14 +86,14 @@ HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
      * Gyro-Rate von 8 kHz auf 1 kHz - passend zur Regelschleife. */
     data = 0x01;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_CONFIG,
-                               I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+                               I2C_MEMADD_SIZE_8BIT, &data, 1, timeout);
     if (status != HAL_OK)
         return status;
 
     /* Sample Rate = 1 kHz / (1+0) = 1000 Hz - ein frischer Wert pro Regelzyklus */
     data = 0x00;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_SMPLRT_DIV,
-                               I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+                               I2C_MEMADD_SIZE_8BIT, &data, 1, timeout);
     if (status != HAL_OK)
         return status;
 
@@ -92,7 +101,7 @@ HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
      * und bei Anschlag liefert der Sensor sonst Unsinn. */
     data = 0x08;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_ACCEL_CONFIG,
-                               I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+                               I2C_MEMADD_SIZE_8BIT, &data, 1, timeout);
     if (status != HAL_OK)
         return status;
 
@@ -100,7 +109,7 @@ HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c)
      * drehst du schneller, und dann wuerde der Sensor abschneiden. */
     data = 0x08;
     status = HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, MPU6050_GYRO_CONFIG,
-                               I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
+                               I2C_MEMADD_SIZE_8BIT, &data, 1, timeout);
 
     filt_primed = 0;
     return status;
@@ -125,6 +134,171 @@ HAL_StatusTypeDef MPU6050_ReadAll(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data)
     data->gyro_z = (int16_t)((buf[12] << 8) | buf[13]);
 
     return HAL_OK;
+}
+
+/* ===== Nicht blockierendes Lesen per Interrupt =====
+ * Der TIM2-Interrupt startet jede Millisekunde einen Lesevorgang, die
+ * I2C-Interrupts der HAL arbeiten ihn ab, die Hauptschleife holt das
+ * Ergebnis mit MPU6050_ReadPoll ab.
+ * Die HAL wartet in HAL_I2C_Mem_Read_IT bis zu 25 ms auf ein freies
+ * BUSY-Flag - deshalb wird das vorher selbst geprueft. */
+static I2C_HandleTypeDef *rd_i2c = 0;
+static uint8_t rd_buf[14];
+static uint8_t prev_buf[14];
+static volatile uint8_t rd_active = 0;  /* Transfer laeuft */
+static volatile uint8_t rd_done = 0;    /* Ergebnis liegt vor, noch nicht abgeholt */
+static volatile uint8_t rd_ok = 0;      /* Ergebnis ist gueltig */
+static volatile uint8_t rd_blocked = 0; /* 1 = nichts starten (Bus-Recovery) */
+
+/* Gesundheit */
+static uint16_t fail_run = 0;   /* Fehler in Folge */
+static uint16_t good_run = 0;   /* gute Messungen in Folge (gesaettigt) */
+static uint16_t frozen_run = 0; /* identische Messungen in Folge */
+static uint8_t failed = 0;      /* 1 = Sensor gilt als ausgefallen */
+static uint32_t err_total = 0;
+
+HAL_StatusTypeDef MPU6050_StartRead(I2C_HandleTypeDef *hi2c)
+{
+    /* Altes Ergebnis noch nicht abgeholt: nicht ueberschreiben */
+    if (rd_blocked || rd_active || rd_done)
+        return HAL_BUSY;
+
+    rd_i2c = hi2c;
+    if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) != RESET ||
+        HAL_I2C_GetState(hi2c) != HAL_I2C_STATE_READY)
+    {
+        /* Bus haengt oder Peripherie ist noch beschaeftigt */
+        rd_ok = 0;
+        rd_done = 1;
+        return HAL_BUSY;
+    }
+
+    rd_active = 1;
+    if (HAL_I2C_Mem_Read_IT(hi2c, MPU6050_ADDR, MPU6050_ACCEL_XOUT_H,
+                            I2C_MEMADD_SIZE_8BIT, rd_buf, 14) != HAL_OK)
+    {
+        rd_active = 0;
+        rd_ok = 0;
+        rd_done = 1;
+        return HAL_ERROR;
+    }
+    return HAL_OK;
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c != rd_i2c)
+        return;
+    rd_ok = 1;
+    rd_active = 0;
+    rd_done = 1;
+}
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c != rd_i2c)
+        return;
+    rd_ok = 0;
+    rd_active = 0;
+    rd_done = 1;
+}
+
+int MPU6050_ReadPoll(MPU6050_Data_t *data)
+{
+    /* rd_active VOR rd_done lesen: der I2C-Interrupt setzt erst rd_active = 0
+     * und dann rd_done = 1. Andersherum gelesen koennte ein gerade fertig
+     * gewordener Transfer als "nichts gestartet" = Fehler zaehlen. */
+    const uint8_t act = rd_active;
+    if (!rd_done)
+        return act ? 0 : -1;
+
+    const uint8_t ok = rd_ok;
+    if (ok)
+    {
+        data->accel_x = (int16_t)((rd_buf[0] << 8) | rd_buf[1]);
+        data->accel_y = (int16_t)((rd_buf[2] << 8) | rd_buf[3]);
+        data->accel_z = (int16_t)((rd_buf[4] << 8) | rd_buf[5]);
+        data->temp_raw = (int16_t)((rd_buf[6] << 8) | rd_buf[7]);
+        data->gyro_x = (int16_t)((rd_buf[8] << 8) | rd_buf[9]);
+        data->gyro_y = (int16_t)((rd_buf[10] << 8) | rd_buf[11]);
+        data->gyro_z = (int16_t)((rd_buf[12] << 8) | rd_buf[13]);
+
+        /* Eingefrorene Werte erkennen: Accel und Gyro rauschen immer etwas,
+         * 100 Mal exakt dieselben Bytes heisst, der Sensor liefert nichts
+         * Neues mehr. Die Temperatur (Byte 6, 7) zaehlt nicht mit. */
+        uint8_t same = 1;
+        for (int i = 0; i < 14; i++)
+        {
+            if (i == 6 || i == 7)
+                continue;
+            if (rd_buf[i] != prev_buf[i])
+                same = 0;
+            prev_buf[i] = rd_buf[i];
+        }
+        frozen_run = same ? (uint16_t)(frozen_run + 1) : 0;
+    }
+
+    /* Erst nach dem Kopieren freigeben, sonst koennte der naechste
+     * Lesevorgang rd_buf schon wieder beschreiben. */
+    rd_done = 0;
+
+    if (frozen_run >= MPU6050_FROZEN_LIMIT)
+    {
+        failed = 1; /* eingefroren: sofort als ausgefallen werten */
+        good_run = 0;
+        return -1;
+    }
+    if (!ok)
+        return -1;
+    return 1;
+}
+
+uint8_t MPU6050_ReadBusy(void)
+{
+    return rd_active;
+}
+
+void MPU6050_BlockReads(uint8_t block)
+{
+    /* Beim Sperren und beim Freigeben einen evtl. halb fertigen Transfer
+     * verwerfen - die Recovery setzt die I2C-Peripherie dazwischen zurueck. */
+    if (block)
+        rd_blocked = 1;
+    rd_active = 0;
+    rd_done = 0;
+    __COMPILER_BARRIER();
+    if (!block)
+        rd_blocked = 0; /* erst freigeben, wenn alles zurueckgesetzt ist */
+}
+
+void MPU6050_ReportResult(uint8_t ok)
+{
+    if (ok)
+    {
+        fail_run = 0;
+        if (good_run < 0xFFFF)
+            good_run++;
+        if (failed && good_run >= MPU6050_GOOD_TO_RECOVER)
+            failed = 0;
+    }
+    else
+    {
+        err_total++;
+        good_run = 0;
+        if (fail_run < 0xFFFF)
+            fail_run++;
+        if (fail_run >= MPU6050_FAIL_LIMIT)
+            failed = 1;
+    }
+}
+
+uint8_t MPU6050_Failed(void) { return failed; }
+uint16_t MPU6050_FailRun(void) { return fail_run; }
+uint32_t MPU6050_ErrorCount(void) { return err_total; }
+
+uint8_t MPU6050_Healthy(void)
+{
+    return !failed && good_run >= MPU6050_GOOD_TO_RECOVER;
 }
 
 /* --- Gyro-Kalibrierung: misst Offsets im Ruhezustand --- */

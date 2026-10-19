@@ -48,6 +48,26 @@ void Motor_Arm(void);
 void Motor_Disarm(void);
 uint8_t Motor_IsArmed(void);
 
+/* Notaus fuer Fault-Handler, Error_Handler und assert_failed:
+ * schreibt die Stopp-Pulsbreite direkt in alle vier Vergleichsregister von
+ * TIM3, ohne HAL, ohne Funktionsaufruf und ohne Stack. TIM3 laeuft in
+ * Hardware weiter und erzeugt sonst endlos den letzten Gaswert, auch wenn
+ * die CPU haengt.
+ * Vorher wird die Vorladung (OCxPE) abgeschaltet, damit der neue Wert sofort
+ * gilt: ein laufender laengerer Puls endet beim Vergleich mit 125 us, nichts
+ * wird verlaengert. Ein Update-Event (UG) waere falsch - es setzt den Zaehler
+ * zurueck und verlaengert einen laufenden Puls auf bis zu 375 us = Vollgas. */
+static inline void Motor_EmergencyStop(void)
+{
+    const uint32_t stop = (uint32_t)MOTOR_US_MIN * MOTOR_TICKS_PER_US;
+    TIM3->CCMR1 &= ~(TIM_CCMR1_OC1PE | TIM_CCMR1_OC2PE);
+    TIM3->CCMR2 &= ~(TIM_CCMR2_OC3PE | TIM_CCMR2_OC4PE);
+    TIM3->CCR1 = stop;
+    TIM3->CCR2 = stop;
+    TIM3->CCR3 = stop;
+    TIM3->CCR4 = stop;
+}
+
 /* Gibt die aktuelle Wiederholrate in Hz zurueck - fuer den 'status'-Befehl */
 uint32_t Motor_UpdateRateHz(void);
 

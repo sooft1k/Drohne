@@ -72,10 +72,40 @@ typedef struct
 } MPU6050_Data_t;
 
 HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c);
+HAL_StatusTypeDef MPU6050_InitTimeout(I2C_HandleTypeDef *hi2c, uint32_t timeout);
 HAL_StatusTypeDef MPU6050_WhoAmI(I2C_HandleTypeDef *hi2c, uint8_t *id);
 HAL_StatusTypeDef MPU6050_ReadAll(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data);
 
 void MPU6050_Calibrate(I2C_HandleTypeDef *hi2c, MPU6050_Data_t *data, uint16_t samples);
+
+/* ===== Lesen im Regelbetrieb, per Interrupt =====
+ * MPU6050_ReadAll oben blockiert und ist nur fuer Start und Kalibrierung. */
+
+/* Fehler in Folge, ab denen der Sensor als ausgefallen gilt (1 pro ms) */
+#define MPU6050_FAIL_LIMIT 20
+/* Gute Messungen in Folge, ab denen er wieder als gesund gilt (1 pro ms) */
+#define MPU6050_GOOD_TO_RECOVER 500
+/* Identische Messungen in Folge, ab denen die Werte als eingefroren gelten
+ * (der Sensor gilt dann sofort als ausgefallen) */
+#define MPU6050_FROZEN_LIMIT 100
+
+/* Startet einen Lesevorgang per Interrupt. Aus dem TIM2-Interrupt aufrufen.
+ * Blockiert nie: ist der Bus belegt, wird das als Fehler gemeldet. */
+HAL_StatusTypeDef MPU6050_StartRead(I2C_HandleTypeDef *hi2c);
+
+/* Holt das Ergebnis ab: 1 = neue Rohwerte in data, 0 = Transfer laeuft
+ * noch, -1 = Fehler (oder nichts gestartet, oder Werte eingefroren). */
+int MPU6050_ReadPoll(MPU6050_Data_t *data);
+
+uint8_t MPU6050_ReadBusy(void);           /* 1 = Transfer laeuft */
+void MPU6050_BlockReads(uint8_t block);   /* 1 = keine neuen Transfers (Recovery) */
+
+/* Ergebnis jedes Regelzyklus melden, fuehrt den Fehlerzaehler */
+void MPU6050_ReportResult(uint8_t ok);
+uint8_t MPU6050_Failed(void);      /* 1 = MPU6050_FAIL_LIMIT Fehler in Folge */
+uint8_t MPU6050_Healthy(void);     /* 1 = nicht ausgefallen und seit 0,5 s stabil */
+uint16_t MPU6050_FailRun(void);    /* aktuelle Fehler in Folge */
+uint32_t MPU6050_ErrorCount(void); /* Fehler seit dem Start */
 
 /* Braucht jetzt dt, weil die Filter darauf rechnen */
 void MPU6050_Convert(MPU6050_Data_t *data, float dt);

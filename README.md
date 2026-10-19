@@ -122,7 +122,10 @@ Konvention oben. Der Fehler liegt dann woanders (Einbaulage, Verkabelung).
 ### Teil C – Motoren (Akku dran, Propeller ab)
 
 14. Funke an, Arm-Schalter unten, Gas ganz unten. Akku anstecken.
-15. Arm-Schalter hoch: Alle vier Motoren laufen im Leerlauf. Drehrichtung
+15. Drohne etwa 30° schräg halten und den Arm-Schalter hochnehmen: Die
+    Motoren bleiben aus, das Terminal meldet `Arming abgelehnt: zu schief`.
+    Arm-Schalter wieder runter, Drohne flach hinstellen.
+    Arm-Schalter hoch: Alle vier Motoren laufen im Leerlauf. Drehrichtung
     jedes Motors prüfen (Klebeband-Fähnchen auf der Glocke), von oben gesehen:
     M1 hinten rechts CW, M2 vorne rechts CCW, M3 hinten links CCW,
     M4 vorne links CW. Dreht ein Motor falsch herum: im ESC-Configurator
@@ -186,22 +189,68 @@ zurückkommt – Knüppel und Modus-Schalter wirken bis dahin nicht. Nur der
 Arm-Schalter wirkt immer: runter heißt sofort aus. Danach lässt sich über
 die Funke erst wieder armen, wenn der Arm-Schalter einmal unten war.
 
-Ohne Funk lässt sich weiter über das Terminal armen (`arm`, Prüfstand).
-Die Motoren gehen dann sofort in den Leerlauf. Mit verbundener Funke lehnt
-das Terminal `arm` ab. Kommt die Funke dazu, hat sie Vorrang: Steht der
-Arm-Schalter unten oder wurde nicht über die Funke gearmt, schaltet die
-Firmware ab.
+Ohne Funk lässt sich weiter über das Terminal armen (`arm`, dann `ja`,
+Prüfstand). Die Motoren gehen dann sofort in den Leerlauf. Mit verbundener
+Funke lehnt das Terminal `arm` ab. Kommt die Funke dazu, hat sie Vorrang:
+Steht der Arm-Schalter unten oder wurde nicht über die Funke gearmt,
+schaltet die Firmware ab.
+
+## Sicherheitsabfragen beim Armen
+
+Gilt für den Arm-Schalter und für `arm` im Terminal (`Sensors/arming.c`):
+
+| Bedingung | Grenze |
+|---|---|
+| Sensor | MPU6050 erkannt, nicht ausgefallen, seit 0,5 s fehlerfrei |
+| Neigung | Roll und Pitch jeweils höchstens 25° (`ARM_MAX_TILT_DEG`) |
+| Akku | Spannung erkannt und mindestens 3,50 V pro Zelle (`BAT_WARN_V`) |
+| Gas | Knüppel unter 5 % (nur Arm-Schalter) |
+
+Scheitert eine Bedingung, bleibt die Drohne aus und das Terminal zeigt den
+Grund (`Arming abgelehnt: ...`). Der Arm-Schalter muss dann erst wieder
+runter – die Drohne armt nicht von selbst, sobald die Bedingung später passt.
+Ohne angeschlossenen Spannungsteiler an PC0 lässt sich normalerweise nicht
+armen (ein offener Eingang kann allerdings zufällige Werte liefern). Die
+Neigung wird zweimal geprüft: am gefilterten Lagewinkel und direkt am
+Beschleunigungssensor. Die Zellenerkennung ist bei teilentladenen 5S/6S-Akkus
+nicht eindeutig – dann kann ein zu leerer Akku als „OK“ durchgehen
+(siehe „Akku und Strom“).
+
+`arm` im Terminal fragt zusätzlich nach: Erst nach `ja` innerhalb von 5 s
+wird gearmt, die Prüfungen laufen dabei noch einmal. `t <gas>` geht nur,
+wenn gearmt ist.
+
+## Sensorausfall, Watchdog und Fehler
+
+- Der MPU6050 wird jede Millisekunde per Interrupt gelesen, ohne die
+  Regelschleife zu blockieren. Einzelne Lesefehler überbrückt die Regelung
+  mit den letzten Werten.
+- 20 Fehler in Folge (20 ms) oder 100 exakt gleiche Messungen hintereinander
+  (eingefrorene Werte, 100 ms): Der Sensor gilt als ausgefallen, die Motoren
+  gehen sofort aus. Wieder armen lässt sich erst nach 0,5 s fehlerfreiem Lesen.
+- Scheitert das Lesen dreimal in Folge, setzt die Firmware den I2C-Bus und
+  die Peripherie neu auf (höchstens alle 20 ms).
+- Watchdog (IWDG): Läuft der Regelzyklus etwa 100 ms lang nicht (je nach
+  Toleranz des internen Oszillators 68–188 ms), startet der Prozessor neu.
+  Danach sind die Motoren aus. Beim Start meldet das Terminal
+  `Letzter Neustart durch den Watchdog`, wenn das passiert ist. Der Watchdog
+  läuft erst ab `>> Bereit.`, also nach der Gyro-Kalibrierung.
+- Fault-Handler, `Error_Handler` und `assert_failed` setzen als Erstes alle
+  vier Motorpulse auf Stopp. Der Motortimer läuft sonst in Hardware weiter
+  und gibt endlos den letzten Gaswert aus.
 
 ## Terminal-Befehle
 
 | Befehl | Wirkung |
 |---|---|
-| `arm` / `disarm` (`stop`) | Motoren scharf (nur ohne Funk) / aus. Nach `disarm` armt der Arm-Schalter erst wieder, wenn er einmal unten war |
-| `status`, `loop`, `rc`, `bat`, `pid`, `mix`, `filt` | Anzeigen |
+| `arm`, dann `ja` | Motoren scharf, nur ohne Funk und mit Sicherheitsabfragen |
+| `disarm` (`stop`) | Motoren aus. Danach armt der Arm-Schalter erst wieder, wenn er einmal unten war |
+| `status` | Zustand, Sensorfehler und ob Armen gerade erlaubt wäre |
+| `loop`, `rc`, `bat`, `pid`, `mix`, `filt` | Anzeigen |
 | `angle`, `rate` | Flugmodus |
 | `stream on` / `stream off` | Lage und Drehraten mit 50 Hz ausgeben (nur disarmed) |
 | `kipp` | Kipptest-Anzeige an/aus (nur disarmed) |
-| `t <gas>` | Gas in %, nur ohne Funk (mit Funk überschreibt der Knüppel) |
+| `t <gas>` | Gas in %, nur gearmt und ohne Funk (mit Funk überschreibt der Knüppel) |
 | `rrp 1.2` usw. | PID-Wert setzen: Kreis (r/a), Achse (r/p/y), Term (p/i/d) |
 | `glpf <hz>`, `alpf <hz>`, `tau <s>` | Filter einstellen |
 | `batcal <volt>` | Akkuspannung kalibrieren |

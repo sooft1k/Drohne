@@ -12,6 +12,7 @@
 #define HAL_UART_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
 #define HAL_ADC_MODULE_ENABLED
+#define HAL_IWDG_MODULE_ENABLED
 
 #define HSE_VALUE ((uint32_t)8000000U) /* WeAct Board: 8 MHz HSE */
 #define HSE_STARTUP_TIMEOUT ((uint32_t)100U)
@@ -31,7 +32,9 @@
 #define USE_HAL_I2C_REGISTER_CALLBACKS 0U
 #define USE_HAL_UART_REGISTER_CALLBACKS 0U
 
-#define USE_FULL_ASSERT 0U
+/* Asserts der HAL aus. Zum Einschalten die Zeile einkommentieren -
+ * es zaehlt nur, OB das Makro definiert ist, nicht sein Wert. */
+/* #define USE_FULL_ASSERT 1U */
 
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f4xx_hal_gpio.h"
@@ -43,6 +46,7 @@
 #include "stm32f4xx_hal_uart.h"
 #include "stm32f4xx_hal_tim.h"
 #include "stm32f4xx_hal_adc.h"
+#include "stm32f4xx_hal_iwdg.h"
 
 #ifdef USE_FULL_ASSERT
 #define assert_param(expr) ((expr) ? (void)0U : assert_failed((uint8_t *)__FILE__, __LINE__))
