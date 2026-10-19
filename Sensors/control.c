@@ -117,7 +117,7 @@ void Control_Update(MPU6050_Data_t *s, float dt,
     *out_yaw = PID_Update(&pid_rate_yaw, setpoint.yaw, s->gyro_z_dps, dt, integrate);
 }
 
-void Control_SetGain(char loop, char axis, char term, float value)
+uint8_t Control_SetGain(char loop, char axis, char term, float value)
 {
     PID_t *pid = 0;
 
@@ -140,7 +140,9 @@ void Control_SetGain(char loop, char axis, char term, float value)
     }
 
     if (!pid)
-        return;
+        return 0;
+    if (!(value >= 0.0f && value < 1000.0f)) /* NaN, unendlich, negativ */
+        return 0;
 
     if (term == 'p')
         pid->kp = value;
@@ -149,9 +151,10 @@ void Control_SetGain(char loop, char axis, char term, float value)
     else if (term == 'd')
         pid->kd = value;
     else
-        return;
+        return 0;
 
     Control_Reset();
+    return 1;
 }
 
 void Control_PrintGains(void)

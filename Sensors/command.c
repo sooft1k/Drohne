@@ -68,9 +68,16 @@ void Command_Process(void)
         return;
 
     /* ---------- Motorsteuerung ---------- */
-    if (strcmp(line, "arm") == 0)
+    if (strcmp(line, "arm") == 0 && CRSF_LinkUp())
     {
-        Control_Reset(); /* Integratoren loeschen vor dem Scharfschalten */
+        /* Mit Funk entscheidet der Arm-Schalter - ein Terminal-arm wuerde
+         * im naechsten Zyklus ohnehin wieder aufgehoben. */
+        printf(">> Funk ist verbunden - bitte mit dem Arm-Schalter armen.\r\n");
+    }
+    else if (strcmp(line, "arm") == 0)
+    {
+        setpoint.throttle = 0.0f; /* ein vorher gesetztes 't' nicht sofort anlegen */
+        Control_Reset();          /* Integratoren loeschen vor dem Scharfschalten */
         Motor_Arm();
         printf(">> ARMED\r\n");
     }
@@ -78,6 +85,7 @@ void Command_Process(void)
     {
         Motor_Disarm();
         setpoint.throttle = 0.0f;
+        RC_BlockArm(); /* sonst armt der noch oben stehende Arm-Schalter sofort wieder */
         printf(">> DISARMED - alle Motoren gestoppt.\r\n");
     }
 
@@ -187,6 +195,10 @@ void Command_Process(void)
     /* ---------- Kipptest ohne Propeller ----------
      * Zeigt 5x pro Sekunde, was der Mixer bei 50 % Gas aus der aktuellen
      * Lage machen wuerde. Nur disarmed, die Motoren bleiben aus. */
+    else if (strcmp(line, "kipp") == 0 && Motor_IsArmed())
+    {
+        printf(">> Kipptest nur disarmed - erst 'disarm'.\r\n");
+    }
     else if (strcmp(line, "kipp") == 0)
     {
         kipp_on = !kipp_on;
@@ -215,8 +227,10 @@ void Command_Process(void)
 
         if (end != line + 3)
         {
-            Control_SetGain(line[0], line[1], line[2], v);
-            printf(">> %c%c%c = %.4f\r\n", line[0], line[1], line[2], v);
+            if (Control_SetGain(line[0], line[1], line[2], v))
+                printf(">> %c%c%c = %.4f\r\n", line[0], line[1], line[2], v);
+            else
+                printf(">> Ungueltig (Yaw hat keinen Winkelregler, Wert 0..1000)\r\n");
         }
         else
         {
@@ -234,7 +248,7 @@ void Command_Process(void)
 
         if (end != line + 2)
         {
-            if (v < 0.0f)
+            if (!(v >= 0.0f)) /* auch NaN */
                 v = 0.0f;
             if (v > 100.0f)
                 v = 100.0f;
@@ -258,67 +272,15 @@ void Command_Process(void)
                m1, m2, m3, m4, setpoint.throttle);
     }
 
-    /* ---------- Einzelmotor: m1 20 ----------
-     * Wird vom Mixer im naechsten Zyklus ueberschrieben, solange Gas > 0.
-     * Fuer Einzeltests vorher 't 0' setzen. */
-    else if (line[0] == 'm' && line[1] >= '1' && line[1] <= '4')
-    {
-        uint8_t motor = (uint8_t)(line[1] - '0');
-        char *end;
-        long val = strtol(line + 2, &end, 10);
-
-        if (end != line + 2 && *end == '\0')
-        {
-            if (val < 0)
-                val = 0;
-            if (val > 100)
-                val = 100;
-
-            if (Motor_IsArmed())
-            {
-                Motor_SetPercent(motor, (float)val);
-                printf(">> Motor %u: %ld%%\r\n", motor, val);
-            }
-            else
-            {
-                printf(">> Erst 'arm' senden!\r\n");
-            }
-        }
-        else
-        {
-            printf(">> Format: m1 20\r\n");
-        }
-    }
-
-    /* ---------- Nackte Zahl: alle vier Motoren ---------- */
+    /* Die frueheren Motortests 'm1 20' und nackte Zahlen sind entfallen:
+     * Solange gearmt ist, schreibt der Mixer jede Millisekunde alle vier
+     * Motoren neu, ein Einzelwert hielt nicht einmal eine Millisekunde. */
     else
     {
-        char *end;
-        long val = strtol(line, &end, 10);
-        if (end != line && *end == '\0')
-        {
-            if (val < 0)
-                val = 0;
-            if (val > 100)
-                val = 100;
-
-            if (Motor_IsArmed())
-            {
-                Motor_SetAllPercent((float)val);
-                printf(">> Alle Motoren: %ld%%\r\n", val);
-            }
-            else
-            {
-                printf(">> Erst 'arm' senden!\r\n");
-            }
-        }
-        else
-        {
-            printf(">> Unbekannt: '%s'\r\n", line);
-            printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
-            printf(">> angle | rate | stream on/off | kipp | t <gas> | m1..m4 <wert> |\r\n");
-            printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt>\r\n");
-        }
+        printf(">> Unbekannt: '%s'\r\n", line);
+        printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
+        printf(">> angle | rate | stream on/off | kipp | t <gas> |\r\n");
+        printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt>\r\n");
     }
 
     line_len = 0;

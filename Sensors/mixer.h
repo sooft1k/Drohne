@@ -31,6 +31,15 @@
 #define MIXER_IDLE_PERCENT   15.0f
 #define MIXER_MAX_PERCENT   100.0f
 
+/* Airmode: Erst wenn das Gas seit dem Armen einmal diesen Wert erreicht hat
+ * (die Drohne also fliegt), darf der Mixer das Grundgas anheben, damit die
+ * Korrekturen auch bei Gas ganz unten voll wirken. Vorher - am Boden -
+ * bleiben die Motoren bei Gas 0 im reinen Leerlauf, auch wenn die Drohne
+ * schief steht. Gilt bis zum Disarm.
+ * Das Schwebegas muss ueber diesem Wert liegen, sonst fehlt beim Sinken
+ * mit wenig Gas die Lageregelung - dann den Wert senken. */
+#define MIXER_AIRMODE_START_PERCENT 25.0f
+
 /* Rechnet Gas und die drei Reglerausgaben auf vier Motoren um
  * und schreibt sie direkt an die Motoren.
  *

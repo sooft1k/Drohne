@@ -10,8 +10,9 @@ static uint8_t arm_latch = 0; /* verhindert Armen, solange der Schalter
 
 /* Failsafe-Gasrampe */
 static uint8_t fs_ramp = 0;       /* 1 = Rampe laeuft */
-static float fs_time = 0.0f;      /* seit Beginn der Rampe, Sekunden */
+static uint32_t fs_t0 = 0;        /* Beginn der Rampe, HAL_GetTick() */
 static float fs_thr_start = 0.0f; /* Gas beim Signalverlust, % */
+static uint32_t thr_high_ms = 0;  /* zuletzt Gas >= RC_FS_LANDED_THR, HAL_GetTick() */
 
 void RC_Init(void)
 {
@@ -22,9 +23,12 @@ void RC_Init(void)
 
 /* Ein Schritt der Failsafe-Rampe: Angle-Modus, waagrecht, kein Gieren,
  * Gas linear in RC_FS_RAMP_S auf 0, danach disarmen.
- * Laeuft immer bis zum Ende durch - auch wenn das Signal zwischendurch
- * zurueckkommt. Danach muss der Arm-Schalter erst wieder runter. */
-static void failsafe_ramp(float dt)
+ * Laeuft bis zum Ende durch, auch wenn das Signal zwischendurch
+ * zurueckkommt - Knueppel und Modus-Schalter bleiben bis dahin wirkungslos.
+ * Nur der Arm-Schalter wirkt: runter = sofort aus.
+ * Die Zeit kommt aus HAL_GetTick(), nicht aus der Zahl der Regelzyklen -
+ * so bleibt es bei 1,5 s, auch wenn die Schleife einmal langsamer laeuft. */
+static void failsafe_ramp(uint8_t link)
 {
     if (!Motor_IsArmed())
     {
@@ -34,13 +38,23 @@ static void failsafe_ramp(float dt)
         return;
     }
 
+    if (link && CRSF_Channel(RC_CH_ARM) <= RC_SWITCH_HIGH)
+    {
+        /* Signal ist zurueck und der Pilot schaltet ab */
+        Motor_Disarm();
+        setpoint.throttle = 0.0f;
+        Control_Reset();
+        fs_ramp = 0;
+        return;
+    }
+
     Control_SetMode(MODE_ANGLE);
     setpoint.roll = 0.0f;
     setpoint.pitch = 0.0f;
     setpoint.yaw = 0.0f;
 
-    fs_time += dt;
-    if (fs_time >= RC_FS_RAMP_S)
+    const float t = (float)(HAL_GetTick() - fs_t0) * 0.001f;
+    if (t >= RC_FS_RAMP_S)
     {
         Motor_Disarm();
         setpoint.throttle = 0.0f;
@@ -49,7 +63,7 @@ static void failsafe_ramp(float dt)
         return;
     }
 
-    setpoint.throttle = fs_thr_start * (1.0f - fs_time / RC_FS_RAMP_S);
+    setpoint.throttle = fs_thr_start * (1.0f - t / RC_FS_RAMP_S);
 }
 
 /* Knueppelwert in -1.0 bis +1.0 umrechnen, mit Totzone um die Mitte */
@@ -77,6 +91,7 @@ static float stick_norm(uint8_t ch)
 
 void RC_Update(float dt)
 {
+    (void)dt;
     const uint8_t link = CRSF_LinkUp();
 
     /* ---------- Failsafe ---------- */
@@ -86,11 +101,19 @@ void RC_Update(float dt)
         failsafe = 1;
         arm_latch = 0; /* nach Failsafe muss der Schalter erst wieder runter */
 
-        if (Motor_IsArmed())
+        if (Motor_IsArmed() && HAL_GetTick() - thr_high_ms >= RC_FS_LANDED_MS)
+        {
+            /* Gas war schon laenger ganz unten: die Drohne steht. Eine
+             * Rampe von 0 auf 0 braucht es nicht, sofort aus. */
+            Motor_Disarm();
+            setpoint.throttle = 0.0f;
+            Control_Reset();
+        }
+        else if (Motor_IsArmed())
         {
             /* im Flug: Gas langsam herunterfahren statt abschalten */
             fs_ramp = 1;
-            fs_time = 0.0f;
+            fs_t0 = HAL_GetTick();
             fs_thr_start = setpoint.throttle;
         }
         else
@@ -102,7 +125,7 @@ void RC_Update(float dt)
 
     if (fs_ramp)
     {
-        failsafe_ramp(dt);
+        failsafe_ramp(link);
         return;
     }
 
@@ -119,6 +142,8 @@ void RC_Update(float dt)
         thr = 0.0f;
     if (thr > 100.0f)
         thr = 100.0f;
+    if (thr >= RC_FS_LANDED_THR || !Motor_IsArmed())
+        thr_high_ms = HAL_GetTick(); /* fuer die Landeerkennung beim Failsafe */
 
     /* ---------- Flugmodus ueber Schalter ---------- */
     if (CRSF_Channel(RC_CH_MODE) > RC_SWITCH_HIGH)
@@ -152,6 +177,14 @@ void RC_Update(float dt)
         Motor_Disarm();
         setpoint.throttle = 0.0f;
     }
+    else if (sw_on && !arm_latch && Motor_IsArmed())
+    {
+        /* Gearmt, aber nicht vom Funk (per Terminal ohne Funk). Sobald die
+         * Funke da ist, entscheidet sie - und der Schalter stand schon oben,
+         * ohne dass Gas-unten geprueft wurde. Also aus. */
+        Motor_Disarm();
+        setpoint.throttle = 0.0f;
+    }
 
     /* ---------- Sollwerte ----------
      * Vorzeichen nach der Konvention in mixer.c:
@@ -172,6 +205,11 @@ void RC_Update(float dt)
     }
     setpoint.yaw = y * RC_MAX_YAW_RATE;
     setpoint.throttle = Motor_IsArmed() ? thr : 0.0f;
+}
+
+void RC_BlockArm(void)
+{
+    arm_latch = 0;
 }
 
 uint8_t RC_IsFailsafe(void)

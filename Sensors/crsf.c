@@ -13,6 +13,7 @@ static uint8_t frame_len = 0;
 
 static volatile uint16_t ch_us[CRSF_CHANNELS];
 static volatile uint32_t last_frame_ms = 0;
+static volatile uint8_t have_frame = 0; /* 1 = schon mindestens ein gueltiges Paket */
 static volatile uint32_t frame_count = 0;
 static volatile uint32_t error_count = 0;
 
@@ -68,6 +69,7 @@ void CRSF_Init(UART_HandleTypeDef *huart)
     frame_count = 0;
     error_count = 0;
     last_frame_ms = 0;
+    have_frame = 0;
 
     /* Startwerte: alles Mitte, Gas ganz unten.
      * Falls nie ein Paket kommt, steht damit nichts auf Vollgas. */
@@ -120,6 +122,7 @@ void CRSF_RxByte(void)
                 {
                     unpack_channels(&buf[3]);
                     last_frame_ms = HAL_GetTick();
+                    have_frame = 1;
                     frame_count++;
                 }
                 /* andere Pakettypen ignorieren wir */
@@ -144,9 +147,14 @@ uint16_t CRSF_Channel(uint8_t ch)
 
 uint32_t CRSF_AgeMs(void)
 {
-    if (last_frame_ms == 0)
+    if (!have_frame)
         return 0xFFFFFFFF;
-    return HAL_GetTick() - last_frame_ms;
+
+    /* Zeitstempel ZUERST lesen, dann die aktuelle Zeit. Andersherum kann
+     * genau dazwischen ein Paket ankommen (Zeitstempel = jetzt + 1 ms),
+     * die Differenz wird negativ, also 0xFFFFFFFF -> "kein Signal". */
+    const uint32_t last = last_frame_ms;
+    return HAL_GetTick() - last;
 }
 
 uint8_t CRSF_LinkUp(void)

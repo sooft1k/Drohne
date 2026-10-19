@@ -109,14 +109,15 @@ Vor jedem Erstflug und nach jeder Änderung an Sensor, Mixer oder Verkabelung.
 10. Rechte Seite etwa 20° nach unten: **M1 und M2 (rechts) höher** als M3 und M4.
 11. Flach liegend im Uhrzeigersinn drehen: während der Drehung **M1 und M4
     (CW) höher** als M2 und M3. Der Regler bremst die Drehung.
-12. Mit verbundener Funke, flach liegend:
+12. Mit verbundener Funke (Arm-Schalter unten), flach liegend:
     - Roll-Knüppel rechts → **M3 und M4 höher** (linke Seite hebt sich)
     - Pitch-Knüppel nach vorne → **M1 und M3 höher** (Heck hebt sich)
     - Yaw-Knüppel rechts → **M2 und M3 höher**
 13. `kipp` beendet die Anzeige.
 
-Ist in Teil B eine Richtung verkehrt, obwohl Teil A stimmt: nicht fliegen,
-Mixer und Regler prüfen.
+Ist in Teil B eine Richtung verkehrt, obwohl Teil A stimmt: nicht fliegen.
+Die Vorzeichen in `mixer.c` nicht einfach umdrehen – sie folgen der
+Konvention oben. Der Fehler liegt dann woanders (Einbaulage, Verkabelung).
 
 ### Teil C – Motoren (Akku dran, Propeller ab)
 
@@ -124,16 +125,31 @@ Mixer und Regler prüfen.
 15. Arm-Schalter hoch: Alle vier Motoren laufen im Leerlauf. Drehrichtung
     jedes Motors prüfen (Klebeband-Fähnchen auf der Glocke), von oben gesehen:
     M1 hinten rechts CW, M2 vorne rechts CCW, M3 hinten links CCW,
-    M4 vorne links CW.
-16. Modus Angle, Gas auf etwa 25 %, Drohne gut festhalten:
+    M4 vorne links CW. Dreht ein Motor falsch herum: im ESC-Configurator
+    („Motor Direction“) umstellen oder zwei der drei Motordrähte tauschen –
+    nie die Vorzeichen im Mixer ändern.
+16. Modus Angle, Gas auf etwa 30 %, Drohne gut festhalten:
     - Nase nach unten kippen → die vorderen Motoren laufen schneller.
     - Rechte Seite nach unten → die rechten Motoren laufen schneller.
-17. Gas ganz zurück: Die Motoren laufen im Leerlauf weiter und gehen nicht aus.
+17. Drohne flach halten, Gas ganz zurück: Die Motoren laufen im Leerlauf
+    weiter und gehen nicht aus. (Weil das Gas in Schritt 16 schon über 25 %
+    war, ist jetzt Airmode aktiv: Schräg gehalten würden die tieferen Motoren
+    weiter hochdrehen. Siehe „Leerlauf und Gas“.)
+    Terminal-Test: `disarm` eingeben, während der Arm-Schalter noch oben ist.
+    Die Motoren gehen aus und bleiben aus, bis der Schalter einmal unten war.
 18. Failsafe: Gas auf etwa 30 %, dann die Funke ausschalten. Nach 0,5 s
     nimmt die Firmware das Gas in 1,5 s auf Leerlauf zurück und schaltet
     danach die Motoren ab. Funke wieder an: Die Motoren bleiben aus, bis der
     Arm-Schalter einmal unten war.
-19. Arm-Schalter runter: Motoren sofort aus.
+19. Arm-Schalter während der Rampe (nur, wenn sich die Verbindung schnell
+    unterbrechen und wiederherstellen lässt, z. B. am Sender das interne
+    HF-Modul kurz auf AUS und zurück): armen, Gas etwa 30 %, Verbindung
+    unterbrechen, nach etwa 1 s wiederherstellen und sofort den Arm-Schalter
+    runter: Motoren sofort aus. Vorher zum Armen Gas ganz runter. Ein
+    Neustart des Senders dauert zu lang – dann hat die Rampe schon
+    abgeschaltet und der Test sagt nichts aus.
+20. Gas ganz unten, Arm-Schalter hoch (Motoren im Leerlauf), dann
+    Arm-Schalter runter: Motoren sofort aus.
 
 ## Leerlauf und Gas
 
@@ -141,29 +157,51 @@ Solange gearmt ist, laufen alle Motoren mindestens mit `MIXER_IDLE_PERCENT`
 (15 %, in `Sensors/mixer.h`). Gas 0–100 % wird linear auf Leerlauf bis Vollgas
 abgebildet, es gibt keinen Sprung. Disarmed sind alle Motoren aus.
 
+Airmode: Erst wenn das Gas seit dem Armen einmal mindestens
+`MIXER_AIRMODE_START_PERCENT` (25 %) erreicht hat, darf der Mixer das
+Grundgas anheben, damit die Lageregelung auch bei Gas ganz unten voll wirkt
+(wichtig im Flug, z. B. beim Sinken). Vorher – am Boden – bleibt es bei
+Gas 0 beim reinen Leerlauf, auch wenn die Drohne schief steht, und die
+Korrekturen werden gestaucht. Das Schwebegas sollte über 25 % liegen,
+sonst den Wert in `mixer.h` senken.
+
+**Nach dem Landen sofort disarmen.** Airmode bleibt bis zum Disarm aktiv:
+Steht die gelandete Drohne schief, drehen die tieferen Motoren hoch.
+
 ## Failsafe
 
 Kommt länger als `CRSF_TIMEOUT_MS` (500 ms) kein gültiges Funkpaket:
 
-- disarmed: nichts passiert, Arming bleibt gesperrt
+- disarmed: Arming über die Funke ist gesperrt, bis das Signal zurück ist
+  und der Arm-Schalter einmal unten war
 - gearmt: Angle-Modus wird erzwungen, Roll/Pitch/Yaw-Sollwert 0 (waagrecht,
   kein Gieren), Gas läuft in `RC_FS_RAMP_S` (1,5 s) linear auf 0, danach
   wird disarmt
+- gearmt, aber das Gas war schon mindestens 1 s unter 5 %
+  (`RC_FS_LANDED_MS`, `RC_FS_LANDED_THR`): Die Drohne gilt als gelandet und
+  wird sofort disarmt, ohne Rampe
 
-Die Rampe läuft immer bis zum Ende, auch wenn das Signal zwischendurch
-zurückkommt. Danach lässt sich erst wieder armen, wenn der Arm-Schalter
-einmal unten war.
+Die Rampe läuft bis zum Ende, auch wenn das Signal zwischendurch
+zurückkommt – Knüppel und Modus-Schalter wirken bis dahin nicht. Nur der
+Arm-Schalter wirkt immer: runter heißt sofort aus. Danach lässt sich über
+die Funke erst wieder armen, wenn der Arm-Schalter einmal unten war.
+
+Ohne Funk lässt sich weiter über das Terminal armen (`arm`, Prüfstand).
+Die Motoren gehen dann sofort in den Leerlauf. Mit verbundener Funke lehnt
+das Terminal `arm` ab. Kommt die Funke dazu, hat sie Vorrang: Steht der
+Arm-Schalter unten oder wurde nicht über die Funke gearmt, schaltet die
+Firmware ab.
 
 ## Terminal-Befehle
 
 | Befehl | Wirkung |
 |---|---|
-| `arm` / `disarm` (`stop`) | Motoren scharf / aus |
+| `arm` / `disarm` (`stop`) | Motoren scharf (nur ohne Funk) / aus. Nach `disarm` armt der Arm-Schalter erst wieder, wenn er einmal unten war |
 | `status`, `loop`, `rc`, `bat`, `pid`, `mix`, `filt` | Anzeigen |
 | `angle`, `rate` | Flugmodus |
-| `stream on` / `stream off` | Lage und Drehraten mit 50 Hz ausgeben |
+| `stream on` / `stream off` | Lage und Drehraten mit 50 Hz ausgeben (nur disarmed) |
 | `kipp` | Kipptest-Anzeige an/aus (nur disarmed) |
-| `t <gas>` | Gas in %, nur ohne Funk |
+| `t <gas>` | Gas in %, nur ohne Funk (mit Funk überschreibt der Knüppel) |
 | `rrp 1.2` usw. | PID-Wert setzen: Kreis (r/a), Achse (r/p/y), Term (p/i/d) |
 | `glpf <hz>`, `alpf <hz>`, `tau <s>` | Filter einstellen |
 | `batcal <volt>` | Akkuspannung kalibrieren |

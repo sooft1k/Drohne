@@ -78,7 +78,7 @@ int main(void)
     printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
-    printf("         angle | rate | stream on/off | kipp | t <gas> | m1..m4 <wert>\r\n");
+    printf("         angle | rate | stream on/off | kipp | t <gas>\r\n");
 
     who = 0;
     if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
@@ -152,9 +152,10 @@ int main(void)
 
         /* ===== ENDE REGELZYKLUS ===== */
 
-        /* Ausgabe stark gedrosselt - printf blockiert und darf den Takt nicht fressen.
+        /* Ausgabe stark gedrosselt und nur disarmed - printf blockiert, eine
+         * Zeile kostet rund 7 ms und wuerde gearmt den Regeltakt fressen.
          * Alle Werte in Koerperachsen, Vorzeichen siehe mixer.c. */
-        if (Command_StreamOn() && ++stream_div >= 20)
+        if (Command_StreamOn() && !Motor_IsArmed() && ++stream_div >= 20)
         {
             stream_div = 0;
             printf("R:%6.1f P:%6.1f | Gx:%7.2f Gy:%7.2f Gz:%7.2f | roh Gx:%7.2f Gy:%7.2f\r\n",

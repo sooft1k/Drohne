@@ -47,7 +47,8 @@ void Control_SetMode(FlightMode_t mode);
 /* loop: 'r' = Rate (innen), 'a' = Angle (aussen)
  * axis: 'r' / 'p' / 'y'
  * term: 'p' / 'i' / 'd' */
-void Control_SetGain(char loop, char axis, char term, float value);
+/* Rueckgabe 1 = gesetzt, 0 = ungueltig (Kreis/Achse/Term oder Wert) */
+uint8_t Control_SetGain(char loop, char axis, char term, float value);
 void Control_PrintGains(void);
 
 #endif /* CONTROL_H */

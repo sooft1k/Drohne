@@ -26,8 +26,14 @@
 
 /* Failsafe: Dauer der Gasrampe nach Signalverlust.
  * Waehrend der Rampe: Angle-Modus, Roll/Pitch/Yaw = 0, Gas linear auf 0.
- * Danach wird disarmt. Signalverlust gilt nach CRSF_TIMEOUT_MS (crsf.h). */
+ * Danach wird disarmt. Signalverlust gilt nach CRSF_TIMEOUT_MS (crsf.h).
+ * Der Arm-Schalter (runter = aus) wirkt auch waehrend der Rampe. */
 #define RC_FS_RAMP_S 1.5f
+
+/* War das Gas beim Signalverlust schon so lange unter RC_FS_LANDED_THR,
+ * gilt die Drohne als gelandet: sofort disarmen statt Rampe. */
+#define RC_FS_LANDED_THR 5.0f /* %  */
+#define RC_FS_LANDED_MS 1000  /* ms */
 
 void RC_Init(void);
 
@@ -35,8 +41,12 @@ void RC_Init(void);
  * uebernimmt Failsafe und Arming. dt in Sekunden. */
 void RC_Update(float dt);
 
-uint8_t RC_IsFailsafe(void);         /* 1 = kein gueltiges Funksignal */
+uint8_t RC_IsFailsafe(void);         /* 1 = Failsafe: kein Signal oder Rampe laeuft noch */
 uint8_t RC_FailsafeRampActive(void); /* 1 = Failsafe-Gasrampe laeuft gerade */
+
+/* Arming ueber den Schalter sperren, bis er einmal unten war.
+ * Fuer Disarm von aussen (Terminal), sonst armt der Schalter sofort wieder. */
+void RC_BlockArm(void);
 void RC_PrintStatus(void);
 
 #endif /* RC_H */
