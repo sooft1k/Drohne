@@ -27,8 +27,12 @@
 /* Leerlauf: Solange gearmt ist, laeuft jeder Motor mindestens mit diesem
  * Wert - auch bei Gas ganz unten. Sonst braucht der ESC beim Wiederanlaufen
  * zu lange und die Regelung verliert die Achse.
- * 15 % ist die gemessene Anlaufschwelle deiner Motoren. */
-#define MIXER_IDLE_PERCENT   15.0f
+ * Bezogen auf den Gasbereich in motor.h: 0 % = MOTOR_US_MIN (143,5 us, dort
+ * steht der Motor gerade noch). Die frueher gemessene Anlaufschwelle
+ * (15 % von 125..250 us = 143,75 us) liegt genau an diesem Minimum. 5 % =
+ * 147,8 us laesst Abstand, damit kein Motor im Leerlauf stockt. Drehen die
+ * Motoren im Leerlauf ungleichmaessig an, erhoehen; zu schnell, senken. */
+#define MIXER_IDLE_PERCENT    5.0f
 #define MIXER_MAX_PERCENT   100.0f
 
 /* Airmode: Erst wenn das Gas seit dem Armen einmal diesen Wert erreicht hat

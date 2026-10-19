@@ -41,8 +41,9 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     HAL_GPIO_Init(GPIOA, &g);
 
     /* Timer-Basis: Werte kommen aus motor.h, je nach Protokoll.
-     * Oneshot125: 42 MHz Tick, 1 kHz Wiederholrate, Pulse 125..250 us
-     * PWM:         1 MHz Tick, 50 Hz Wiederholrate, Pulse 1000..2000 us */
+     * Oneshot125: 42 MHz Tick, 1 kHz Wiederholrate
+     * PWM:         1 MHz Tick, 50 Hz Wiederholrate
+     * Pulsbreiten: MOTOR_US_STOP, MOTOR_US_MIN..MOTOR_US_MAX in motor.h */
     motor_tim->Instance = TIM3;
     motor_tim->Init.Prescaler = MOTOR_TIM_PRESCALER;
     motor_tim->Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -55,7 +56,7 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     /* Alle vier Kanaele gleich konfigurieren */
     TIM_OC_InitTypeDef oc = {0};
     oc.OCMode = TIM_OCMODE_PWM1;
-    oc.Pulse = (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US; /* SICHER: Stopp */
+    oc.Pulse = (uint32_t)MOTOR_US_STOP * MOTOR_TICKS_PER_US; /* SICHER: Stopp */
     oc.OCPolarity = TIM_OCPOLARITY_HIGH;
     oc.OCFastMode = TIM_OCFAST_DISABLE;
 
@@ -67,7 +68,7 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     }
 
     armed = 0; /* Start immer disarmed */
-    Motor_SetAllUs(MOTOR_US_IDLE);
+    Motor_SetAllUs(MOTOR_US_STOP);
 }
 
 void Motor_SetUs(uint8_t motor, uint16_t us)
@@ -80,16 +81,17 @@ void Motor_SetUs(uint8_t motor, uint16_t us)
     /* Sicherheit: ohne arm immer Stopp */
     if (!armed)
     {
-        motor_write_raw(idx, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US);
+        motor_write_raw(idx, (uint32_t)MOTOR_US_STOP * MOTOR_TICKS_PER_US);
         return;
     }
 
-    if (us < MOTOR_US_MIN)
-        us = MOTOR_US_MIN;
-    if (us > MOTOR_US_MAX)
-        us = MOTOR_US_MAX;
+    float v = (float)us;
+    if (v < MOTOR_US_MIN)
+        v = MOTOR_US_MIN;
+    if (v > MOTOR_US_MAX)
+        v = MOTOR_US_MAX;
 
-    motor_write_raw(idx, (uint32_t)us * MOTOR_TICKS_PER_US);
+    motor_write_raw(idx, MOTOR_US_TO_TICKS(v));
 }
 
 void Motor_SetPercent(uint8_t motor, float percent)
@@ -106,17 +108,18 @@ void Motor_SetPercent(uint8_t motor, float percent)
 
     if (!armed)
     {
-        motor_write_raw(idx, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US);
+        motor_write_raw(idx, (uint32_t)MOTOR_US_STOP * MOTOR_TICKS_PER_US);
         return;
     }
 
     /* Direkt in Ticks rechnen statt ueber ganze Mikrosekunden.
-     * Bei Oneshot125 sind 125 us Stellbereich nur 125 ganze Schritte -
-     * in Ticks sind es 5250, also fein genug fuer die Regelung. */
-    const uint32_t t_min = (uint32_t)MOTOR_US_MIN * MOTOR_TICKS_PER_US;
-    const uint32_t t_max = (uint32_t)MOTOR_US_MAX * MOTOR_TICKS_PER_US;
+     * Bei Oneshot125 sind 85,5 us Stellbereich nur 85 ganze Schritte -
+     * in Ticks sind es 3591, also fein genug fuer die Regelung.
+     * 0 % = MOTOR_US_MIN (ESC-Minimum), 100 % = MOTOR_US_MAX. */
+    const uint32_t t_min = MOTOR_US_TO_TICKS(MOTOR_US_MIN);
+    const uint32_t t_max = MOTOR_US_TO_TICKS(MOTOR_US_MAX);
 
-    uint32_t ticks = t_min + (uint32_t)((percent / 100.0f) * (float)(t_max - t_min));
+    uint32_t ticks = t_min + (uint32_t)((percent / 100.0f) * (float)(t_max - t_min) + 0.5f);
 
     motor_write_raw(idx, ticks);
 }
@@ -142,7 +145,7 @@ void Motor_Disarm(void)
 {
     armed = 0;
     for (uint8_t i = 0; i < MOTOR_COUNT; i++)
-        motor_write_raw(i, (uint32_t)MOTOR_US_IDLE * MOTOR_TICKS_PER_US); /* sofort Stopp */
+        motor_write_raw(i, (uint32_t)MOTOR_US_STOP * MOTOR_TICKS_PER_US); /* sofort Stopp */
 }
 
 uint8_t Motor_IsArmed(void)

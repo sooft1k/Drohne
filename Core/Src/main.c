@@ -104,8 +104,8 @@ int main(void)
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
-    printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Start %u us (disarmed)\r\n",
-           Motor_UpdateRateHz(), MOTOR_US_IDLE);
+    printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Stopp %u us, Gas %.1f-%.1f us\r\n",
+           Motor_UpdateRateHz(), MOTOR_US_STOP, MOTOR_US_MIN, MOTOR_US_MAX);
     printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Strom: PA4 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");

@@ -5,7 +5,7 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 | Teil | Anschluss |
 |---|---|
 | Gyro/Accel | MPU6050 an I2C1 (PB6 SCL, PB7 SDA), 400 kHz |
-| Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PA6, M4 = PA7 |
+| Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PA6, M4 = PA7; 143,5–229 µs (BLHeli_S ab Werk), Stopp 125 µs |
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
 | Kanäle | 1 Roll, 2 Pitch, 3 Gas, 4 Yaw, **5 Arm-Schalter (AUX1)**, 7 Modus Angle/Rate |
 | Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
@@ -157,46 +157,50 @@ sie in dieser Zeit sicher auf Low.
 | Keramikkondensator X7R | 100 nF | 2 | C1 an PC0, C2 an PA4 |
 | optional Widerstand | 10 kΩ + 20 kΩ | je 1 | Teiler am Strom, falls > 3,0 V |
 
-## ESC einstellen (BLHeli_S)
+## ESC und Motorsignal (BLHeli_S)
 
-**Vor dem ersten Motortest einstellen.** BLHeli_S nimmt ab Werk nur
-1148–1832 µs als Gasbereich an, bei Oneshot125 geteilt durch 8, also
-143,5–229 µs. Die Firmware gibt aber 125–250 µs aus. Mit den
-Werkseinstellungen:
+**Der ESC muss nicht umprogrammiert werden.** Die Firmware gibt genau den
+Gasbereich aus, den BLHeli_S ab Werk erwartet: PPM Min/Max Throttle
+1148/1832 µs, bei Oneshot125 geteilt durch 8.
 
-- liegt der Leerlauf (15 % = 143,75 µs) genau an der Anlaufschwelle – ein
-  Motor kann im Leerlauf stehen bleiben;
-- tut sich über 229 µs (83 % Ausgang) nichts mehr – bei viel Gas fehlt der
-  Regelung der Stellweg nach oben, die Drohne lässt sich nicht mehr halten.
-
-Einstellungen (für alle vier ESCs gleich):
-
-| Einstellung | Wert | Warum |
+| Zustand | Pulsbreite | Konstante (`Sensors/motor.h`) |
 |---|---|---|
-| PPM Min Throttle | 1040 µs (= 130 µs bei Oneshot125) | Stopp-Puls 125 µs liegt darunter, Leerlauf 15 % sicher darüber |
-| PPM Max Throttle | 2000 µs (= 250 µs) | voller Ausgangsbereich nutzbar |
-| Programming by TX | aus | kein versehentlicher Programmiermodus beim Einschalten |
-| Motor Direction | je Motor passend | siehe Kipptest Schritt 15 |
-| Rest | Werkseinstellung | |
+| Disarmed, Start, Notaus | 125 µs – sicher unter dem Minimum, der ESC steht und armt | `MOTOR_US_STOP` |
+| Gearmt, 0 % Ausgang | 143,5 µs = ESC-Minimum, Motor steht gerade noch | `MOTOR_US_MIN` |
+| Gearmt, Leerlauf | 147,8 µs = 5 % (`MIXER_IDLE_PERCENT`) | |
+| Gearmt, 100 % Ausgang | 229 µs = ESC-Maximum | `MOTOR_US_MAX` |
 
-So kommst du an die ESCs: Die eigene Flugsteuerung kann kein
-BLHeli-Passthrough. Du brauchst eine 1-Wire-Schnittstelle, die an die
-Motorsignal-Pads (M1–M4) und GND des ESC kommt:
+Der Stopp-Puls von 125 µs liegt weit unter dem Maximum – der ESC geht beim
+Einschalten nicht in den Programmiermodus (der startet nur, wenn beim
+Einschalten Vollgas anliegt).
 
-- einen fertigen USB-Linker für BLHeli (z. B. „BLHeli USB Linker“), oder
-- einen Arduino Nano/Uno mit der 4-Way-Interface-Firmware aus BLHeliSuite, oder
-- vorübergehend eine Betaflight-Flugsteuerung, dann über
-  [esc-configurator.com](https://esc-configurator.com) (Chrome/Edge).
+**Leerlauf prüfen** (Kipptest Schritt 15): Alle vier Motoren müssen im
+Leerlauf sicher und gleichmäßig drehen. Stockt einer oder läuft er
+unruhig an, `MIXER_IDLE_PERCENT` in `Sensors/mixer.h` in Schritten von 1 %
+erhöhen; drehen sie unnötig schnell, senken (nicht unter 2 %).
 
-Programmiert wird mit Akku am ESC, aber ohne Propeller. Danach die
-Signalleitungen wieder an PB0/PB1/PA6/PA7.
+**Drehrichtung** ohne Linker: Dreht ein Motor falsch herum, zwei seiner drei
+Motordrähte tauschen.
 
-**Danach den Leerlauf prüfen** (Kipptest Schritt 15): Alle vier Motoren
-müssen im Leerlauf sicher und gleichmäßig drehen. Die 15 % in
-`MIXER_IDLE_PERCENT` (`Sensors/mixer.h`) wurden mit den Werkseinstellungen
-gemessen; mit Min Throttle 1040 drehen sie etwas schneller. Laufen sie
-deutlich zu schnell, den Wert in kleinen Schritten senken (nicht unter die
-Stelle, an der ein Motor stockt).
+### Optional: ESC umprogrammieren
+
+Wer später einen BLHeli-Linker hat (fertiger USB-Linker, Arduino mit der
+4-Way-Interface-Firmware aus BLHeliSuite oder vorübergehend eine
+Betaflight-Flugsteuerung mit [esc-configurator.com](https://esc-configurator.com)),
+kann den Gasbereich etwas weiter stellen und „Programming by TX“
+abschalten. Die eigene Flugsteuerung kann kein BLHeli-Passthrough.
+
+| Einstellung | Wert | dann in `motor.h` |
+|---|---|---|
+| PPM Min Throttle | 1040 µs | `MOTOR_US_MIN 130.0f` |
+| PPM Max Throttle | 2000 µs | `MOTOR_US_MAX 250.0f` |
+| Programming by TX | aus | – |
+
+**Wichtig:** ESC und `motor.h` müssen immer zusammenpassen. Nur den ESC
+umstellen und die Firmware nicht (oder umgekehrt) verschiebt Leerlauf und
+Vollgas – im schlimmsten Fall steht ein Motor im Leerlauf oder die oberen
+Prozent wirken nicht mehr. `MOTOR_US_STOP` muss immer deutlich unter
+`MOTOR_US_MIN` bleiben. Danach den Leerlauf wie oben prüfen.
 
 ## Bauen und Flashen
 
@@ -346,7 +350,8 @@ Konvention oben. Der Fehler liegt dann woanders (Einbaulage, Verkabelung).
 ## Leerlauf und Gas
 
 Solange gearmt ist, laufen alle Motoren mindestens mit `MIXER_IDLE_PERCENT`
-(15 %, in `Sensors/mixer.h`). Gas 0–100 % wird linear auf Leerlauf bis Vollgas
+(5 %, in `Sensors/mixer.h`; 0 % = 143,5 µs, siehe „ESC und Motorsignal“).
+Gas 0–100 % wird linear auf Leerlauf bis Vollgas
 abgebildet, es gibt keinen Sprung. Disarmed sind alle Motoren aus.
 
 Airmode: Erst wenn das Gas seit dem Armen einmal mindestens
