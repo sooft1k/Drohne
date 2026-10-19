@@ -37,6 +37,9 @@ uint16_t CRSF_Channel(uint8_t ch);
 /* 1 = Verbindung steht, 0 = seit CRSF_TIMEOUT_MS nichts empfangen */
 uint8_t  CRSF_LinkUp(void);
 
+/* Akku-Telemetrie an die Funke senden (Spannung V, Strom A, mAh, %) */
+void CRSF_SendBattery(float volt, float amps, float mah, uint8_t percent);
+
 /* Zaehler fuer die Diagnose */
 uint32_t CRSF_FrameCount(void);
 uint32_t CRSF_ErrorCount(void);

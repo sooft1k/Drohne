@@ -9,6 +9,7 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
 | Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
 | Akkuspannung | PC0 (ADC1 Kanal 10), Teiler 11:1 |
+| Strom | PA4 (ADC2 Kanal 4), Stromausgang „C“ des ESC – höchstens 3,3 V! |
 
 Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 
@@ -262,6 +263,56 @@ wenn gearmt ist.
   vier Motorpulse auf Stopp. Der Motortimer läuft sonst in Hardware weiter
   und gibt endlos den letzten Gaswert aus.
 
+## Akku und Strom
+
+**Spannung:** Teiler 11:1 an PC0, 100 Messungen pro Sekunde, Tiefpass 0,5 s.
+Der Filter startet beim Anstecken mit dem ersten Messwert. Nach 0,5 s wird
+die Zellenzahl bestimmt (3,3–4,3 V pro Zelle) und bleibt dann fest. Bei
+teilentladenen 5S/6S-Akkus ist das nicht eindeutig (ein 6S mit 3,5 V/Zelle
+sieht aus wie ein voller 5S). Wer immer denselben Akkutyp fliegt, trägt die
+Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein.
+
+**Warnung und Gasbegrenzung:**
+
+| Zustand | Zellspannung | Gas höchstens | LED |
+|---|---|---|---|
+| OK | ab 3,50 V | 100 % | blinkt mit 2 Hz |
+| Warnung | unter 3,50 V | 80 % | blinkt mit 5 Hz |
+| Kritisch | unter 3,30 V | 60 % | blinkt mit 12,5 Hz |
+
+Gearmt zählt ein Zustand erst, wenn die Spannung 2 s lang unter der
+Schwelle bleibt (Spannungseinbrüche bei Vollgas lösen nichts aus), und er
+wird bis zum Disarm nicht wieder besser. Die Gasgrenze sinkt mit 20 % pro
+Sekunde, damit die Drohne nicht absackt. Werte in `battery.h`.
+
+**Telemetrie an die Funke:** Die Firmware schickt fünfmal pro Sekunde
+Spannung, Strom, verbrauchte mAh und eine grobe Restladung an den
+ELRS-Empfänger. Am Sender unter Telemetrie „Sensoren suchen“; danach gibt es
+die Sensoren RxBt, Curr, Capa und Bat%. Für eine Ansage bei niedrigem Akku
+dort eine Warnschwelle (z. B. RxBt < 14,0 V bei 4S) oder eine
+Spezialfunktion einstellen.
+
+**Strom:** Stromausgang „C“ des 4in1-ESC an PA4. PA4 verträgt höchstens
+3,3 V – vor dem Anschließen am Ausgang messen (Akku dran, Motoren aus und
+unter Last). Ein Widerstand von 1–10 kΩ in Reihe und 100 nF nach Masse am
+Pin schützen ihn und glätten die PWM-Welligkeit des ESC.
+
+Die Skalierung ist für den B-Cube-4in1 nicht gesichert. Voreingestellt sind
+12,75 mV/A (`CURR_MV_PER_A_DEFAULT`, Angabe von B-Cube für den AM32-4in1),
+üblich sind 12–40 mV/A. Deshalb kalibrieren:
+
+1. Nullpunkt: Wird beim Anstecken des Akkus automatisch gemessen
+   (disarmed, Motoren stehen). Von Hand: `curzero`.
+2. Skalierung: Zangen- oder Leistungsmesser in die Akkuleitung, Motoren mit
+   gleichmäßigem Strom laufen lassen (mindestens 1 A, besser 5–10 A), dann
+   `curcal <ampere>` mit dem abgelesenen Wert.
+3. Kontrolle über die Kapazität: Nach einem Flug die mAh aus `bat` mit der
+   Menge vergleichen, die das Ladegerät wieder hineinlädt.
+
+Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
+einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
+`CURR_MV_PER_A_DEFAULT` eintragen.
+
 ## Terminal-Befehle
 
 | Befehl | Wirkung |
@@ -269,7 +320,8 @@ wenn gearmt ist.
 | `arm`, dann `ja` | Motoren scharf, nur ohne Funk und mit Sicherheitsabfragen |
 | `disarm` (`stop`) | Motoren aus. Danach armt der Arm-Schalter erst wieder, wenn er einmal unten war |
 | `status` | Zustand, Sensorfehler und ob Armen gerade erlaubt wäre |
-| `loop`, `rc`, `bat`, `pid`, `mix`, `filt` | Anzeigen |
+| `bat` | Spannung, Zellen, Strom, verbrauchte mAh, Gasgrenze |
+| `loop`, `rc`, `pid`, `mix`, `filt` | Anzeigen |
 | `angle`, `rate` | Flugmodus |
 | `stream on` / `stream off` | Lage und Drehraten mit 50 Hz ausgeben (nur disarmed) |
 | `kipp` | Kipptest-Anzeige an/aus (nur disarmed) |
@@ -277,3 +329,4 @@ wenn gearmt ist.
 | `rrp 1.2` usw. | PID-Wert setzen: Kreis (r/a), Achse (r/p/y), Term (p/i/d) |
 | `glpf <hz>`, `alpf <hz>`, `tau <s>` | Filter einstellen |
 | `batcal <volt>` | Akkuspannung kalibrieren |
+| `curzero`, `curcal <ampere>` | Strommessung: Nullpunkt setzen / Skalierung mit bekanntem Strom |

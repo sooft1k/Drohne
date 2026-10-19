@@ -106,7 +106,7 @@ int main(void)
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
     printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Start %u us (disarmed)\r\n",
            Motor_UpdateRateHz(), MOTOR_US_IDLE);
-    printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Modus: ANGLE\r\n");
+    printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Strom: PA4 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
     printf("         angle | rate | stream on/off | kipp | t <gas>\r\n");
@@ -154,6 +154,7 @@ int main(void)
     uint32_t stream_div = 0; /* 1000 Hz / 20 = 50 Hz Ausgabe */
     uint32_t kipp_div = 0;   /* 1000 Hz / 200 = 5 Hz Ausgabe */
     uint32_t led_div = 0;
+    uint32_t tlm_div = 0;    /* 1000 Hz / 200 = 5 Hz Telemetrie */
     uint32_t hz_stamp = HAL_GetTick();
 
     while (1)
@@ -233,7 +234,8 @@ int main(void)
         float out_roll, out_pitch, out_yaw;
         Control_Update(&sensor, dt, Mixer_IsSaturated(), &out_roll, &out_pitch, &out_yaw);
 
-        Mixer_Update(setpoint.throttle, out_roll, out_pitch, out_yaw);
+        /* Bei niedrigem Akku wird das Gas begrenzt (battery.h) */
+        Mixer_Update(Battery_LimitThrottle(setpoint.throttle), out_roll, out_pitch, out_yaw);
 
         Battery_Update(dt);
 
@@ -266,11 +268,25 @@ int main(void)
                    m[0], m[1], m[2], m[3]);
         }
 
-        /* LED blinkt mit ~2 Hz als Lebenszeichen */
-        if (++led_div >= 250)
+        /* LED als Lebenszeichen: blinkt mit 2 Hz, bei Akku-Warnung schnell
+         * (5 Hz), bei kritischem Akku sehr schnell (12,5 Hz). */
+        const uint32_t led_period = (Battery_State() == BAT_CRITICAL) ? 40
+                                    : (Battery_State() == BAT_WARN)   ? 100
+                                                                      : 250;
+        if (++led_div >= led_period)
         {
             led_div = 0;
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+        }
+
+        /* Akku-Telemetrie an die Funke, 5x pro Sekunde. Dort kann man fuer
+         * Spannung oder Restladung eine Ansage einstellen. */
+        if (++tlm_div >= 200)
+        {
+            tlm_div = 0;
+            if (Battery_Cells() > 0)
+                CRSF_SendBattery(Battery_Volt(), Battery_Current(), Battery_MahUsed(),
+                                 Battery_Percent());
         }
 
         /* Ist-Frequenz einmal pro Sekunde festhalten */

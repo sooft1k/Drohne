@@ -199,12 +199,36 @@ void Command_Process(void)
                    Battery_Volt(), Battery_Cells(),
                    Battery_CellVolt(), Battery_StateText());
         }
+        printf("   Strom: %.2f A | verbraucht: %.0f mAh | Gasgrenze: %.0f %%\r\n",
+               Battery_Current(), Battery_MahUsed(), Battery_ThrottleCap());
+        printf("   Stromsensor: %.2f mV/A, Nullpunkt %.1f mV\r\n",
+               Battery_CurrentMvPerA(), Battery_CurrentZeroMv());
     }
     else if (strncmp(line, "batcal ", 7) == 0)
     {
         float v = strtof(line + 7, 0);
         Battery_Calibrate(v);
         printf(">> Kalibriert auf %.2f V (Faktor %.4f)\r\n", Battery_Volt(), Battery_GetScale());
+    }
+
+    /* ---------- Strommessung kalibrieren ----------
+     * curzero: Motoren aus, aktueller Wert = 0 A.
+     * curcal 5.2: mit einem bekannten Strom (Zangen- oder Leistungsmesser
+     * in der Akkuleitung) die Skalierung bestimmen. */
+    else if (strcmp(line, "curzero") == 0)
+    {
+        if (Battery_CurrentZero())
+            printf(">> Strom-Nullpunkt: %.1f mV\r\n", Battery_CurrentZeroMv());
+        else
+            printf(">> Nur disarmed\r\n");
+    }
+    else if (strncmp(line, "curcal ", 7) == 0)
+    {
+        float a = strtof(line + 7, 0);
+        if (Battery_CurrentCalibrate(a))
+            printf(">> Stromsensor: %.2f mV/A\r\n", Battery_CurrentMvPerA());
+        else
+            printf(">> Abgelehnt: mindestens 1 A und ein deutliches Signal noetig\r\n");
     }
 
     /* ---------- Filter ----------
@@ -359,7 +383,8 @@ void Command_Process(void)
         printf(">> Unbekannt: '%s'\r\n", line);
         printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
         printf(">> angle | rate | stream on/off | kipp | t <gas> |\r\n");
-        printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt>\r\n");
+        printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt> |\r\n");
+        printf(">> curzero | curcal <ampere>\r\n");
     }
 
     line_len = 0;

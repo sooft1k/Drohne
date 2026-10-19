@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define CRSF_TYPE_RC_CHANNELS 0x16
+#define CRSF_TYPE_BATTERY 0x08
 
 static UART_HandleTypeDef *crsf_uart = 0;
 static uint8_t rx_byte;
@@ -160,6 +161,44 @@ uint32_t CRSF_AgeMs(void)
 uint8_t CRSF_LinkUp(void)
 {
     return (CRSF_AgeMs() < CRSF_TIMEOUT_MS) ? 1 : 0;
+}
+
+/* Akku-Telemetrie an den Empfaenger (Typ 0x08). Der ELRS-Empfaenger
+ * leitet sie an die Funke weiter, dort erscheinen die Sensoren "RxBt",
+ * "Curr", "Capa" und "Bat%" (Telemetrie -> Sensoren suchen).
+ * Nicht blockierend: laeuft die vorige Uebertragung noch, wird ausgelassen. */
+void CRSF_SendBattery(float volt, float amps, float mah, uint8_t percent)
+{
+    static uint8_t tx[12]; /* muss bis zum Ende der Uebertragung gueltig bleiben */
+
+    if (!crsf_uart || HAL_UART_GetState(crsf_uart) == HAL_UART_STATE_BUSY_TX ||
+        HAL_UART_GetState(crsf_uart) == HAL_UART_STATE_BUSY_TX_RX)
+        return;
+
+    if (volt < 0.0f)
+        volt = 0.0f;
+    if (amps < 0.0f)
+        amps = 0.0f;
+    if (mah < 0.0f)
+        mah = 0.0f;
+    const uint32_t v = (uint32_t)(volt * 10.0f + 0.5f);  /* 0,1 V */
+    const uint32_t a = (uint32_t)(amps * 10.0f + 0.5f);  /* 0,1 A */
+    const uint32_t c = (uint32_t)(mah + 0.5f);           /* mAh  */
+
+    tx[0] = 0xC8;              /* Adresse: Flight Controller */
+    tx[1] = 10;                /* Laenge: Typ + 8 Daten + CRC */
+    tx[2] = CRSF_TYPE_BATTERY;
+    tx[3] = (uint8_t)(v >> 8);
+    tx[4] = (uint8_t)v;
+    tx[5] = (uint8_t)(a >> 8);
+    tx[6] = (uint8_t)a;
+    tx[7] = (uint8_t)(c >> 16);
+    tx[8] = (uint8_t)(c >> 8);
+    tx[9] = (uint8_t)c;
+    tx[10] = percent;
+    tx[11] = crc8(&tx[2], 9);
+
+    HAL_UART_Transmit_IT(crsf_uart, tx, sizeof(tx));
 }
 
 uint32_t CRSF_FrameCount(void) { return frame_count; }
