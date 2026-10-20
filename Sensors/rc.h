@@ -9,8 +9,10 @@
 #define RC_CH_PITCH 2
 #define RC_CH_THROTTLE 3
 #define RC_CH_YAW 4
-#define RC_CH_ARM 5  /* AUX1: ELRS sendet ihn mit jedem Paket, die anderen
-                      * Schalter nur reihum - deshalb Arm immer hier */
+#define RC_CH_ARM 8  /* AUX4. Die RadioMaster T8L kann Kanal 5 (AUX1) mit
+                      * keinem Schalter belegen. ELRS sendet AUX2..AUX8 reihum,
+                      * einen pro Paket - Kanal 8 kommt deshalb bis zu 8 Pakete
+                      * spaeter an als AUX1 (bei 250 Hz hoechstens ~32 ms). */
 #define RC_CH_MODE 7 /* Schalter SB: Angle / Rate */
 
 /* Totzone um die Mitte in Mikrosekunden.

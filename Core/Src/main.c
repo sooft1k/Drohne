@@ -111,7 +111,7 @@ int main(void)
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
     printf("         angle | rate | stream on/off | kipp | t <gas> | ja |\r\n");
     printf("         rrp/arp <wert> | glpf | alpf | tau | batcal | curzero | curcal\r\n");
-    printf("Arm-Schalter: Kanal 5 (AUX1)\r\n");
+    printf("Arm-Schalter: Kanal %u (AUX%u), Modus: Kanal %u\r\n", RC_CH_ARM, RC_CH_ARM - 4, RC_CH_MODE);
 
     if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST))
         printf("!! Letzter Neustart durch den Watchdog - die Software hing !!\r\n");

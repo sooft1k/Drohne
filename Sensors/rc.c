@@ -233,6 +233,6 @@ void RC_PrintStatus(void)
     printf("   Roll %4u  Pitch %4u  Gas %4u  Yaw %4u\r\n",
            CRSF_Channel(RC_CH_ROLL), CRSF_Channel(RC_CH_PITCH),
            CRSF_Channel(RC_CH_THROTTLE), CRSF_Channel(RC_CH_YAW));
-    printf("   Arm-Schalter %4u  Modus-Schalter %4u\r\n",
-           CRSF_Channel(RC_CH_ARM), CRSF_Channel(RC_CH_MODE));
+    printf("   Arm-Schalter (Kanal %u) %4u  Modus-Schalter (Kanal %u) %4u\r\n",
+           RC_CH_ARM, CRSF_Channel(RC_CH_ARM), RC_CH_MODE, CRSF_Channel(RC_CH_MODE));
 }

@@ -7,18 +7,19 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 | Gyro/Accel | MPU6050 an I2C1 (PB6 SCL, PB7 SDA), 400 kHz |
 | Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PA6, M4 = PA7; 143,5–229 µs (BLHeli_S ab Werk), Stopp 125 µs |
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
-| Kanäle | 1 Roll, 2 Pitch, 3 Gas, 4 Yaw, **5 Arm-Schalter (AUX1)**, 7 Modus Angle/Rate |
+| Kanäle | 1 Roll, 2 Pitch, 3 Gas, 4 Yaw, 7 Modus Angle/Rate, **8 Arm-Schalter (AUX4)** |
 | Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
 | Akkuspannung | PC0 (ADC1 Kanal 10), Teiler 11:1 |
 | Strom | PA4 (ADC2 Kanal 4), Stromausgang „C“ des ESC – höchstens 3,3 V! |
 
 Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 
-> **Umstellung:** Der Arm-Schalter liegt seit Block 5 auf **Kanal 5 (AUX1)**,
-> vorher war es Kanal 8. Am Sender im Mischer den Schalter auf Kanal 5 legen
-> und vor dem ersten Flug Schritt 20 des Kipptests (Arm-Schalter) prüfen.
-> Mit Funk zeigt `rc` die Kanäle; Kanal 5 muss beim Umlegen zwischen etwa
-> 1000 und 2000 wechseln.
+> **Arm-Schalter auf Kanal 8 (AUX4)**, Modus-Schalter auf Kanal 7. Mit Funk
+> zeigt `rc` beide Kanäle; Kanal 8 muss beim Umlegen zwischen etwa 1000 und
+> 2000 wechseln. Vor dem ersten Flug Schritt 20 des Kipptests prüfen.
+> Kanal 5 (AUX1) wäre bei ELRS etwas schneller, lässt sich an der
+> RadioMaster T8L aber keinem Schalter zuordnen – siehe „Arm-Schalter und
+> ELRS“ unter „Failsafe“. Kanal in `RC_CH_ARM` (`Sensors/rc.h`).
 
 ## Verdrahtung (eigener Aufbau mit MPU6050)
 
@@ -418,6 +419,32 @@ meldet das Terminal `DISARMED - laenger als 1000 ms kein Zeichen vom
 Terminal.` Über den Arm-Schalter gearmt gilt das nicht, dort wacht der
 Funk-Failsafe. Der Terminal-Arm ist trotzdem nur für den Prüfstand ohne
 Propeller gedacht.
+
+### Arm-Schalter und ELRS
+
+Der Arm-Schalter liegt auf Kanal 8 (AUX4). ELRS sendet nur AUX1 (Kanal 5)
+mit jedem Funkpaket. AUX2–AUX8 gehen reihum, einer pro Paket: im
+Hybrid-Modus 7 Plätze, im Wide-Modus 8. Ein Umlegen des Arm-Schalters
+kommt deshalb im ungünstigsten Fall erst 7 bzw. 8 Pakete später an:
+
+| Paketrate | Verzögerung höchstens (Hybrid / Wide) | im Mittel |
+|---|---|---|
+| 500 Hz | 14 / 16 ms | ca. 8 ms |
+| 250 Hz | 28 / 32 ms | ca. 15 ms |
+| 150 Hz | 47 / 53 ms | ca. 25 ms |
+| 50 Hz | 140 / 160 ms | ca. 75 ms |
+
+Geht genau das Paket mit Kanal 8 verloren, kommt eine Runde dazu. Der
+Schalter wird als Zustand übertragen, nicht als Ereignis: Ein Disarm geht
+nie verloren, er kommt höchstens etwas später an. Ab 150 Hz liegt das
+deutlich unter der Reaktionszeit des Piloten (200–300 ms); 50 Hz besser
+nicht verwenden. Der Funk-Failsafe hängt nicht davon ab.
+
+Gut zu wissen: ELRS selbst sieht AUX1 als Arm-Kanal. Weil der auf der T8L
+nie hochgeht, hält ELRS das Modell für immer disarmed. Den Flug betrifft das
+nicht, aber die Sperre gegen Einstellungsänderungen im Flug greift nicht –
+im ELRS-Menü (Paketrate usw.) deshalb nichts ändern, solange die Drohne
+fliegt.
 
 ## Regelung
 
