@@ -209,7 +209,6 @@ Prozent wirken nicht mehr. `MOTOR_US_STOP` muss immer deutlich unter
 git submodule update --init --recursive   # STM32CubeF4 mit HAL und CMSIS
 make
 make flash                                # OpenOCD-Pfad steht im Makefile
-make -C tests                             # Host-Tests auf dem PC (gcc)
 ```
 
 ## Vorzeichenkonvention
