@@ -216,6 +216,8 @@ void Command_Process(void)
         printf("   Sensor: %s | Lesefehler bisher: %lu | Arming: %s\r\n",
                !mpu_ok ? "FEHLT" : (MPU6050_Failed() ? "AUSGEFALLEN" : (MPU6050_Healthy() ? "OK" : "nicht bereit")),
                MPU6050_ErrorCount(), Arming_Text(Arming_Check()));
+        if (Arming_BatBypass())
+            printf("   %s\r\n", ARM_BAT_BYPASS_WARNUNG);
     }
     else if (strcmp(line, "loop") == 0)
     {
@@ -246,6 +248,8 @@ void Command_Process(void)
                Battery_Current(), Battery_MahUsed(), Battery_ThrottleCap());
         printf("   Stromsensor: %.2f mV/A, Nullpunkt %.1f mV\r\n",
                Battery_CurrentMvPerA(), Battery_CurrentZeroMv());
+        if (Arming_BatBypass())
+            printf("   %s (Gasbegrenzung aus)\r\n", ARM_BAT_BYPASS_WARNUNG);
     }
     else if (strncmp(line, "batcal ", 7) == 0)
     {
@@ -254,6 +258,21 @@ void Command_Process(void)
             printf(">> Kalibriert auf %.2f V (Faktor %.4f)\r\n", Battery_Volt(), Battery_GetScale());
         else
             printf(">> Abgelehnt: Akku nicht erkannt oder mehr als 20 %% Abweichung\r\n");
+    }
+
+    /* ---------- Pruefstand ohne Akkuteiler ----------
+     * batbypass: Akkupruefung beim Armen und Gasbegrenzung aus, nur bis
+     * zum naechsten Reset. Gearmt kommt der Befehl gar nicht hier an. */
+    else if (strcmp(line, "batbypass") == 0)
+    {
+        Arming_SetBatBypass(1);
+        printf(">> %s\r\n", ARM_BAT_BYPASS_WARNUNG);
+        printf(">> Gilt bis zum Reset oder 'batbypass off'. Alle anderen Pruefungen bleiben.\r\n");
+    }
+    else if (strcmp(line, "batbypass off") == 0)
+    {
+        Arming_SetBatBypass(0);
+        printf(">> Akkupruefung wieder AN\r\n");
     }
 
     /* ---------- Strommessung kalibrieren ----------
@@ -429,7 +448,7 @@ void Command_Process(void)
         printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
         printf(">> angle | rate | stream on/off | kipp | t <gas> |\r\n");
         printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt> |\r\n");
-        printf(">> curzero | curcal <ampere>\r\n");
+        printf(">> curzero | curcal <ampere> | batbypass [off]\r\n");
     }
 
     line_len = 0;

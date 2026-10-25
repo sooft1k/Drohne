@@ -209,6 +209,7 @@ Prozent wirken nicht mehr. `MOTOR_US_STOP` muss immer deutlich unter
 git submodule update --init --recursive   # STM32CubeF4 mit HAL und CMSIS
 make
 make flash                                # OpenOCD-Pfad steht im Makefile
+make -C tests                             # Host-Tests auf dem PC (gcc)
 ```
 
 ## Vorzeichenkonvention
@@ -492,6 +493,21 @@ Beschleunigungssensor. Die Zellenerkennung ist bei teilentladenen 5S/6S-Akkus
 nicht eindeutig – dann kann ein zu leerer Akku als „OK“ durchgehen
 (siehe „Akku und Strom“).
 
+### Prüfstand ohne Akkuteiler: `batbypass`
+
+Sind die Widerstände für den Spannungsteiler noch nicht verbaut, schaltet
+`batbypass` im Terminal die Akkuprüfung beim Armen ab. Nur zum Testen
+**ohne Propeller**:
+
+- nur über das Terminal und nur disarmed einschaltbar, nicht über die Funke
+- liegt nur im RAM – nach jedem Reset wieder aus, sonst `batbypass off`
+- beim Einschalten und nach jedem Armen kommt die Warnung
+  `AKKUPRUEFUNG AUS - NUR OHNE PROPELLER` (gearmt per Interrupt, ohne den
+  Regeltakt aufzuhalten)
+- die Gasbegrenzung bei niedrigem Akku ist dabei aus, weil die Spannung
+  unbekannt ist
+- Sensor, Neigung, Gas und Arm-Schalter werden weiter geprüft
+
 `arm` im Terminal fragt zusätzlich nach: Erst nach `ja` innerhalb von 5 s
 wird gearmt, die Prüfungen laufen dabei noch einmal. `t <gas>` geht nur,
 wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
@@ -591,4 +607,5 @@ einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 | `rrp 1.2` usw. | PID-Wert setzen: Kreis (r/a), Achse (r/p/y), Term (p/i/d) |
 | `glpf <hz>`, `alpf <hz>`, `tau <s>` | Filter einstellen |
 | `batcal <volt>` | Akkuspannung kalibrieren |
+| `batbypass` / `batbypass off` | Prüfstand ohne Akkuteiler: Akkuprüfung und Gasbegrenzung aus bis zum Reset – nur ohne Propeller |
 | `curzero`, `curcal <ampere>` | Strommessung: Nullpunkt setzen / Skalierung mit bekanntem Strom |

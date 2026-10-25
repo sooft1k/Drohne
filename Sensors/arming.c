@@ -10,9 +10,12 @@
 /* aus main.c */
 extern MPU6050_Data_t sensor;
 extern uint8_t mpu_ok;
+extern UART_HandleTypeDef huart2;
 
 static volatile ArmCheck_t pending = ARM_OK; /* noch nicht ausgegebener Ablehnungsgrund */
 static uint32_t arm_count = 0;                /* erfolgreiche Arm-Vorgaenge seit dem Start */
+static uint8_t bat_bypass = 0;                /* 'batbypass': nur RAM, nach Reset aus */
+static volatile uint8_t bypass_warn = 0;      /* Warnung nach dem Armen noch offen */
 
 ArmCheck_t Arming_Check(void)
 {
@@ -35,10 +38,13 @@ ArmCheck_t Arming_Check(void)
     if (fabsf(acc_roll) > ARM_MAX_TILT_DEG || fabsf(acc_pitch) > ARM_MAX_TILT_DEG)
         return ARM_NEIGUNG;
 
-    if (Battery_Cells() == 0)
-        return ARM_KEIN_AKKU;
-    if (Battery_State() != BAT_OK)
-        return ARM_AKKU_LEER;
+    if (!bat_bypass)
+    {
+        if (Battery_Cells() == 0)
+            return ARM_KEIN_AKKU;
+        if (Battery_State() != BAT_OK)
+            return ARM_AKKU_LEER;
+    }
 
     return ARM_OK;
 }
@@ -56,6 +62,8 @@ ArmCheck_t Arming_Arm(void)
     Control_Reset();
     Motor_Arm();
     arm_count++;
+    if (bat_bypass)
+        bypass_warn = 1;
     return ARM_OK;
 }
 
@@ -109,4 +117,33 @@ void Arming_PrintPending(void)
         return;
     pending = ARM_OK;
     printf(">> Arming abgelehnt: %s\r\n", Arming_Text(r));
+}
+
+void Arming_SetBatBypass(uint8_t on)
+{
+    bat_bypass = on ? 1 : 0;
+    if (!bat_bypass)
+        bypass_warn = 0;
+}
+
+uint8_t Arming_BatBypass(void)
+{
+    return bat_bypass;
+}
+
+float Arming_LimitThrottle(float throttle)
+{
+    /* Ohne Akkuteiler ist die Spannung unbekannt - ein offener Pin koennte
+     * sonst einen leeren Akku vortaeuschen und das Gas drosseln */
+    return bat_bypass ? throttle : Battery_LimitThrottle(throttle);
+}
+
+void Arming_PrintBypassWarning(void)
+{
+    static const char msg[] = ">> " ARM_BAT_BYPASS_WARNUNG "\r\n";
+    if (!bypass_warn)
+        return;
+    /* Laeuft gerade noch eine Ausgabe, beim naechsten Aufruf nochmal */
+    if (HAL_UART_Transmit_IT(&huart2, (uint8_t *)msg, sizeof(msg) - 1) == HAL_OK)
+        bypass_warn = 0;
 }

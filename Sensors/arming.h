@@ -44,4 +44,20 @@ const char *Arming_Text(ArmCheck_t r);
  * aufrufen, nicht aus dem Regelzyklus. */
 void Arming_PrintPending(void);
 
+/* Pruefstand ohne Akkuteiler: 'batbypass' im Terminal ueberspringt die
+ * Akkupruefung beim Armen und schaltet die Gasbegrenzung bei niedrigem Akku
+ * ab (die Spannung ist dann unbekannt). Alle anderen Pruefungen bleiben.
+ * Liegt nur im RAM - nach jedem Reset wieder aus. Nur ohne Propeller! */
+#define ARM_BAT_BYPASS_WARNUNG "AKKUPRUEFUNG AUS - NUR OHNE PROPELLER"
+void Arming_SetBatBypass(uint8_t on);
+uint8_t Arming_BatBypass(void);
+
+/* Gas nach der Akku-Gasbegrenzung (Battery_LimitThrottle), mit batbypass unbegrenzt */
+float Arming_LimitThrottle(float throttle);
+
+/* Warnung nach jedem Armen mit aktivem batbypass. Gearmt ist printf stumm,
+ * deshalb sendet sie per Interrupt, ohne den Regeltakt aufzuhalten.
+ * Aus der Leerlaufzeit aufrufen, auch gearmt. */
+void Arming_PrintBypassWarning(void);
+
 #endif /* ARMING_H */

@@ -189,6 +189,7 @@ int main(void)
             Command_Process();
             if (!Motor_IsArmed())
                 Arming_PrintPending();
+            Arming_PrintBypassWarning(); /* auch gearmt, sendet per Interrupt */
             if (imu_fail_report && !Motor_IsArmed())
             {
                 imu_fail_report = 0;
@@ -266,8 +267,8 @@ int main(void)
         float out_roll, out_pitch, out_yaw;
         Control_Update(&sensor, dt, Mixer_IsSaturated(), &out_roll, &out_pitch, &out_yaw);
 
-        /* Bei niedrigem Akku wird das Gas begrenzt (battery.h) */
-        Mixer_Update(Battery_LimitThrottle(setpoint.throttle), out_roll, out_pitch, out_yaw);
+        /* Bei niedrigem Akku wird das Gas begrenzt (battery.h), mit batbypass nicht */
+        Mixer_Update(Arming_LimitThrottle(setpoint.throttle), out_roll, out_pitch, out_yaw);
 
         Battery_Update(dt);
 
