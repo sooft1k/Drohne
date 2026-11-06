@@ -2,6 +2,9 @@
 
 Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 
+Dieser Branch gilt für die neue Platine. Die Firmware ist bisher nur kompiliert
+und noch nicht auf der Platine getestet.
+
 | Teil | Anschluss |
 |---|---|
 | Gyro/Accel | ICM-42688-P an SPI1 (PA4 CS, PA5 SCK, PA6 MISO, PA7 MOSI), 10,5 MHz |
@@ -11,9 +14,10 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 | Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PC6, M4 = PC7; 143,5–229 µs (BLHeli_S ab Werk), Stopp 125 µs |
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
 | Kanäle | 1 Roll, 2 Pitch, 3 Gas, 4 Yaw, 7 Modus Angle/Rate, **8 Arm-Schalter (AUX4)** |
-| Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
+| Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud, über einen USB-Seriell-Adapter |
 | Akkuspannung | PC0 (ADC1 Kanal 10), Teiler 11:1 |
 | Strom | PC1 (ADC2 Kanal 11), Stromausgang „C“ des ESC – höchstens 3,3 V! |
+| Status-LED | PC13, aktiv-low (Low = an) |
 
 Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 
@@ -25,6 +29,11 @@ Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 > ELRS“ unter „Failsafe“. Kanal in `RC_CH_ARM` (`Sensors/rc.h`).
 
 ## Verdrahtung (eigene Platine)
+
+Dieser Abschnitt beschreibt den Zielzustand. Im Schaltplan fehlen Stand
+06.11.2026 noch ESC, ELRS, Terminal, Status-LED und die Messung an PC0 und PC1.
+Die Namen Ro, Ru, Cb, Rs und Cs gelten nur in dieser README, im Schaltplan haben
+die Bauteile andere Nummern.
 
 Alle Massen (GND) sind miteinander verbunden: Akku-Minus über den ESC, die
 Flugsteuerung, Empfänger und der USB-Seriell-Adapter. **Beim Löten
@@ -45,6 +54,7 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
 | BMP388 und QMC5883L SCL / SDA | PB6 / PB7 (I2C1) | auf der Platine |
 | GPS TXD / RXD | PB11 / PB10 (USART3) | auf der Platine |
 | USB-Seriell RX / TX | PA2 / PA3 (USART2) | 3,3-V-Pegel, 115200 Baud |
+| Status-LED | PC13 über LED und 1 kΩ an +3,3 V | aktiv-low |
 
 ### 1. Akkuspannung an PC0
 
@@ -52,23 +62,24 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
  Akku+ (VBAT, bis 25,2 V)
         │
        ┌┴┐
-       │ │ R1  10 kΩ, 1 %, 0,25 W
+       │ │ Ro  10 kΩ, 1 %, 0,25 W
        └┬┘
         │
         ├──────────┬──────────── PC0  (ADC1, Kanal 10)
         │          │
        ┌┴┐       ──┴──
-       │ │ R2    ─────  C1  100 nF, Keramik X7R
+       │ │ Ru    ─────  Cb  100 nF, Keramik X7R
        └┬┘ 1 kΩ    │
         │   1 %    │
  GND ───┴──────────┴──────────── GND STM32 (= Akku-Minus über den ESC)
 ```
 
-- **R1 = 10 kΩ, R2 = 1 kΩ**, Metallschicht, 1 %. Teilerfaktor 11:
-  25,2 V (6S voll) → 2,29 V an PC0, 16,8 V (4S) → 1,53 V.
-- Leistung in R1 bei 25,2 V: 25,2² / 11 kΩ ≈ 58 mW – 0,25-W-Widerstand reicht.
-- **C1 = 100 nF** direkt an PC0 nach GND, glättet Störungen der Motoren.
-- R2 und C1 möglichst nah am STM32-Pin löten, die lange Leitung kommt an R1.
+- **Ro = 10 kΩ, Ru = 1 kΩ**, Metallschicht, 1 %. Teilerfaktor 11:
+  25,2 V (6S voll) → 2,29 V an PC0.
+- Leistung bei 25,2 V: 25,2² / 11 kΩ ≈ 58 mW im ganzen Teiler, davon rund 52 mW
+  in Ro – 0,25-W-Widerstand reicht.
+- **Cb = 100 nF** direkt an PC0 nach GND, glättet Störungen der Motoren.
+- Ru und Cb möglichst nah am STM32-Pin löten, die lange Leitung kommt an Ro.
 - Andere Widerstände gehen auch, dann aber `BAT_R_OBEN` und `BAT_R_UNTEN` in
   `Sensors/battery.h` anpassen. PC0 darf nie mehr als 3,3 V sehen.
 - Nach dem ersten Anstecken mit einem Multimeter die Akkuspannung messen
@@ -80,23 +91,23 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
  ESC "C" / "CUR"
         │
        ┌┴┐
-       │ │ R3  4,7 kΩ
+       │ │ Rs  4,7 kΩ
        └┬┘
         │
         ├──────────────────────── PC1  (ADC2, Kanal 11)
         │
       ──┴──
-      ─────  C2  100 nF, Keramik X7R
+      ─────  Cs  100 nF, Keramik X7R
         │
  GND ───┴──────────────────────── GND STM32
 ```
 
-- **R3 = 4,7 kΩ in Reihe, C2 = 100 nF von PC1 nach GND**, beide direkt am Pin.
+- **Rs = 4,7 kΩ in Reihe, Cs = 100 nF von PC1 nach GND**, beide direkt am Pin.
   Zusammen ein Tiefpass mit etwa 340 Hz: Er glättet die PWM-Welligkeit des
-  ESC (24/48 kHz), und R3 begrenzt den Strom, falls der Ausgang doch über
+  ESC (24/48 kHz), und Rs begrenzt den Strom, falls der Ausgang doch über
   3,3 V geht.
 - PC1 verträgt als Analogeingang **höchstens 3,3 V**. Deshalb vorher messen (siehe Punkt 3). Kann
-  der Ausgang über 3,0 V gehen, statt R3 allein einen Teiler einbauen:
+  der Ausgang über 3,0 V gehen, statt Rs allein einen Teiler einbauen:
 
 ```
  ESC "C" ──[ 10 kΩ ]──┬── PC1
@@ -125,8 +136,8 @@ Mit dem Multimeter (Akku dran, Propeller ab, Motoren aus):
    Leerlauf) steigt der Wert leicht. Bei 12,75 mV/A macht 1 A nur 13 mV
    aus.
 4. **Höchstwert:** Die Skalierung ist nicht bekannt (12–40 mV/A üblich). Bei
-   40 mV/A wären 3,3 V schon bei 82 A erreicht – das schafft ein 5-Zoll-Quad
-   bei Vollgas. Deshalb prüfen, woher der Verstärker seine Versorgung
+   40 mV/A wären 3,3 V schon bei 82 A erreicht – das kann ein 5-Zoll-Quad
+   bei Vollgas erreichen. Deshalb prüfen, woher der Verstärker seine Versorgung
    bekommt: Ist auf der ESC-Platine nur eine 3,3-V-Schiene in der Nähe,
    kann der Ausgang nicht über 3,3 V gehen. Ist es 5 V, den Teiler aus
    Punkt 2 nehmen.
@@ -146,20 +157,19 @@ Telemetrie.
 ```
 
 Nach einem Reset sind die STM32-Pins einige Millisekunden lang offen. Liegt
-eine Signalleitung dabei länger als etwa 15 ms auf High, während der ESC
-startet, springt BLHeli_S in seinen Bootloader und reagiert nicht mehr, bis
-das Signal wieder läuft. Ein 10-kΩ-Widerstand nach GND an jeder Leitung hält
+eine Signalleitung dabei auf High, während der ESC startet, kann BLHeli_S in
+seinen Bootloader springen und erst wieder reagieren, wenn das Signal läuft. Ein 10-kΩ-Widerstand nach GND an jeder Leitung hält
 sie in dieser Zeit sicher auf Low.
 
 ### Bauteilliste
 
 | Bauteil | Wert | Anzahl | Wofür |
 |---|---|---|---|
-| Widerstand 1 %, 0,25 W | 10 kΩ | 1 | R1 Akkuteiler |
-| Widerstand 1 % | 1 kΩ | 1 | R2 Akkuteiler |
-| Widerstand | 4,7 kΩ | 1 | R3 Strom |
+| Widerstand 1 %, 0,25 W | 10 kΩ | 1 | Ro Akkuteiler |
+| Widerstand 1 % | 1 kΩ | 1 | Ru Akkuteiler |
+| Widerstand | 4,7 kΩ | 1 | Rs Strom |
 | Widerstand | 10 kΩ | 4 | Pull-down Motorsignale |
-| Keramikkondensator X7R | 100 nF | 2 | C1 an PC0, C2 an PC1 |
+| Keramikkondensator X7R | 100 nF | 2 | Cb an PC0, Cs an PC1 |
 | optional Widerstand | 10 kΩ + 20 kΩ | je 1 | Teiler am Strom, falls > 3,0 V |
 
 ## ESC und Motorsignal (BLHeli_S)
@@ -268,10 +278,12 @@ Die Firmware rechnet die Chip-Achsen damit auf die Körperachsen um.
 Vor jedem Erstflug und nach jeder Änderung an Sensor, Mixer oder Verkabelung.
 **Propeller ab.**
 
-### Teil A – Sensor (nur USB, kein Akku)
+### Teil A – Sensor (kein Akku)
 
-1. Flugsteuerung flach hinlegen, Nase nach vorne. Terminal an USART2 mit
-   115200 Baud. Reset drücken und bis `>> Bereit.` nicht bewegen
+1. Flugsteuerung flach hinlegen, Nase nach vorne. Strom kommt über die
+   USB-Buchse der Platine. Die Firmware hat dort kein Terminal, deshalb einen
+   USB-Seriell-Adapter an USART2 (PA2/PA3) mit 115200 Baud anschließen. Reset
+   drücken und bis `>> Bereit.` nicht bewegen
    (Gyro-Kalibrierung). Wird sie bewegt, meldet die Firmware „Bewegung
    erkannt“ und misst neu (bis zu 5 Versuche). Klappt keiner, bleibt Arming
    bis zum Neustart gesperrt. Die Lagewinkel starten direkt mit dem Wert aus
@@ -296,12 +308,12 @@ Vor jedem Erstflug und nach jeder Änderung an Sensor, Mixer oder Verkabelung.
    unterstützt, Sensor mit der Bauteilseite nach oben einbauen.
 7. `stream off`.
 
-### Teil B – Regler und Mixer (nur USB, disarmed)
+### Teil B – Regler und Mixer (kein Akku, disarmed)
 
 8. `angle` eingeben (bei verbundener Funke: Modus-Schalter auf Angle),
    dann `kipp`. Das zeigt fünfmal pro Sekunde, was der Mixer bei 50 % Gas
    ausgeben würde. Die Motoren bleiben aus. Flach liegend stehen alle vier
-   Werte etwa gleich (57,5).
+   Werte etwa gleich (52,5).
 9. Nase etwa 20° nach unten drücken: **M2 und M4 (vorne) höher** als M1 und
    M3. Der Regler will die Nase wieder anheben.
 10. Rechte Seite etwa 20° nach unten: **M1 und M2 (rechts) höher** als M3 und M4.
@@ -326,9 +338,9 @@ Konvention oben. Der Fehler liegt dann woanders (Einbaulage, Verkabelung).
     Arm-Schalter hoch: Alle vier Motoren laufen im Leerlauf. Drehrichtung
     jedes Motors prüfen (Klebeband-Fähnchen auf der Glocke), von oben gesehen:
     M1 hinten rechts CW, M2 vorne rechts CCW, M3 hinten links CCW,
-    M4 vorne links CW. Dreht ein Motor falsch herum: im ESC-Configurator
-    („Motor Direction“) umstellen oder zwei der drei Motordrähte tauschen –
-    nie die Vorzeichen im Mixer ändern.
+    M4 vorne links CW. Dreht ein Motor falsch herum: zwei der drei
+    Motordrähte tauschen oder, mit einem BLHeli-Linker, im ESC-Configurator
+    („Motor Direction“) umstellen – nie die Vorzeichen im Mixer ändern.
 16. Modus Angle, Gas auf etwa 30 %, Drohne gut festhalten:
     - Nase nach unten kippen → die vorderen Motoren laufen schneller.
     - Rechte Seite nach unten → die rechten Motoren laufen schneller.
@@ -464,7 +476,7 @@ fliegt.
   25 % Stellbereich), unabhängig von Ki. Er wächst nicht weiter, solange der
   Reglerausgang am Limit steht oder der Mixer die Korrekturen stauchen muss
   (Anti-Windup). Integriert wird erst, wenn die Drohne fliegt: Airmode an
-  (Gas seit dem Armen einmal über 25 %) und Gas über 10 %. Am Boden lädt
+  (Gas seit dem Armen einmal mindestens 25 %) und Gas über 10 %. Am Boden lädt
   sich der I-Anteil so nicht gegen eine Schräglage auf.
 - Moduswechsel Angle/Rate setzt nur den Winkelregler zurück, der I-Anteil
   des Drehratenreglers bleibt.
@@ -492,9 +504,8 @@ runter – die Drohne armt nicht von selbst, sobald die Bedingung später passt.
 Ohne angeschlossenen Spannungsteiler an PC0 lässt sich normalerweise nicht
 armen (ein offener Eingang kann allerdings zufällige Werte liefern). Die
 Neigung wird zweimal geprüft: am gefilterten Lagewinkel und direkt am
-Beschleunigungssensor. Die Zellenerkennung ist bei teilentladenen 5S/6S-Akkus
-nicht eindeutig – dann kann ein zu leerer Akku als „OK“ durchgehen
-(siehe „Akku und Strom“).
+Beschleunigungssensor. Die Akkugrenze rechnet fest mit 6S (siehe „Akku und
+Strom“).
 
 ### Prüfstand ohne Akkuteiler: `batbypass`
 
@@ -533,18 +544,22 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
   Danach sind die Motoren aus. Beim Start meldet das Terminal
   `Letzter Neustart durch den Watchdog`, wenn das passiert ist. Der Watchdog
   läuft erst ab `>> Bereit.`, also nach der Gyro-Kalibrierung.
-- Fault-Handler, `Error_Handler` und `assert_failed` setzen als Erstes alle
-  vier Motorpulse auf Stopp. Der Motortimer läuft sonst in Hardware weiter
-  und gibt endlos den letzten Gaswert aus.
+- Fault-Handler und `Error_Handler` setzen als Erstes alle vier Motorpulse auf
+  Stopp. Der Motortimer läuft sonst in Hardware weiter und gibt endlos den
+  letzten Gaswert aus. `assert_failed` macht das ebenso, ist aber nur mit
+  `USE_FULL_ASSERT` aktiv, und das ist im aktuellen Build aus.
 
 ## Akku und Strom
 
 **Spannung:** Teiler 11:1 an PC0, 100 Messungen pro Sekunde, Tiefpass 0,5 s.
-Der Filter startet beim Anstecken mit dem ersten Messwert. Nach 0,5 s wird
-die Zellenzahl bestimmt (3,3–4,38 V pro Zelle, also auch HV-LiPo voll) und bleibt dann fest. Bei
-teilentladenen 5S/6S-Akkus ist das nicht eindeutig (ein 6S mit 3,5 V/Zelle
-sieht aus wie ein voller 5S). Wer immer denselben Akkutyp fliegt, trägt die
-Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein. Voreingestellt sind 6S.
+Der Filter startet beim Anstecken mit dem ersten Messwert. Die Zellenzahl steht
+fest auf 6 (`BAT_CELLS_DEFAULT` in `Sensors/battery.h`). Ein voller 5S wird
+deshalb wie ein fast leerer 6S gelesen, ein 4S gilt als leer.
+
+Mit `BAT_CELLS_DEFAULT` = 0 bestimmt die Firmware die Zellenzahl 0,5 s nach dem
+Anstecken selbst (3,3–4,38 V pro Zelle, also auch HV-LiPo voll), und sie bleibt
+dann fest. Bei teilentladenen 5S/6S-Akkus ist das nicht eindeutig (ein 6S mit
+3,5 V/Zelle sieht aus wie ein voller 5S).
 
 **Warnung und Gasbegrenzung:**
 
@@ -553,6 +568,7 @@ Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein. Voreingestellt
 | OK | ab 3,50 V | 100 % | blinkt mit 2 Hz |
 | Warnung | unter 3,50 V | 80 % | blinkt mit 5 Hz |
 | Kritisch | unter 3,30 V | 60 % | blinkt mit 12,5 Hz |
+| Kein Akku erkannt | – | Armen gesperrt | blinkt mit 2 Hz |
 | Sensor fehlt / Kalibrierung gescheitert | – | Armen gesperrt | leuchtet dauernd |
 
 Gearmt zählt ein Zustand erst, wenn die Spannung 2 s lang unter der
@@ -591,8 +607,8 @@ Die Skalierung ist für den B-Cube-4in1 nicht gesichert. Voreingestellt sind
    `curcal <ampere>` – das geht auch gearmt. Gearmt antwortet das Terminal
    nicht; nach `disarm` zeigt `bat` den neuen mV/A-Wert.
 
-`batcal` nimmt nur Werte an, die höchstens 20 % von der Messung abweichen
-(sonst Tippfehler oder falsche Widerstände). Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
+`batcal` nimmt nur Werte an, die zwischen 20 % unter und 25 % über der Messung
+liegen (sonst Tippfehler oder falsche Widerstände). Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
 einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 `CURR_MV_PER_A_DEFAULT` eintragen.
 
@@ -605,6 +621,7 @@ einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 | `status` | Zustand, Sensorfehler und ob Armen gerade erlaubt wäre |
 | `bat` | Spannung, Zellen, Strom, verbrauchte mAh, Gasgrenze |
 | `loop`, `rc`, `pid`, `mix`, `filt` | Anzeigen |
+| `sens` | Barometer, Kompass und GPS: Werte und Fehlerzähler |
 | `angle`, `rate` | Flugmodus |
 | `stream on` / `stream off` | Lage und Drehraten mit 50 Hz ausgeben (nur disarmed) |
 | `kipp` | Kipptest-Anzeige an/aus (nur disarmed) |
