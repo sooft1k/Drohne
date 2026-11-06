@@ -44,7 +44,7 @@
 #define MOTOR_US_TO_TICKS(us) ((uint32_t)((float)(us) * (float)MOTOR_TICKS_PER_US + 0.5f))
 
 /* Motoren werden mit 1..4 angesprochen - wie auf dem ESC beschriftet.
- * M1 -> PB0 (CH3), M2 -> PB1 (CH4), M3 -> PA6 (CH1), M4 -> PA7 (CH2) */
+ * M1 -> PB0 (CH3), M2 -> PB1 (CH4), M3 -> PC6 (CH1), M4 -> PC7 (CH2) */
 
 void Motor_Init(TIM_HandleTypeDef *htim);
 

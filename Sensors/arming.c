@@ -1,15 +1,15 @@
 #include "arming.h"
 #include "motor.h"
 #include "control.h"
-#include "mpu6050.h"
+#include "icm42688.h"
 #include "battery.h"
 #include "rc.h"
 #include <stdio.h>
 #include <math.h>
 
 /* aus main.c */
-extern MPU6050_Data_t sensor;
-extern uint8_t mpu_ok;
+extern ICM42688_Data_t sensor;
+extern uint8_t imu_ok;
 extern UART_HandleTypeDef huart2;
 
 static volatile ArmCheck_t pending = ARM_OK; /* noch nicht ausgegebener Ablehnungsgrund */
@@ -22,7 +22,7 @@ ArmCheck_t Arming_Check(void)
     if (Motor_IsArmed())
         return ARM_SCHON_ARMED;
 
-    if (!mpu_ok || !MPU6050_Healthy())
+    if (!imu_ok || !ICM42688_Healthy())
         return ARM_KEIN_SENSOR;
 
     if (sensor.roll > ARM_MAX_TILT_DEG || sensor.roll < -ARM_MAX_TILT_DEG ||

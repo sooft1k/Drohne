@@ -1,5 +1,7 @@
 #include "main.h"
-#include "mpu6050.h"
+#include "icm42688.h"
+#include "auxsens.h"
+#include "gps.h"
 #include "motor.h"
 #include "command.h"
 #include "control.h"
@@ -11,16 +13,17 @@
 #include <stdio.h>
 #include <string.h>
 
-I2C_HandleTypeDef hi2c1;
+SPI_HandleTypeDef hspi1;   /* ICM-42688-P */
 UART_HandleTypeDef huart1; /* ELRS-Empfaenger, CRSF */
 UART_HandleTypeDef huart2; /* Debug-Monitor */
+UART_HandleTypeDef huart3; /* GPS */
 TIM_HandleTypeDef htim2;   /* Regeltakt 1 kHz */
 TIM_HandleTypeDef htim3;   /* Motorsignal */
 IWDG_HandleTypeDef hiwdg;  /* Watchdog */
 
 uint8_t who = 0;
-uint8_t mpu_ok = 0;
-MPU6050_Data_t sensor;
+uint8_t imu_ok = 0;
+ICM42688_Data_t sensor;
 
 /* Regeltakt: wird im TIM2-Interrupt gesetzt, in der Hauptschleife geleert */
 volatile uint8_t loop_flag = 0;
@@ -34,23 +37,18 @@ uint32_t loop_hz = 0;              /* gemessene Ist-Frequenz, von command.c gele
 #define DT_MIN 0.0002f
 #define DT_MAX 0.020f
 
-/* Spaetestens so lange nach dem Takt muss der Sensor geantwortet haben.
- * Ein Lesevorgang dauert bei 400 kHz etwa 0,4 ms. */
-#define IMU_DEADLINE_US 800
-
-static uint32_t imu_recover_ms = 0;  /* letzte Bus-Recovery, HAL_GetTick() */
+static uint32_t imu_recover_ms = 0;  /* letzter Neustart des Sensors, HAL_GetTick() */
 static uint8_t imu_fail_report = 0;  /* Sensorausfall noch nicht gemeldet */
 
 static void SystemClock_Config(void);
 static void GPIO_Init(void);
-static void I2C1_Init(void);
+static void SPI1_Init(void);
 static void USART1_Init(void);
 static void USART2_Init(void);
+static void USART3_Init(void);
 static void TIM2_Loop_Init(void);
 static void IWDG_Init(void);
 static void DWT_Init(void);
-static HAL_StatusTypeDef I2C1_Setup(void);
-static void I2C1_Recover(void);
 
 /* Terminal-Ausgabe. Solange gearmt ist, wird nichts gesendet:
  * HAL_UART_Transmit wartet bei 115200 Baud rund 87 us pro Zeichen, eine
@@ -78,11 +76,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         if (loop_flag)
             loop_missed++; /* vorheriger Zyklus war noch nicht fertig */
         loop_flag = 1;
-
-        /* Sensor fuer diesen Takt anstossen. Der Lesevorgang laeuft per
-         * Interrupt im Hintergrund, die Hauptschleife holt ihn ab. */
-        if (mpu_ok)
-            MPU6050_StartRead(&hi2c1);
     }
 }
 
@@ -93,7 +86,7 @@ int main(void)
     GPIO_Init();
     DWT_Init();
     USART2_Init();
-    I2C1_Init();
+    SPI1_Init();
     Motor_Init(&htim3);
     Command_Init(&huart2);
     Control_Init();
@@ -101,14 +94,20 @@ int main(void)
     USART1_Init();
     CRSF_Init(&huart1);
     RC_Init();
+    USART3_Init();
+    GPS_Init(&huart3);
+    AuxSens_Init();
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
-    printf("Motoren: M1=PB0 M2=PB1 M3=PA6 M4=PA7, %lu Hz, Stopp %u us, Gas %.1f-%.1f us\r\n",
+    printf("Motoren: M1=PB0 M2=PB1 M3=PC6 M4=PC7, %lu Hz, Stopp %u us, Gas %.1f-%.1f us\r\n",
            Motor_UpdateRateHz(), MOTOR_US_STOP, MOTOR_US_MIN, MOTOR_US_MAX);
-    printf("Regeltakt: 1000 Hz | I2C: 400 kHz | Akku: PC0 | Strom: PA4 | Modus: ANGLE\r\n");
+    printf("Regeltakt: 1000 Hz | IMU: SPI1 10,5 MHz | Akku: PC0 | Strom: PC1 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
-    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
+    printf("GPS: USART3 PB10/PB11, %d Baud\r\n", GPS_BAUD);
+    printf("Baro: %s | Kompass: %s\r\n", AuxSens_BaroOk() ? "OK" : "FEHLT",
+           AuxSens_MagOk() ? "OK" : "FEHLT");
+    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc | sens |\r\n");
     printf("         angle | rate | stream on/off | kipp | t <gas> | ja |\r\n");
     printf("         rrp/arp <wert> | glpf | alpf | tau | batcal | curzero | curcal\r\n");
     printf("Arm-Schalter: Kanal %u (AUX%u), Modus: Kanal %u\r\n", RC_CH_ARM, RC_CH_ARM - 4, RC_CH_MODE);
@@ -118,37 +117,38 @@ int main(void)
     __HAL_RCC_CLEAR_RESET_FLAGS();
 
     who = 0;
-    if (MPU6050_WhoAmI(&hi2c1, &who) == HAL_OK && who == 0x68)
+    if (ICM42688_WhoAmI(&hspi1, &who) == HAL_OK && who == ICM42688_WHO_AM_I_VALUE)
     {
-        printf("MPU6050 WHO_AM_I = 0x%02X\r\n", who);
+        printf("ICM-42688-P WHO_AM_I = 0x%02X\r\n", who);
 
-        if (MPU6050_Init(&hi2c1) == HAL_OK)
+        if (ICM42688_Init(&hspi1) == HAL_OK)
         {
-            printf("MPU6050 init OK (Gyro +-2000 dps, Accel +-4g, DLPF 188 Hz)\r\n");
+            printf("ICM-42688-P init OK (Gyro +-2000 dps, Accel +-4g, Filter 250 Hz)\r\n");
+            HAL_Delay(50); /* der Gyro braucht 30 ms bis zu gueltigen Werten */
             /* Kalibrieren, bis die Drohne dabei still lag - hoechstens 5 Versuche */
-            MPU6050_CalResult_t cal = MPU6050_CAL_BEWEGT;
-            for (int versuch = 1; versuch <= 5 && cal != MPU6050_CAL_OK; versuch++)
+            ICM42688_CalResult_t cal = ICM42688_CAL_BEWEGT;
+            for (int versuch = 1; versuch <= 5 && cal != ICM42688_CAL_OK; versuch++)
             {
                 printf("Kalibriere Gyro (Versuch %d)... NICHT bewegen!\r\n", versuch);
-                cal = MPU6050_Calibrate(&hi2c1, &sensor, 1000);
-                if (cal == MPU6050_CAL_BEWEGT)
+                cal = ICM42688_Calibrate(&hspi1, &sensor, 1000);
+                if (cal == ICM42688_CAL_BEWEGT)
                     printf("Bewegung erkannt - nochmal.\r\n");
-                else if (cal == MPU6050_CAL_LESEFEHLER)
+                else if (cal == ICM42688_CAL_LESEFEHLER)
                     printf("Zu viele Lesefehler - nochmal.\r\n");
             }
 
-            if (cal == MPU6050_CAL_OK)
+            if (cal == ICM42688_CAL_OK)
             {
                 printf("Offsets: GX=%.1f GY=%.1f GZ=%.1f\r\n",
                        sensor.gyro_x_offset, sensor.gyro_y_offset, sensor.gyro_z_offset);
 
                 /* Lagewinkel gleich aus dem Accel, nicht ab 0 einschwingen */
-                if (MPU6050_ReadAll(&hi2c1, &sensor) == HAL_OK)
+                if (ICM42688_ReadAll(&hspi1, &sensor) == HAL_OK)
                 {
-                    MPU6050_Convert(&sensor, 0.001f);
-                    MPU6050_InitAngles(&sensor);
+                    ICM42688_Convert(&sensor, 0.001f);
+                    ICM42688_InitAngles(&sensor);
                 }
-                mpu_ok = 1;
+                imu_ok = 1;
             }
             else
             {
@@ -157,12 +157,12 @@ int main(void)
         }
         else
         {
-            printf("MPU6050 init FAILED - Arming gesperrt\r\n");
+            printf("ICM-42688-P init FAILED - Arming gesperrt\r\n");
         }
     }
     else
     {
-        printf("Kein MPU6050 erkannt - Arming gesperrt\r\n");
+        printf("Kein ICM-42688-P erkannt - Arming gesperrt\r\n");
     }
 
     /* Watchdog und Regeltakt erst starten, wenn die Kalibrierung durch ist */
@@ -187,6 +187,8 @@ int main(void)
         {
             /* Leerlaufzeit: hier laufen die nicht-zeitkritischen Sachen */
             Command_Process();
+            GPS_Process();
+            AuxSens_Process();
             if (!Motor_IsArmed())
                 Arming_PrintPending();
             Arming_PrintBypassWarning(); /* auch gearmt, sendet per Interrupt */
@@ -194,22 +196,15 @@ int main(void)
             {
                 imu_fail_report = 0;
                 printf(">> SENSOR AUSGEFALLEN - Motoren aus. Fehler bisher: %lu\r\n",
-                       MPU6050_ErrorCount());
+                       ICM42688_ErrorCount());
             }
             continue;
         }
 
-        /* --- Sensordaten dieses Takts abholen ---
-         * Der Lesevorgang laeuft seit dem TIM2-Interrupt (ca. 0,4 ms). Hier
-         * wird nur gewartet, bis er fertig ist - hoechstens bis
-         * IMU_DEADLINE_US nach dem Takt, dann zaehlt er als Fehler. */
+        /* --- Sensordaten dieses Takts lesen, dauert rund 12 us --- */
         int imu = -1;
-        if (mpu_ok)
-        {
-            while ((imu = MPU6050_ReadPoll(&sensor)) == 0 && TIM2->CNT < IMU_DEADLINE_US)
-            {
-            }
-        }
+        if (imu_ok)
+            imu = ICM42688_Read(&hspi1, &sensor);
         loop_flag = 0;
         loop_count++;
 
@@ -234,25 +229,30 @@ int main(void)
             imu_dt = DT_MAX;
         if (imu == 1)
         {
-            MPU6050_Convert(&sensor, imu_dt);
-            MPU6050_UpdateAngles(&sensor, imu_dt);
+            ICM42688_Convert(&sensor, imu_dt);
+            ICM42688_UpdateAngles(&sensor, imu_dt);
             imu_dt = 0.0f;
         }
-        if (mpu_ok)
+        if (imu_ok)
         {
             /* Einzelne Fehler: die Regelung rechnet mit den letzten Werten
-             * weiter. Nach MPU6050_FAIL_LIMIT Fehlern in Folge gilt der
+             * weiter. Nach ICM42688_FAIL_LIMIT Fehlern in Folge gilt der
              * Sensor als ausgefallen (siehe unten). */
-            MPU6050_ReportResult(imu == 1);
-            if (imu != 1 && MPU6050_FailRun() >= 3 && HAL_GetTick() - imu_recover_ms >= 20)
+            ICM42688_ReportResult(imu == 1);
+            /* Hatte der Sensor die Spannung verloren, muss er neu eingestellt
+             * werden. Das blockiert kurz, deshalb nur disarmed. */
+            if (imu != 1 && ICM42688_FailRun() >= 3 && !Motor_IsArmed() &&
+                HAL_GetTick() - imu_recover_ms >= 100)
             {
                 imu_recover_ms = HAL_GetTick();
-                I2C1_Recover();
+                HAL_IWDG_Refresh(&hiwdg);
+                (void)ICM42688_Init(&hspi1);
+                HAL_IWDG_Refresh(&hiwdg);
             }
         }
 
         /* Ohne funktionierenden Sensor gibt es keine Lageregelung: sofort aus */
-        if (Motor_IsArmed() && (!mpu_ok || MPU6050_Failed()))
+        if (Motor_IsArmed() && (!imu_ok || ICM42688_Failed()))
         {
             Arming_Disarm();
             imu_fail_report = 1;
@@ -308,7 +308,7 @@ int main(void)
         const uint32_t led_period = (Battery_State() == BAT_CRITICAL) ? 40
                                     : (Battery_State() == BAT_WARN)   ? 100
                                                                       : 250;
-        if (!mpu_ok)
+        if (!imu_ok)
         {
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET); /* aktiv-low: an */
         }
@@ -380,122 +380,45 @@ static void GPIO_Init(void)
     g.Pull = GPIO_NOPULL;
     g.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOC, &g);
+
+    /* PA4: Chip-Select der IMU, im Ruhezustand hoch */
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+    g.Pin = GPIO_PIN_4;
+    g.Mode = GPIO_MODE_OUTPUT_PP;
+    g.Pull = GPIO_NOPULL;
+    g.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &g);
 }
 
-/* I2C mit 400 kHz - bei 100 kHz dauert ein Sensor-Lesevorgang
- * rund 1,4 ms und 1000 Hz waeren unmoeglich. */
-static void I2C1_Init(void)
+/* SPI1 fuer die IMU: PA5 SCK, PA6 MISO, PA7 MOSI. 84 MHz / 8 = 10,5 MHz, der
+ * Sensor kann bis 24 MHz. Mode 0: SCK ruht auf low, so entsteht beim ersten
+ * Einschalten der Peripherie keine Taktflanke. */
+static void SPI1_Init(void)
 {
-    if (I2C1_Setup() != HAL_OK)
+    __HAL_RCC_SPI1_CLK_ENABLE();
+
+    GPIO_InitTypeDef g = {0};
+    g.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
+    g.Mode = GPIO_MODE_AF_PP;
+    g.Pull = GPIO_NOPULL;
+    g.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    g.Alternate = GPIO_AF5_SPI1;
+    HAL_GPIO_Init(GPIOA, &g);
+
+    hspi1.Instance = SPI1;
+    hspi1.Init.Mode = SPI_MODE_MASTER;
+    hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+    hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+    hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+    hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+    hspi1.Init.NSS = SPI_NSS_SOFT;
+    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+    hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+    hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+    hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+    hspi1.Init.CRCPolynomial = 10;
+    if (HAL_SPI_Init(&hspi1) != HAL_OK)
         Error_Handler();
-
-    /* Gleiche Prioritaet wie der Regeltakt (TIM2): die beiden unterbrechen
-     * sich nicht gegenseitig, TIM2 startet die Lesevorgaenge. */
-    HAL_NVIC_SetPriority(I2C1_EV_IRQn, 4, 0);
-    HAL_NVIC_SetPriority(I2C1_ER_IRQn, 4, 0);
-    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
-}
-
-static HAL_StatusTypeDef I2C1_Setup(void)
-{
-    __HAL_RCC_I2C1_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-
-    GPIO_InitTypeDef g = {0};
-    g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
-    g.Mode = GPIO_MODE_AF_OD;
-    g.Pull = GPIO_PULLUP;
-    g.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    g.Alternate = GPIO_AF4_I2C1;
-    HAL_GPIO_Init(GPIOB, &g);
-
-    hi2c1.Instance = I2C1;
-    hi2c1.Init.ClockSpeed = 400000;
-    hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-    hi2c1.Init.OwnAddress1 = 0;
-    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    hi2c1.Init.OwnAddress2 = 0;
-    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-    return HAL_I2C_Init(&hi2c1);
-}
-
-/* Wartet us Mikrosekunden mit dem Taktzaehler. Nur fuer die Bus-Recovery. */
-static void delay_us(uint32_t us)
-{
-    const uint32_t start = DWT->CYCCNT;
-    const uint32_t n = us * (SystemCoreClock / 1000000U);
-    while (DWT->CYCCNT - start < n)
-    {
-    }
-}
-
-/* I2C-Bus und Peripherie neu aufsetzen, wenn das Lesen mehrmals scheitert.
- * Typischer Fall: eine Uebertragung wurde mittendrin abgebrochen, der
- * Sensor haelt SDA fest und das BUSY-Flag der Peripherie bleibt stehen.
- * Dauert etwa 0,2 ms, disarmed zusaetzlich etwa 15 ms fuer MPU6050_Init
- * (hoechstens 6 Transfers x 3 ms + 10 ms Pause - unter der Watchdog-Zeit). */
-static void I2C1_Recover(void)
-{
-    MPU6050_BlockReads(1);
-    HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
-    HAL_I2C_DeInit(&hi2c1);
-
-    /* SCL (PB6) und SDA (PB7) als Open-Drain-Ausgang. Haelt der Sensor SDA
-     * fest, mit bis zu 9 Takten auf SCL freitakten, danach ein STOP. */
-    GPIO_InitTypeDef g = {0};
-    g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
-    g.Mode = GPIO_MODE_OUTPUT_OD;
-    g.Pull = GPIO_PULLUP;
-    g.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6 | GPIO_PIN_7, GPIO_PIN_SET);
-    HAL_GPIO_Init(GPIOB, &g);
-    delay_us(5);
-
-    for (int i = 0; i < 9 && HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) == GPIO_PIN_RESET; i++)
-    {
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-        delay_us(5);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-        delay_us(5);
-    }
-
-    /* STOP: SDA geht hoch, waehrend SCL hoch ist */
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-    delay_us(5);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
-    delay_us(5);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-    delay_us(5);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
-    delay_us(5);
-
-    /* Peripherie komplett zuruecksetzen - das loescht auch ein haengendes
-     * BUSY-Flag - und neu einrichten (Pins wieder auf I2C) */
-    __HAL_RCC_I2C1_FORCE_RESET();
-    __HAL_RCC_I2C1_RELEASE_RESET();
-    (void)I2C1_Setup();
-
-    __HAL_I2C_CLEAR_FLAG(&hi2c1, I2C_FLAG_AF);
-    HAL_NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
-    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
-
-    /* Hatte der Sensor die Spannung verloren, ist er wieder im Schlafmodus
-     * und muss neu eingestellt werden. Das blockiert kurz, deshalb nur
-     * disarmed und nur bei freiem Bus (sonst warten die HAL-Aufrufe je 25 ms). */
-    if (!Motor_IsArmed() && __HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY) == RESET)
-    {
-        HAL_IWDG_Refresh(&hiwdg);
-        (void)MPU6050_InitTimeout(&hi2c1, 3);
-        HAL_IWDG_Refresh(&hiwdg);
-    }
-
-    MPU6050_BlockReads(0);
 }
 
 /* USART1 fuer den ELRS-Empfaenger: PA9 = TX, PA10 = RX, 420000 Baud */
@@ -554,6 +477,35 @@ static void USART2_Init(void)
 
     HAL_NVIC_SetPriority(USART2_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(USART2_IRQn);
+}
+
+/* USART3 fuer das GPS: PB10 = TX, PB11 = RX */
+static void USART3_Init(void)
+{
+    __HAL_RCC_USART3_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+
+    GPIO_InitTypeDef g = {0};
+    g.Pin = GPIO_PIN_10 | GPIO_PIN_11;
+    g.Mode = GPIO_MODE_AF_PP;
+    g.Pull = GPIO_PULLUP;
+    g.Speed = GPIO_SPEED_FREQ_HIGH;
+    g.Alternate = GPIO_AF7_USART3;
+    HAL_GPIO_Init(GPIOB, &g);
+
+    huart3.Instance = USART3;
+    huart3.Init.BaudRate = GPS_BAUD;
+    huart3.Init.WordLength = UART_WORDLENGTH_8B;
+    huart3.Init.StopBits = UART_STOPBITS_1;
+    huart3.Init.Parity = UART_PARITY_NONE;
+    huart3.Init.Mode = UART_MODE_TX_RX;
+    huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+    if (HAL_UART_Init(&huart3) != HAL_OK)
+        Error_Handler();
+
+    HAL_NVIC_SetPriority(USART3_IRQn, 6, 0);
+    HAL_NVIC_EnableIRQ(USART3_IRQn);
 }
 
 /* TIM2 als Regeltakt: 84 MHz / 84 = 1 MHz Tick, 1000 Ticks = 1 ms = 1000 Hz */

@@ -4,13 +4,16 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 
 | Teil | Anschluss |
 |---|---|
-| Gyro/Accel | MPU6050 an I2C1 (PB6 SCL, PB7 SDA), 400 kHz |
-| Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PA6, M4 = PA7; 143,5–229 µs (BLHeli_S ab Werk), Stopp 125 µs |
+| Gyro/Accel | ICM-42688-P an SPI1 (PA4 CS, PA5 SCK, PA6 MISO, PA7 MOSI), 10,5 MHz |
+| Barometer | BMP388 an I2C1 (PB6 SCL, PB7 SDA), Adresse 0x76, 400 kHz |
+| Kompass | QMC5883L an I2C1, Adresse 0x0D |
+| GPS | ATGM336H-6N-74 an USART3 (PB10 TX, PB11 RX), 115200 Baud, NMEA |
+| Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PC6, M4 = PC7; 143,5–229 µs (BLHeli_S ab Werk), Stopp 125 µs |
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
 | Kanäle | 1 Roll, 2 Pitch, 3 Gas, 4 Yaw, 7 Modus Angle/Rate, **8 Arm-Schalter (AUX4)** |
 | Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
 | Akkuspannung | PC0 (ADC1 Kanal 10), Teiler 11:1 |
-| Strom | PA4 (ADC2 Kanal 4), Stromausgang „C“ des ESC – höchstens 3,3 V! |
+| Strom | PC1 (ADC2 Kanal 11), Stromausgang „C“ des ESC – höchstens 3,3 V! |
 
 Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 
@@ -21,25 +24,26 @@ Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 > RadioMaster T8L aber keinem Schalter zuordnen – siehe „Arm-Schalter und
 > ELRS“ unter „Failsafe“. Kanal in `RC_CH_ARM` (`Sensors/rc.h`).
 
-## Verdrahtung (eigener Aufbau mit MPU6050)
+## Verdrahtung (eigene Platine)
 
 Alle Massen (GND) sind miteinander verbunden: Akku-Minus über den ESC, die
-Flugsteuerung, Empfänger, MPU6050 und der USB-Seriell-Adapter. **Beim Löten
+Flugsteuerung, Empfänger und der USB-Seriell-Adapter. **Beim Löten
 und Anstecken immer zuerst GND verbinden**, dann die Signale.
 
 ### Übersicht
 
 | Von | An STM32 | Hinweis |
 |---|---|---|
-| ESC M1 / M2 / M3 / M4 | PB0 / PB1 / PA6 / PA7 | je 10 kΩ nach GND empfohlen (siehe unten) |
+| ESC M1 / M2 / M3 / M4 | PB0 / PB1 / PC6 / PC7 | je 10 kΩ nach GND empfohlen (siehe unten) |
 | ESC GND | GND | gemeinsame Masse, Pflicht |
-| ESC Strom „C“/„CUR“ | PA4 über 4,7 kΩ, 100 nF nach GND | höchstens 3,3 V am Pin |
+| ESC Strom „C“/„CUR“ | PC1 über 4,7 kΩ, 100 nF nach GND | höchstens 3,3 V am Pin |
 | Akku+ (z. B. ESC-Pin „V“/„VBAT“) | PC0 über Teiler 10 kΩ / 1 kΩ, 100 nF | Teiler 11:1 |
 | ELRS TX | PA10 (USART1 RX) | |
 | ELRS RX | PA9 (USART1 TX) | für die Akku-Telemetrie |
 | ELRS 5V / GND | 5 V / GND | |
-| MPU6050 SCL / SDA | PB6 / PB7 | Breakout mit Pull-ups (GY-521: 4,7 kΩ) |
-| MPU6050 VCC / GND | 3,3 V / GND | Bauteilseite oben, X-Pfeil nach vorne |
+| ICM-42688-P CS / SCK / MISO / MOSI | PA4 / PA5 / PA6 / PA7 (SPI1) | auf der Platine |
+| BMP388 und QMC5883L SCL / SDA | PB6 / PB7 (I2C1) | auf der Platine |
+| GPS TXD / RXD | PB11 / PB10 (USART3) | auf der Platine |
 | USB-Seriell RX / TX | PA2 / PA3 (USART2) | 3,3-V-Pegel, 115200 Baud |
 
 ### 1. Akkuspannung an PC0
@@ -70,7 +74,7 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
 - Nach dem ersten Anstecken mit einem Multimeter die Akkuspannung messen
   und `batcal <volt>` eingeben.
 
-### 2. Stromeingang PA4 schützen
+### 2. Stromeingang PC1 schützen
 
 ```
  ESC "C" / "CUR"
@@ -79,7 +83,7 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
        │ │ R3  4,7 kΩ
        └┬┘
         │
-        ├──────────────────────── PA4  (ADC2, Kanal 4)
+        ├──────────────────────── PC1  (ADC2, Kanal 11)
         │
       ──┴──
       ─────  C2  100 nF, Keramik X7R
@@ -87,15 +91,15 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
  GND ───┴──────────────────────── GND STM32
 ```
 
-- **R3 = 4,7 kΩ in Reihe, C2 = 100 nF von PA4 nach GND**, beide direkt am Pin.
+- **R3 = 4,7 kΩ in Reihe, C2 = 100 nF von PC1 nach GND**, beide direkt am Pin.
   Zusammen ein Tiefpass mit etwa 340 Hz: Er glättet die PWM-Welligkeit des
   ESC (24/48 kHz), und R3 begrenzt den Strom, falls der Ausgang doch über
   3,3 V geht.
-- PA4 ist **nicht 5-V-fest**. Deshalb vorher messen (siehe Punkt 3). Kann
+- PC1 verträgt als Analogeingang **höchstens 3,3 V**. Deshalb vorher messen (siehe Punkt 3). Kann
   der Ausgang über 3,0 V gehen, statt R3 allein einen Teiler einbauen:
 
 ```
- ESC "C" ──[ 10 kΩ ]──┬── PA4
+ ESC "C" ──[ 10 kΩ ]──┬── PC1
                       ├──[ 20 kΩ ]── GND
                       └──|| 100 nF ── GND
 ```
@@ -133,7 +137,7 @@ Telemetrie.
 ### 4. Motorsignale
 
 ```
- PB0 ──┬──── ESC M1        (ebenso PB1→M2, PA6→M3, PA7→M4)
+ PB0 ──┬──── ESC M1        (ebenso PB1→M2, PC6→M3, PC7→M4)
        │
       ┌┴┐
       │ │ 10 kΩ nach GND (empfohlen)
@@ -155,7 +159,7 @@ sie in dieser Zeit sicher auf Low.
 | Widerstand 1 % | 1 kΩ | 1 | R2 Akkuteiler |
 | Widerstand | 4,7 kΩ | 1 | R3 Strom |
 | Widerstand | 10 kΩ | 4 | Pull-down Motorsignale |
-| Keramikkondensator X7R | 100 nF | 2 | C1 an PC0, C2 an PA4 |
+| Keramikkondensator X7R | 100 nF | 2 | C1 an PC0, C2 an PC1 |
 | optional Widerstand | 10 kΩ + 20 kΩ | je 1 | Teiler am Strom, falls > 3,0 V |
 
 ## ESC und Motorsignal (BLHeli_S)
@@ -250,8 +254,8 @@ Motorbelegung, Blick von oben:
 
 ### Einbaulage des Sensors
 
-Der MPU6050 liegt mit der Bauteilseite nach oben. In `Sensors/mpu6050.h`
-wird eingestellt, wohin der X-Pfeil auf dem Sensor-Board zeigt:
+Der ICM-42688-P liegt mit der Bauteilseite nach oben. In `Sensors/icm42688.h`
+wird eingestellt, wohin die X-Achse des Chips zeigt. Das hängt vom Layout ab:
 
 ```c
 #define IMU_ALIGN IMU_X_VORNE   /* oder IMU_X_RECHTS, IMU_X_HINTEN, IMU_X_LINKS */
@@ -477,7 +481,7 @@ Gilt für den Arm-Schalter und für `arm` im Terminal (`Sensors/arming.c`):
 
 | Bedingung | Grenze |
 |---|---|
-| Sensor | MPU6050 erkannt, nicht ausgefallen, seit 0,5 s fehlerfrei |
+| Sensor | ICM-42688-P erkannt, nicht ausgefallen, seit 0,5 s fehlerfrei |
 | Neigung | Roll und Pitch jeweils höchstens 25° (`ARM_MAX_TILT_DEG`) |
 | Akku | Spannung erkannt und mindestens 3,50 V pro Zelle (`BAT_WARN_V`) |
 | Gas | Knüppel unter 5 % (nur Arm-Schalter) |
@@ -514,14 +518,16 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
 
 ## Sensorausfall, Watchdog und Fehler
 
-- Der MPU6050 wird jede Millisekunde per Interrupt gelesen, ohne die
-  Regelschleife zu blockieren. Einzelne Lesefehler überbrückt die Regelung
-  mit den letzten Werten.
+- Der ICM-42688-P wird jede Millisekunde per SPI gelesen, das dauert rund
+  12 µs. Einzelne Lesefehler überbrückt die Regelung mit den letzten Werten.
 - 20 Fehler in Folge (20 ms) oder 100 exakt gleiche Messungen hintereinander
   (eingefrorene Werte, 100 ms): Der Sensor gilt als ausgefallen, die Motoren
   gehen sofort aus. Wieder armen lässt sich erst nach 0,5 s fehlerfreiem Lesen.
-- Scheitert das Lesen dreimal in Folge, setzt die Firmware den I2C-Bus und
-  die Peripherie neu auf (höchstens alle 20 ms).
+- Scheitert das Lesen dreimal in Folge, richtet die Firmware den Sensor neu
+  ein (nur disarmed, höchstens alle 100 ms).
+- Barometer, Kompass und GPS fließen nicht in die Regelung ein. Ihr Ausfall
+  sperrt weder das Armen noch stört er den Flug. Der Befehl `sens` zeigt ihre
+  Werte und Fehlerzähler.
 - Watchdog (IWDG): Läuft der Regelzyklus etwa 100 ms lang nicht (je nach
   Toleranz des internen Oszillators 68–188 ms), startet der Prozessor neu.
   Danach sind die Motoren aus. Beim Start meldet das Terminal
@@ -538,7 +544,7 @@ Der Filter startet beim Anstecken mit dem ersten Messwert. Nach 0,5 s wird
 die Zellenzahl bestimmt (3,3–4,38 V pro Zelle, also auch HV-LiPo voll) und bleibt dann fest. Bei
 teilentladenen 5S/6S-Akkus ist das nicht eindeutig (ein 6S mit 3,5 V/Zelle
 sieht aus wie ein voller 5S). Wer immer denselben Akkutyp fliegt, trägt die
-Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein.
+Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein. Voreingestellt sind 6S.
 
 **Warnung und Gasbegrenzung:**
 
@@ -558,10 +564,10 @@ Sekunde, damit die Drohne nicht absackt. Werte in `battery.h`.
 Spannung, Strom, verbrauchte mAh und eine grobe Restladung an den
 ELRS-Empfänger. Am Sender unter Telemetrie „Sensoren suchen“; danach gibt es
 die Sensoren RxBt, Curr, Capa und Bat%. Für eine Ansage bei niedrigem Akku
-dort eine Warnschwelle (z. B. RxBt < 14,0 V bei 4S) oder eine
+dort eine Warnschwelle (z. B. RxBt < 21,0 V bei 6S) oder eine
 Spezialfunktion einstellen.
 
-**Strom:** Stromausgang „C“ des 4in1-ESC an PA4. PA4 verträgt höchstens
+**Strom:** Stromausgang „C“ des 4in1-ESC an PC1. PC1 verträgt höchstens
 3,3 V – vor dem Anschließen am Ausgang messen (Akku dran, Motoren aus und
 unter Last). Schutzbeschaltung (4,7 kΩ in Reihe, 100 nF nach Masse) siehe
 „Verdrahtung“, Punkt 2.

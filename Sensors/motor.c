@@ -7,8 +7,8 @@ static uint8_t armed = 0;
 static const uint32_t motor_ch[MOTOR_COUNT] = {
     TIM_CHANNEL_3, /* Motor 1 -> PB0 */
     TIM_CHANNEL_4, /* Motor 2 -> PB1 */
-    TIM_CHANNEL_1, /* Motor 3 -> PA6 */
-    TIM_CHANNEL_2  /* Motor 4 -> PA7 */
+    TIM_CHANNEL_1, /* Motor 3 -> PC6 */
+    TIM_CHANNEL_2  /* Motor 4 -> PC7 */
 };
 
 /* Schreibt direkt ins Timer-Register, ohne Pruefung. Nur intern!
@@ -23,8 +23,8 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     motor_tim = htim;
 
     __HAL_RCC_TIM3_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
 
     GPIO_InitTypeDef g = {0};
     g.Mode = GPIO_MODE_AF_PP;
@@ -36,9 +36,9 @@ void Motor_Init(TIM_HandleTypeDef *htim)
     g.Pin = GPIO_PIN_0 | GPIO_PIN_1;
     HAL_GPIO_Init(GPIOB, &g);
 
-    /* PA6 = M3, PA7 = M4 */
+    /* PC6 = M3, PC7 = M4 */
     g.Pin = GPIO_PIN_6 | GPIO_PIN_7;
-    HAL_GPIO_Init(GPIOA, &g);
+    HAL_GPIO_Init(GPIOC, &g);
 
     /* Timer-Basis: Werte kommen aus motor.h, je nach Protokoll.
      * Oneshot125: 42 MHz Tick, 1 kHz Wiederholrate

@@ -20,7 +20,7 @@
  * denselben Akkutyp fliegt, traegt die Zellenzahl hier fest ein.
  * Erkannt werden 3,3..4,38 V pro Zelle (auch HV-LiPo voll). Hoeher
  * geht nicht: ein leerer 4S (3,3 V) saehe sonst aus wie ein voller 3S. */
-#define BAT_CELLS_DEFAULT 0
+#define BAT_CELLS_DEFAULT 6
 
 /* Warnschwellen pro Zelle */
 #define BAT_WARN_V   3.50f   /* landen */
@@ -37,13 +37,13 @@
 #define BAT_THR_LIMIT_CRIT 60.0f
 #define BAT_THR_SLEW       20.0f
 
-/* Strommessung: Stromausgang "C" des ESC an PA4 (ADC2_IN4).
+/* Strommessung: Stromausgang "C" des ESC an PC1 (ADC2_IN11).
  * Skalierung in mV pro Ampere. Fuer den B-Cube-4in1 gibt es keinen
  * gesicherten Wert - 12,75 mV/A nennt B-Cube fuer seinen AM32-4in1, ueblich
  * sind 12..40 mV/A. Mit 'curcal <ampere>' kalibrieren (siehe README).
  * Der Nullpunkt wird beim Anstecken des Akkus automatisch gemessen
  * (disarmed, Motoren stehen) oder mit 'curzero'.
- * Achtung: PA4 vertraegt hoechstens 3,3 V - am Stromausgang vorher messen. */
+ * Achtung: PC1 vertraegt hoechstens 3,3 V - am Stromausgang vorher messen. */
 #define CURR_MV_PER_A_DEFAULT 12.75f
 
 typedef enum

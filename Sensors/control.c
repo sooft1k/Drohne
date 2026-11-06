@@ -77,7 +77,7 @@ void Control_SetMode(FlightMode_t mode)
     }
 }
 
-void Control_Update(MPU6050_Data_t *s, float dt, uint8_t saturated,
+void Control_Update(ICM42688_Data_t *s, float dt, uint8_t saturated,
                     float *out_roll, float *out_pitch, float *out_yaw)
 {
     /* I-Anteil nur bei anliegendem Gas - sonst laeuft der Integrator

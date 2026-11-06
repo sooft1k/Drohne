@@ -17,8 +17,8 @@
  *   Pitch nach vorne    -> Pitch -  (Nase runter, Drohne fliegt vorwaerts)
  *   Yaw   rechts        -> Yaw   +
  *
- * Sensor (mpu6050.c): die Chip-Achsen werden je nach Einbaulage
- * (IMU_ALIGN in mpu6050.h) auf diese Koerperachsen umgerechnet.
+ * Sensor (icm42688.c): die Chip-Achsen werden je nach Einbaulage
+ * (IMU_ALIGN in icm42688.h) auf diese Koerperachsen umgerechnet.
  *
  * Mixer (unten):
  *   Roll  +  -> rechte Motoren (M1, M2) weniger, linke (M3, M4) mehr

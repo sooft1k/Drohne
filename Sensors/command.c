@@ -2,11 +2,13 @@
 #include "motor.h"
 #include "control.h"
 #include "mixer.h"
-#include "mpu6050.h"
+#include "icm42688.h"
 #include "battery.h"
 #include "crsf.h"
 #include "rc.h"
 #include "arming.h"
+#include "auxsens.h"
+#include "gps.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,7 +18,7 @@
 /* aus main.c */
 extern uint32_t loop_hz;
 extern volatile uint32_t loop_missed;
-extern uint8_t mpu_ok;
+extern uint8_t imu_ok;
 
 static UART_HandleTypeDef *cmd_uart = 0;
 static uint8_t rx_char;
@@ -214,8 +216,8 @@ void Command_Process(void)
         printf("   Stream: %s | Loop: %lu Hz | Motoren: %lu Hz\r\n",
                stream_on ? "AN" : "AUS", loop_hz, Motor_UpdateRateHz());
         printf("   Sensor: %s | Lesefehler bisher: %lu | Arming: %s\r\n",
-               !mpu_ok ? "FEHLT" : (MPU6050_Failed() ? "AUSGEFALLEN" : (MPU6050_Healthy() ? "OK" : "nicht bereit")),
-               MPU6050_ErrorCount(), Arming_Text(Arming_Check()));
+               !imu_ok ? "FEHLT" : (ICM42688_Failed() ? "AUSGEFALLEN" : (ICM42688_Healthy() ? "OK" : "nicht bereit")),
+               ICM42688_ErrorCount(), Arming_Text(Arming_Check()));
         if (Arming_BatBypass())
             printf("   %s\r\n", ARM_BAT_BYPASS_WARNUNG);
     }
@@ -223,6 +225,13 @@ void Command_Process(void)
     {
         printf(">> Regeltakt: %lu Hz | verpasste Zyklen: %lu\r\n",
                loop_hz, loop_missed);
+    }
+
+    /* ---------- Baro, Kompass, GPS ---------- */
+    else if (strcmp(line, "sens") == 0)
+    {
+        AuxSens_Print();
+        GPS_Print();
     }
 
     /* ---------- Funkempfang ---------- */
@@ -299,28 +308,28 @@ void Command_Process(void)
      * Muss VOR dem PID-Block stehen, sonst wird 'alpf' als Angle-Befehl gelesen. */
     else if (strcmp(line, "filt") == 0)
     {
-        printf(">> Gyro-Tiefpass : %.0f Hz\r\n", MPU6050_GetGyroLPF());
-        printf(">> Accel-Tiefpass: %.0f Hz\r\n", MPU6050_GetAccelLPF());
-        printf(">> Komplementaer : tau %.2f s\r\n", MPU6050_GetCompTau());
+        printf(">> Gyro-Tiefpass : %.0f Hz\r\n", ICM42688_GetGyroLPF());
+        printf(">> Accel-Tiefpass: %.0f Hz\r\n", ICM42688_GetAccelLPF());
+        printf(">> Komplementaer : tau %.2f s\r\n", ICM42688_GetCompTau());
     }
     else if (strncmp(line, "glpf ", 5) == 0)
     {
         float v = strtof(line + 5, 0);
-        MPU6050_SetGyroLPF(v);
-        printf(">> Gyro-Tiefpass: %.0f Hz%s\r\n", MPU6050_GetGyroLPF(),
+        ICM42688_SetGyroLPF(v);
+        printf(">> Gyro-Tiefpass: %.0f Hz%s\r\n", ICM42688_GetGyroLPF(),
                (v <= 0.0f) ? " (aus)" : "");
     }
     else if (strncmp(line, "alpf ", 5) == 0)
     {
         float v = strtof(line + 5, 0);
-        MPU6050_SetAccelLPF(v);
-        printf(">> Accel-Tiefpass: %.0f Hz\r\n", MPU6050_GetAccelLPF());
+        ICM42688_SetAccelLPF(v);
+        printf(">> Accel-Tiefpass: %.0f Hz\r\n", ICM42688_GetAccelLPF());
     }
     else if (strncmp(line, "tau ", 4) == 0)
     {
         float v = strtof(line + 4, 0);
-        MPU6050_SetCompTau(v);
-        printf(">> Komplementaerfilter tau: %.2f s\r\n", MPU6050_GetCompTau());
+        ICM42688_SetCompTau(v);
+        printf(">> Komplementaerfilter tau: %.2f s\r\n", ICM42688_GetCompTau());
     }
 
     /* ---------- Flugmodus ---------- */
@@ -445,7 +454,7 @@ void Command_Process(void)
     else
     {
         printf(">> Unbekannt: '%s'\r\n", line);
-        printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc |\r\n");
+        printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc | sens |\r\n");
         printf(">> angle | rate | stream on/off | kipp | t <gas> |\r\n");
         printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt> |\r\n");
         printf(">> curzero | curcal <ampere> | batbypass [off]\r\n");
@@ -461,6 +470,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         Command_RxByte();
     else if (huart->Instance == USART1)
         CRSF_RxByte();
+    else if (huart->Instance == USART3)
+        GPS_RxByte();
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -469,4 +480,6 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
         Command_RxError();
     else if (huart->Instance == USART1)
         CRSF_RxError();
+    else if (huart->Instance == USART3)
+        GPS_RxError();
 }

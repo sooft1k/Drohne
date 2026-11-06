@@ -2,7 +2,7 @@
 #define CONTROL_H
 
 #include "pid.h"
-#include "mpu6050.h"
+#include "icm42688.h"
 
 /* Flugmodus */
 typedef enum
@@ -42,7 +42,7 @@ void Control_Reset(void);
 /* dt: gemessene Zeit seit dem letzten Aufruf in Sekunden.
  * saturated: Mixer konnte die Korrekturen im letzten Zyklus nicht voll
  * umsetzen (Mixer_IsSaturated) - dann waechst kein I-Anteil weiter. */
-void Control_Update(MPU6050_Data_t *s, float dt, uint8_t saturated,
+void Control_Update(ICM42688_Data_t *s, float dt, uint8_t saturated,
                     float *out_roll, float *out_pitch, float *out_yaw);
 
 void Control_SetMode(FlightMode_t mode);

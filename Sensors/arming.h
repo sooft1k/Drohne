@@ -12,7 +12,7 @@
 typedef enum
 {
     ARM_OK = 0,
-    ARM_KEIN_SENSOR, /* MPU6050 fehlt, ausgefallen oder liefert noch nicht stabil */
+    ARM_KEIN_SENSOR, /* ICM-42688-P fehlt, ausgefallen oder liefert noch nicht stabil */
     ARM_NEIGUNG,     /* Drohne steht zu schief */
     ARM_KEIN_AKKU,   /* keine Akkuspannung erkannt */
     ARM_AKKU_LEER,   /* Akku unter der Warnschwelle */

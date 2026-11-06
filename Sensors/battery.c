@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 static ADC_HandleTypeDef hadc1; /* Akkuspannung, PC0 */
-static ADC_HandleTypeDef hadc2; /* Strom, PA4 */
+static ADC_HandleTypeDef hadc2; /* Strom, PC1 */
 
 static float volt = 0.0f;  /* gefilterte Akkuspannung */
 static float scale = 1.0f; /* Korrekturfaktor aus der Kalibrierung */
@@ -78,7 +78,6 @@ void Battery_Init(void)
 {
     __HAL_RCC_ADC1_CLK_ENABLE();
     __HAL_RCC_ADC2_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
 
     GPIO_InitTypeDef g = {0};
@@ -86,11 +85,11 @@ void Battery_Init(void)
     g.Pull = GPIO_NOPULL;
     g.Pin = GPIO_PIN_0; /* PC0: Akkuspannung */
     HAL_GPIO_Init(GPIOC, &g);
-    g.Pin = GPIO_PIN_4; /* PA4: Strom */
-    HAL_GPIO_Init(GPIOA, &g);
+    g.Pin = GPIO_PIN_1; /* PC1: Strom */
+    HAL_GPIO_Init(GPIOC, &g);
 
     adc_init(&hadc1, ADC1, ADC_CHANNEL_10);
-    adc_init(&hadc2, ADC2, ADC_CHANNEL_4);
+    adc_init(&hadc2, ADC2, ADC_CHANNEL_11);
 
     volt = 0.0f;
     cells = 0;
