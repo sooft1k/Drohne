@@ -2,6 +2,9 @@
 
 Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 
+Dieser Branch gilt für den Aufbau mit MPU6050. Die Firmware für die neue Platine
+liegt auf dem Branch `fc-platine`.
+
 | Teil | Anschluss |
 |---|---|
 | Gyro/Accel | MPU6050 an I2C1 (PB6 SCL, PB7 SDA), 400 kHz |
@@ -11,6 +14,7 @@ Eigene Flugsteuerung für einen Quadrocopter mit STM32F405RGT6 (STM32-HAL).
 | Terminal | USART2 (PA2 TX, PA3 RX), 115200 Baud |
 | Akkuspannung | PC0 (ADC1 Kanal 10), Teiler 11:1 |
 | Strom | PA4 (ADC2 Kanal 4), Stromausgang „C“ des ESC – höchstens 3,3 V! |
+| Status-LED | PC13, aktiv-low (Low = an) |
 
 Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
 
@@ -38,7 +42,7 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
 | ELRS TX | PA10 (USART1 RX) | |
 | ELRS RX | PA9 (USART1 TX) | für die Akku-Telemetrie |
 | ELRS 5V / GND | 5 V / GND | |
-| MPU6050 SCL / SDA | PB6 / PB7 | Breakout mit Pull-ups (GY-521: 4,7 kΩ) |
+| MPU6050 SCL / SDA | PB6 / PB7 | Breakout mit Pull-ups (GY-521: meist 4,7 kΩ) |
 | MPU6050 VCC / GND | 3,3 V / GND | Bauteilseite oben, X-Pfeil nach vorne |
 | USB-Seriell RX / TX | PA2 / PA3 (USART2) | 3,3-V-Pegel, 115200 Baud |
 
@@ -62,7 +66,8 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
 
 - **R1 = 10 kΩ, R2 = 1 kΩ**, Metallschicht, 1 %. Teilerfaktor 11:
   25,2 V (6S voll) → 2,29 V an PC0, 16,8 V (4S) → 1,53 V.
-- Leistung in R1 bei 25,2 V: 25,2² / 11 kΩ ≈ 58 mW – 0,25-W-Widerstand reicht.
+- Leistung bei 25,2 V: 25,2² / 11 kΩ ≈ 58 mW im ganzen Teiler, davon rund 52 mW
+  in R1 – 0,25-W-Widerstand reicht.
 - **C1 = 100 nF** direkt an PC0 nach GND, glättet Störungen der Motoren.
 - R2 und C1 möglichst nah am STM32-Pin löten, die lange Leitung kommt an R1.
 - Andere Widerstände gehen auch, dann aber `BAT_R_OBEN` und `BAT_R_UNTEN` in
@@ -121,8 +126,8 @@ Mit dem Multimeter (Akku dran, Propeller ab, Motoren aus):
    Leerlauf) steigt der Wert leicht. Bei 12,75 mV/A macht 1 A nur 13 mV
    aus.
 4. **Höchstwert:** Die Skalierung ist nicht bekannt (12–40 mV/A üblich). Bei
-   40 mV/A wären 3,3 V schon bei 82 A erreicht – das schafft ein 5-Zoll-Quad
-   bei Vollgas. Deshalb prüfen, woher der Verstärker seine Versorgung
+   40 mV/A wären 3,3 V schon bei 82 A erreicht – das kann ein 5-Zoll-Quad
+   bei Vollgas erreichen. Deshalb prüfen, woher der Verstärker seine Versorgung
    bekommt: Ist auf der ESC-Platine nur eine 3,3-V-Schiene in der Nähe,
    kann der Ausgang nicht über 3,3 V gehen. Ist es 5 V, den Teiler aus
    Punkt 2 nehmen.
@@ -142,9 +147,8 @@ Telemetrie.
 ```
 
 Nach einem Reset sind die STM32-Pins einige Millisekunden lang offen. Liegt
-eine Signalleitung dabei länger als etwa 15 ms auf High, während der ESC
-startet, springt BLHeli_S in seinen Bootloader und reagiert nicht mehr, bis
-das Signal wieder läuft. Ein 10-kΩ-Widerstand nach GND an jeder Leitung hält
+eine Signalleitung dabei auf High, während der ESC startet, kann BLHeli_S in
+seinen Bootloader springen und erst wieder reagieren, wenn das Signal läuft. Ein 10-kΩ-Widerstand nach GND an jeder Leitung hält
 sie in dieser Zeit sicher auf Low.
 
 ### Bauteilliste
@@ -297,7 +301,7 @@ Vor jedem Erstflug und nach jeder Änderung an Sensor, Mixer oder Verkabelung.
 8. `angle` eingeben (bei verbundener Funke: Modus-Schalter auf Angle),
    dann `kipp`. Das zeigt fünfmal pro Sekunde, was der Mixer bei 50 % Gas
    ausgeben würde. Die Motoren bleiben aus. Flach liegend stehen alle vier
-   Werte etwa gleich (57,5).
+   Werte etwa gleich (52,5).
 9. Nase etwa 20° nach unten drücken: **M2 und M4 (vorne) höher** als M1 und
    M3. Der Regler will die Nase wieder anheben.
 10. Rechte Seite etwa 20° nach unten: **M1 und M2 (rechts) höher** als M3 und M4.
@@ -322,9 +326,9 @@ Konvention oben. Der Fehler liegt dann woanders (Einbaulage, Verkabelung).
     Arm-Schalter hoch: Alle vier Motoren laufen im Leerlauf. Drehrichtung
     jedes Motors prüfen (Klebeband-Fähnchen auf der Glocke), von oben gesehen:
     M1 hinten rechts CW, M2 vorne rechts CCW, M3 hinten links CCW,
-    M4 vorne links CW. Dreht ein Motor falsch herum: im ESC-Configurator
-    („Motor Direction“) umstellen oder zwei der drei Motordrähte tauschen –
-    nie die Vorzeichen im Mixer ändern.
+    M4 vorne links CW. Dreht ein Motor falsch herum: zwei der drei
+    Motordrähte tauschen oder, mit einem BLHeli-Linker, im ESC-Configurator
+    („Motor Direction“) umstellen – nie die Vorzeichen im Mixer ändern.
 16. Modus Angle, Gas auf etwa 30 %, Drohne gut festhalten:
     - Nase nach unten kippen → die vorderen Motoren laufen schneller.
     - Rechte Seite nach unten → die rechten Motoren laufen schneller.
@@ -460,7 +464,7 @@ fliegt.
   25 % Stellbereich), unabhängig von Ki. Er wächst nicht weiter, solange der
   Reglerausgang am Limit steht oder der Mixer die Korrekturen stauchen muss
   (Anti-Windup). Integriert wird erst, wenn die Drohne fliegt: Airmode an
-  (Gas seit dem Armen einmal über 25 %) und Gas über 10 %. Am Boden lädt
+  (Gas seit dem Armen einmal mindestens 25 %) und Gas über 10 %. Am Boden lädt
   sich der I-Anteil so nicht gegen eine Schräglage auf.
 - Moduswechsel Angle/Rate setzt nur den Winkelregler zurück, der I-Anteil
   des Drehratenreglers bleibt.
@@ -514,9 +518,10 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
 
 ## Sensorausfall, Watchdog und Fehler
 
-- Der MPU6050 wird jede Millisekunde per Interrupt gelesen, ohne die
-  Regelschleife zu blockieren. Einzelne Lesefehler überbrückt die Regelung
-  mit den letzten Werten.
+- Der MPU6050 wird jede Millisekunde per Interrupt gelesen. Die Regelschleife
+  wartet auf das Ergebnis, höchstens bis 800 µs nach dem Takt
+  (`IMU_DEADLINE_US`), danach zählt es als Lesefehler. Einzelne Lesefehler
+  überbrückt die Regelung mit den letzten Werten.
 - 20 Fehler in Folge (20 ms) oder 100 exakt gleiche Messungen hintereinander
   (eingefrorene Werte, 100 ms): Der Sensor gilt als ausgefallen, die Motoren
   gehen sofort aus. Wieder armen lässt sich erst nach 0,5 s fehlerfreiem Lesen.
@@ -527,9 +532,10 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
   Danach sind die Motoren aus. Beim Start meldet das Terminal
   `Letzter Neustart durch den Watchdog`, wenn das passiert ist. Der Watchdog
   läuft erst ab `>> Bereit.`, also nach der Gyro-Kalibrierung.
-- Fault-Handler, `Error_Handler` und `assert_failed` setzen als Erstes alle
-  vier Motorpulse auf Stopp. Der Motortimer läuft sonst in Hardware weiter
-  und gibt endlos den letzten Gaswert aus.
+- Fault-Handler und `Error_Handler` setzen als Erstes alle vier Motorpulse auf
+  Stopp. Der Motortimer läuft sonst in Hardware weiter und gibt endlos den
+  letzten Gaswert aus. `assert_failed` macht das ebenso, ist aber nur mit
+  `USE_FULL_ASSERT` aktiv, und das ist im aktuellen Build aus.
 
 ## Akku und Strom
 
@@ -547,6 +553,7 @@ Zellenzahl fest in `BAT_CELLS_DEFAULT` (`Sensors/battery.h`) ein.
 | OK | ab 3,50 V | 100 % | blinkt mit 2 Hz |
 | Warnung | unter 3,50 V | 80 % | blinkt mit 5 Hz |
 | Kritisch | unter 3,30 V | 60 % | blinkt mit 12,5 Hz |
+| Kein Akku erkannt | – | Armen gesperrt | blinkt mit 2 Hz |
 | Sensor fehlt / Kalibrierung gescheitert | – | Armen gesperrt | leuchtet dauernd |
 
 Gearmt zählt ein Zustand erst, wenn die Spannung 2 s lang unter der
@@ -558,7 +565,7 @@ Sekunde, damit die Drohne nicht absackt. Werte in `battery.h`.
 Spannung, Strom, verbrauchte mAh und eine grobe Restladung an den
 ELRS-Empfänger. Am Sender unter Telemetrie „Sensoren suchen“; danach gibt es
 die Sensoren RxBt, Curr, Capa und Bat%. Für eine Ansage bei niedrigem Akku
-dort eine Warnschwelle (z. B. RxBt < 14,0 V bei 4S) oder eine
+dort eine Warnschwelle (z. B. RxBt < 21,0 V bei 6S oder 14,0 V bei 4S) oder eine
 Spezialfunktion einstellen.
 
 **Strom:** Stromausgang „C“ des 4in1-ESC an PA4. PA4 verträgt höchstens
@@ -585,8 +592,8 @@ Die Skalierung ist für den B-Cube-4in1 nicht gesichert. Voreingestellt sind
    `curcal <ampere>` – das geht auch gearmt. Gearmt antwortet das Terminal
    nicht; nach `disarm` zeigt `bat` den neuen mV/A-Wert.
 
-`batcal` nimmt nur Werte an, die höchstens 20 % von der Messung abweichen
-(sonst Tippfehler oder falsche Widerstände). Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
+`batcal` nimmt nur Werte an, die zwischen 20 % unter und 25 % über der Messung
+liegen (sonst Tippfehler oder falsche Widerstände). Beide Kalibrierungen (`batcal`, `curcal`) liegen nur im RAM und sind nach
 einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 `CURR_MV_PER_A_DEFAULT` eintragen.
 
