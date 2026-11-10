@@ -10,7 +10,7 @@ und noch nicht auf der Platine getestet.
 | Gyro/Accel | ICM-42688-P an SPI1 (PA4 CS, PA5 SCK, PA6 MISO, PA7 MOSI), 10,5 MHz |
 | Barometer | BMP388 an I2C1 (PB6 SCL, PB7 SDA), Adresse 0x76, 400 kHz |
 | Kompass | QMC5883L an I2C1, Adresse 0x0D |
-| Abstand (ToF) | VL53L1X an I2C3 (PA8 SCL, PC9 SDA), Adresse 0x29, 400 kHz; XSHUT PC8, Interrupt PC2 |
+| Abstand (ToF) | 5× VL53L1X an I2C3 (PA8 SCL, PC9 SDA), Adressen 0x30–0x34, 400 kHz; je eigenes XSHUT und Interrupt |
 | GPS | ATGM336H-6N-74 an USART3 (PB10 TX, PB11 RX), 115200 Baud, NMEA |
 | Motoren | TIM3, Oneshot125: M1 = PB0, M2 = PB1, M3 = PC6, M4 = PC7; 143,5–229 µs (BLHeli_S ab Werk), Stopp 125 µs |
 | Funk | ELRS-Empfänger, CRSF 420000 Baud an USART1 (PA9 TX, PA10 RX) |
@@ -53,7 +53,9 @@ und Anstecken immer zuerst GND verbinden**, dann die Signale.
 | ELRS 5V / GND | 5 V / GND | |
 | ICM-42688-P CS / SCK / MISO / MOSI | PA4 / PA5 / PA6 / PA7 (SPI1) | auf der Platine |
 | BMP388 und QMC5883L SCL / SDA | PB6 / PB7 (I2C1) | auf der Platine |
-| VL53L1X SCL / SDA / XSHUT / GPIO1 | PA8 / PC9 / PC8 / PC2 (I2C3) | auf der Platine, Pullups 4,7 kΩ (I2C) und 10 kΩ |
+| VL53L1X SCL / SDA | PA8 / PC9 (I2C3) | auf der Platine, Pullups 4,7 kΩ (R16, R17) |
+| VL53L1X XSHUT 1–5 | PC8, PB12, PB13, PB14, PB15 | je 10 kΩ nach 3,3 V |
+| VL53L1X GPIO1 (INT) 1–5 | PC2, PB4, PB5, PB8, PB9 | je 10 kΩ nach 3,3 V |
 | GPS TXD / RXD | PB11 / PB10 (USART3) | auf der Platine |
 | USB-Seriell RX / TX | PA2 / PA3 (USART2) | 3,3-V-Pegel, 115200 Baud |
 | Status-LED | PC13 über LED und 1 kΩ an +3,3 V | aktiv-low |
@@ -538,7 +540,7 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
   gehen sofort aus. Wieder armen lässt sich erst nach 0,5 s fehlerfreiem Lesen.
 - Scheitert das Lesen dreimal in Folge, richtet die Firmware den Sensor neu
   ein (nur disarmed, höchstens alle 100 ms).
-- Barometer, Kompass, GPS und der ToF-Sensor fließen nicht in die Regelung
+- Barometer, Kompass, GPS und die ToF-Sensoren fließen nicht in die Regelung
   ein. Ihr Ausfall sperrt weder das Armen noch stört er den Flug. Der Befehl
   `sens` zeigt ihre Werte und Fehlerzähler.
 - Watchdog (IWDG): Läuft der Regelzyklus etwa 100 ms lang nicht (je nach
@@ -551,38 +553,45 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
   letzten Gaswert aus. `assert_failed` macht das ebenso, ist aber nur mit
   `USE_FULL_ASSERT` aktiv, und das ist im aktuellen Build aus.
 
-## ToF-Abstandssensor (VL53L1X)
+## ToF-Abstandssensoren (VL53L1X)
 
-Ein VL53L1X sitzt auf der Platine (U8) und misst per Laser die Entfernung bis
+Fünf VL53L1X sitzen auf der Platine und messen per Laser die Entfernung bis
 etwa 4 m. Treiber: `Sensors/tof.c`, aufgebaut nach dem Ultra Lite Driver (ULD)
 von ST.
 
-- Bus: I2C3 an PA8 (SCL) und PC9 (SDA), 400 kHz, eigener Bus mit eigenen
-  4,7-kΩ-Pullups. Adresse 0x29 (Werkseinstellung).
-- XSHUT an PC8: Die Firmware schaltet den Sensor damit beim Start und bei
-  jedem Neustart einmal aus und wieder ein.
-- GPIO1 (Interrupt) an PC2, aktiv-low: meldet eine neue Messung. Schweigt die
-  Leitung, fragt die Firmware ersatzweise das Statusregister ab.
-- **2V8-Modus**: Sensor und Pullups liegen an 3,3 V. Laut Datenblatt
+| Sensor | Bauteil | XSHUT | INT (GPIO1) | Adresse |
+|---|---|---|---|---|
+| 1 | U8 | PC8 | PC2 | 0x30 |
+| 2 | U9 | PB12 | PB4 | 0x31 |
+| 3 | U10 | PB13 | PB5 | 0x32 |
+| 4 | U12 | PB14 | PB8 | 0x33 |
+| 5 | U11 | PB15 | PB9 | 0x34 |
+
+- Bus: I2C3 an PA8 (SCL) und PC9 (SDA), 400 kHz, eigener Bus. Die
+  4,7-kΩ-Pullups (R16, R17) gibt es nur einmal für alle fünf Sensoren.
+- Adressen: Alle VL53L1X starten mit 0x29. Die Firmware hält beim Start alle
+  XSHUT low, schaltet die Sensoren nacheinander ein und gibt jedem seine
+  eigene Adresse (0x30 bis 0x34). Fällt ein Sensor aus, wird nur er per XSHUT
+  neu gestartet und neu adressiert.
+- INT, aktiv-low: meldet eine neue Messung. Schweigt die Leitung, fragt die
+  Firmware ersatzweise das Statusregister ab.
+- **2V8-Modus**: Sensoren und Pullups liegen an 3,3 V. Laut Datenblatt
   (Tabelle 14) müssen die Pegel an SDA, SCL, XSHUT und GPIO1 dann der
   Versorgung entsprechen. Ab Werk steht der Sensor im 1V8-Modus. Die Firmware
   setzt deshalb Register 0x2E und 0x2F auf 0x01.
-- Messung: Long Distance Mode, 50 ms Messzeit, 20 Messungen pro Sekunde.
-  Gelesen wird per Interrupt im Hintergrund, die Regelung wird nicht
-  ausgebremst.
+- Messung: Long Distance Mode, 50 ms Messzeit, 20 Messungen pro Sekunde je
+  Sensor. Gelesen wird per Interrupt im Hintergrund, reihum, die Regelung
+  wird nicht ausgebremst.
 - Ausfall: Kommt 0,5 s lang keine Messung oder gibt es 10 I2C-Fehler in
-  Folge, gilt der Sensor als ausgefallen. Disarmed versucht die Firmware
+  Folge, gilt ein Sensor als ausgefallen. Disarmed versucht die Firmware
   jede Sekunde einen Neustart. Solange gearmt ist, pausiert die Einrichtung,
-  weil sie jeweils einige Millisekunden blockiert.
-- `tof` zeigt die Entfernung. Ungültige Messungen (kein Ziel, Signal zu
+  weil sie jeweils einige Millisekunden blockiert. Die anderen Sensoren
+  messen weiter.
+- `tof` zeigt alle Entfernungen. Ungültige Messungen (kein Ziel, Signal zu
   schwach, außerhalb des Messbereichs) erscheinen als `---` mit Grund.
-- Im Code: `Tof_DistanceMm(max_alter_ms)` liefert die letzte gültige
-  Entfernung oder 0, wenn keine gültige Messung jünger als `max_alter_ms` ist.
-
-Der Sensor misst nur in die Richtung, in die die Platine zeigt, und braucht
-freie Sicht. Für weitere Sensoren an I2C3 muss jeder ein eigenes XSHUT
-bekommen: Alle VL53L1X starten mit Adresse 0x29 und werden nacheinander
-eingeschaltet und umadressiert.
+- Im Code: `Tof_DistanceMm(sensor, max_alter_ms)` (Sensor 0 bis 4) liefert die
+  letzte gültige Entfernung oder 0, wenn keine gültige Messung jünger als
+  `max_alter_ms` ist.
 
 ## Akku und Strom
 
@@ -657,7 +666,7 @@ einem Neustart weg. Den ermittelten mV/A-Wert dauerhaft in
 | `bat` | Spannung, Zellen, Strom, verbrauchte mAh, Gasgrenze |
 | `loop`, `rc`, `pid`, `mix`, `filt` | Anzeigen |
 | `sens` | Barometer, Kompass, GPS und ToF: Werte und Fehlerzähler |
-| `tof` | ToF-Sensor: Entfernung in mm, Messstatus und Fehlerzähler |
+| `tof` | alle 5 ToF-Sensoren: Entfernung in mm, Messstatus und Fehlerzähler |
 | `angle`, `rate` | Flugmodus |
 | `stream on` / `stream off` | Lage und Drehraten mit 50 Hz ausgeben (nur disarmed) |
 | `kipp` | Kipptest-Anzeige an/aus (nur disarmed) |

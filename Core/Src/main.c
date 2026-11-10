@@ -109,7 +109,7 @@ int main(void)
     printf("GPS: USART3 PB10/PB11, %d Baud\r\n", GPS_BAUD);
     printf("Baro: %s | Kompass: %s\r\n", AuxSens_BaroOk() ? "OK" : "FEHLT",
            AuxSens_MagOk() ? "OK" : "FEHLT");
-    printf("ToF: VL53L1X an I2C3 PA8/PC9, XSHUT PC8, INT PC2: %s\r\n", Tof_Ok() ? "OK" : "FEHLT");
+    printf("ToF: 5x VL53L1X an I2C3 PA8/PC9: %u von %u OK\r\n", Tof_OkCount(), TOF_COUNT);
     printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc | sens | tof |\r\n");
     printf("         angle | rate | stream on/off | kipp | t <gas> | ja |\r\n");
     printf("         rrp/arp <wert> | glpf | alpf | tau | batcal | curzero | curcal\r\n");
