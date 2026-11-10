@@ -8,6 +8,7 @@
 #include "rc.h"
 #include "arming.h"
 #include "auxsens.h"
+#include "tof.h"
 #include "gps.h"
 #include <stdio.h>
 #include <string.h>
@@ -227,11 +228,16 @@ void Command_Process(void)
                loop_hz, loop_missed);
     }
 
-    /* ---------- Baro, Kompass, GPS ---------- */
+    /* ---------- Baro, Kompass, GPS, ToF ---------- */
     else if (strcmp(line, "sens") == 0)
     {
         AuxSens_Print();
         GPS_Print();
+        Tof_Print();
+    }
+    else if (strcmp(line, "tof") == 0)
+    {
+        Tof_Print();
     }
 
     /* ---------- Funkempfang ---------- */
@@ -454,7 +460,7 @@ void Command_Process(void)
     else
     {
         printf(">> Unbekannt: '%s'\r\n", line);
-        printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc | sens |\r\n");
+        printf(">> arm | disarm | status | loop | pid | mix | filt | bat | rc | sens | tof |\r\n");
         printf(">> angle | rate | stream on/off | kipp | t <gas> |\r\n");
         printf(">> rrp/arp <wert> | glpf <hz> | alpf <hz> | tau <sek> | batcal <volt> |\r\n");
         printf(">> curzero | curcal <ampere> | batbypass [off]\r\n");

@@ -6,6 +6,7 @@ extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 extern TIM_HandleTypeDef htim2;
 extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c3;
 
 /* Alle Fehler-Handler schalten zuerst die Motorpulse auf Stopp und bleiben
  * dann stehen. Nach dem Start (ab ">> Bereit.") setzt der Watchdog (IWDG)
@@ -79,4 +80,15 @@ void I2C1_EV_IRQHandler(void)
 void I2C1_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&hi2c1);
+}
+
+/* ToF-Sensor VL53L1X wird per Interrupt gelesen (tof.c) */
+void I2C3_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&hi2c3);
+}
+
+void I2C3_ER_IRQHandler(void)
+{
+    HAL_I2C_ER_IRQHandler(&hi2c3);
 }

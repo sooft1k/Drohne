@@ -2,6 +2,7 @@
 #include "auxsens.h"
 #include "bmp388.h"
 #include "qmc5883l.h"
+#include "tof.h"
 #include "motor.h"
 #include <stdio.h>
 
@@ -175,16 +176,21 @@ void AuxSens_Init(void)
     }
 }
 
+/* Die HAL-Callbacks gelten fuer alle I2C-Busse: I2C1 hier, I2C3 im ToF (tof.c) */
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
         xfer = X_DONE_OK;
+    else if (hi2c->Instance == I2C3)
+        Tof_I2CDone(1);
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
 {
     if (hi2c->Instance == I2C1)
         xfer = X_DONE_ERR;
+    else if (hi2c->Instance == I2C3)
+        Tof_I2CDone(0);
 }
 
 static void dev_fail(Dev_t d)

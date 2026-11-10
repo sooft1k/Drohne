@@ -11,6 +11,7 @@ Sensors/icm42688.c \
 Sensors/bmp388.c \
 Sensors/qmc5883l.c \
 Sensors/auxsens.c \
+Sensors/tof.c \
 Sensors/gps.c \
 Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
 Drivers/STM32F4/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \

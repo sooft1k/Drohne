@@ -1,6 +1,7 @@
 #include "main.h"
 #include "icm42688.h"
 #include "auxsens.h"
+#include "tof.h"
 #include "gps.h"
 #include "motor.h"
 #include "command.h"
@@ -97,6 +98,7 @@ int main(void)
     USART3_Init();
     GPS_Init(&huart3);
     AuxSens_Init();
+    Tof_Init();
 
     printf("\r\n=== STM32F405 Drohnen FC Boot ===\r\n");
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
@@ -107,7 +109,8 @@ int main(void)
     printf("GPS: USART3 PB10/PB11, %d Baud\r\n", GPS_BAUD);
     printf("Baro: %s | Kompass: %s\r\n", AuxSens_BaroOk() ? "OK" : "FEHLT",
            AuxSens_MagOk() ? "OK" : "FEHLT");
-    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc | sens |\r\n");
+    printf("ToF: VL53L1X an I2C3 PA8/PC9, XSHUT PC8, INT PC2: %s\r\n", Tof_Ok() ? "OK" : "FEHLT");
+    printf("Befehle: arm | disarm | status | loop | pid | mix | filt | bat | rc | sens | tof |\r\n");
     printf("         angle | rate | stream on/off | kipp | t <gas> | ja |\r\n");
     printf("         rrp/arp <wert> | glpf | alpf | tau | batcal | curzero | curcal\r\n");
     printf("Arm-Schalter: Kanal %u (AUX%u), Modus: Kanal %u\r\n", RC_CH_ARM, RC_CH_ARM - 4, RC_CH_MODE);
@@ -189,6 +192,7 @@ int main(void)
             Command_Process();
             GPS_Process();
             AuxSens_Process();
+            Tof_Process();
             if (!Motor_IsArmed())
                 Arming_PrintPending();
             Arming_PrintBypassWarning(); /* auch gearmt, sendet per Interrupt */
