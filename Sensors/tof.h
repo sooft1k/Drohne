@@ -5,15 +5,16 @@
 #include <stdint.h>
 
 /* Fuenf ToF-Abstandssensoren VL53L1X an I2C3 (PA8 SCL, PC9 SDA, 400 kHz).
- * Jeder Sensor hat ein eigenes XSHUT und einen eigenen Interrupt (GPIO1),
- * beide mit 10 kOhm nach 3,3 V:
+ * Jeder Sensor sitzt auf einer eigenen Sensorplatine (Sheet_ToF) und steckt an
+ * einem der Stecker J5 bis J9. Jeder hat ein eigenes XSHUT und einen eigenen
+ * Interrupt (GPIO1), beide mit 10 kOhm nach 3,3 V:
  *
  *   Sensor  XSHUT  INT   Adresse
- *   1 (U8)  PC8    PC2   0x30
- *   2 (U9)  PB12   PB4   0x31
- *   3 (U10) PB13   PB5   0x32
- *   4 (U12) PB14   PB8   0x33
- *   5 (U11) PB15   PB9   0x34
+ *   1 (J5)  PC8    PC2   0x30
+ *   2 (J6)  PB12   PB4   0x31
+ *   3 (J7)  PB13   PB5   0x32
+ *   4 (J8)  PB14   PB8   0x33
+ *   5 (J9)  PB15   PB9   0x34
  *
  * Alle VL53L1X starten mit Adresse 0x29. Die Firmware schaltet sie per XSHUT
  * nacheinander ein und gibt jedem seine eigene Adresse.

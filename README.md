@@ -555,17 +555,18 @@ wenn gearmt ist. Gearmt muss mindestens jede Sekunde ein Zeichen kommen
 
 ## ToF-Abstandssensoren (VL53L1X)
 
-Fünf VL53L1X sitzen auf der Platine und messen per Laser die Entfernung bis
+Fünf VL53L1X sitzen auf eigenen Sensorplatinen (Sheet_ToF) und stecken an den
+Steckern J5 bis J9 der Hauptplatine. Sie messen per Laser die Entfernung bis
 etwa 4 m. Treiber: `Sensors/tof.c`, aufgebaut nach dem Ultra Lite Driver (ULD)
 von ST.
 
-| Sensor | Bauteil | XSHUT | INT (GPIO1) | Adresse |
+| Sensor | Stecker | XSHUT | INT (GPIO1) | Adresse |
 |---|---|---|---|---|
-| 1 | U8 | PC8 | PC2 | 0x30 |
-| 2 | U9 | PB12 | PB4 | 0x31 |
-| 3 | U10 | PB13 | PB5 | 0x32 |
-| 4 | U12 | PB14 | PB8 | 0x33 |
-| 5 | U11 | PB15 | PB9 | 0x34 |
+| 1 | J5 | PC8 | PC2 | 0x30 |
+| 2 | J6 | PB12 | PB4 | 0x31 |
+| 3 | J7 | PB13 | PB5 | 0x32 |
+| 4 | J8 | PB14 | PB8 | 0x33 |
+| 5 | J9 | PB15 | PB9 | 0x34 |
 
 - Bus: I2C3 an PA8 (SCL) und PC9 (SDA), 400 kHz, eigener Bus. Die
   4,7-kΩ-Pullups (R16, R17) gibt es nur einmal für alle fünf Sensoren.

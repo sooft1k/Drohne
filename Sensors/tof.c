@@ -22,15 +22,15 @@ typedef struct
     uint16_t xshut_pin;
     GPIO_TypeDef *int_port;
     uint16_t int_pin;
-    const char *name; /* Bauteil im Schaltplan */
+    const char *name; /* Stecker im Schaltplan (Sheet_1) */
 } TofPins_t;
 
 static const TofPins_t pins[TOF_COUNT] = {
-    {GPIOC, GPIO_PIN_8, GPIOC, GPIO_PIN_2, "U8"},
-    {GPIOB, GPIO_PIN_12, GPIOB, GPIO_PIN_4, "U9"},
-    {GPIOB, GPIO_PIN_13, GPIOB, GPIO_PIN_5, "U10"},
-    {GPIOB, GPIO_PIN_14, GPIOB, GPIO_PIN_8, "U12"},
-    {GPIOB, GPIO_PIN_15, GPIOB, GPIO_PIN_9, "U11"},
+    {GPIOC, GPIO_PIN_8, GPIOC, GPIO_PIN_2, "J5"},
+    {GPIOB, GPIO_PIN_12, GPIOB, GPIO_PIN_4, "J6"},
+    {GPIOB, GPIO_PIN_13, GPIOB, GPIO_PIN_5, "J7"},
+    {GPIOB, GPIO_PIN_14, GPIOB, GPIO_PIN_8, "J8"},
+    {GPIOB, GPIO_PIN_15, GPIOB, GPIO_PIN_9, "J9"},
 };
 
 /* ---------- Register ---------- */
