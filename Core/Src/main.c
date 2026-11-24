@@ -18,7 +18,7 @@ SPI_HandleTypeDef hspi1;   /* ICM-42688-P */
 UART_HandleTypeDef huart1; /* ELRS-Empfaenger, CRSF */
 UART_HandleTypeDef huart2; /* Debug-Monitor */
 UART_HandleTypeDef huart3; /* GPS */
-TIM_HandleTypeDef htim2;   /* Regeltakt 1 kHz */
+TIM_HandleTypeDef htim2;   /* Ersatztakt fuer den Regelzyklus */
 TIM_HandleTypeDef htim3;   /* Motorsignal */
 IWDG_HandleTypeDef hiwdg;  /* Watchdog */
 
@@ -26,11 +26,22 @@ uint8_t who = 0;
 uint8_t imu_ok = 0;
 ICM42688_Data_t sensor;
 
-/* Regeltakt: wird im TIM2-Interrupt gesetzt, in der Hauptschleife geleert */
-volatile uint8_t loop_flag = 0;
-volatile uint32_t loop_missed = 0; /* Zyklen, die nicht rechtzeitig fertig wurden */
-volatile uint32_t loop_count = 0;  /* fuer die Frequenzmessung */
-uint32_t loop_hz = 0;              /* gemessene Ist-Frequenz, von command.c gelesen */
+/* Regeltakt: Der Gyro meldet jeden neuen Messwert (1 kHz) ueber INT1 an PC3,
+ * das startet den Regelzyklus. So wird jeder Messwert genau einmal und ohne
+ * Wartezeit verarbeitet - zwei getrennte Takte (Gyro und Timer) wuerden
+ * gegeneinander driften, dann fiele ab und zu ein Wert doppelt oder gar nicht
+ * an. TIM2 ist der Ersatztakt: jeder Gyro-Interrupt setzt ihn zurueck, er
+ * meldet sich also nur, wenn LOOP_FALLBACK_US lang kein Interrupt kam.
+ * Ohne Sensor laeuft TIM2 allein mit 1 kHz wie frueher. */
+#define LOOP_FALLBACK_US 1500 /* Gyro-Takt 1000 us, mit Reserve fuer seine Toleranz */
+#define LOOP_TIM2_ONLY_US 1000
+
+volatile uint8_t loop_flag = 0;     /* im Interrupt gesetzt, in der Hauptschleife geleert */
+volatile uint32_t loop_missed = 0;  /* Zyklen, die nicht rechtzeitig fertig wurden */
+volatile uint32_t loop_fallback = 0; /* Zyklen, die der Ersatztakt TIM2 gestartet hat */
+volatile uint32_t loop_count = 0;   /* fuer die Frequenzmessung */
+uint32_t loop_hz = 0;               /* gemessene Ist-Frequenz, von command.c gelesen */
+uint8_t gyro_int_on = 0;            /* Regeltakt kommt vom Gyro-Interrupt */
 
 /* Gemessene Zykluszeit wird auf diesen Bereich begrenzt (Sekunden).
  * Normal sind 0,001 s. Laengere Pausen gibt es nur disarmed, wenn das
@@ -47,7 +58,8 @@ static void SPI1_Init(void);
 static void USART1_Init(void);
 static void USART2_Init(void);
 static void USART3_Init(void);
-static void TIM2_Loop_Init(void);
+static void TIM2_Loop_Init(uint32_t period_us);
+static void GyroInt_Init(void);
 static void IWDG_Init(void);
 static void DWT_Init(void);
 
@@ -69,14 +81,33 @@ int _write(int file, char *ptr, int len)
     return len;
 }
 
-/* Wird von HAL bei jedem Timer-Ueberlauf gerufen */
+/* Startet einen Regelzyklus. Beide Aufrufer (EXTI3 und TIM2) haben dieselbe
+ * Interrupt-Prioritaet, unterbrechen sich also nicht gegenseitig. */
+static void loop_trigger(void)
+{
+    if (loop_flag)
+        loop_missed++; /* vorheriger Zyklus war noch nicht fertig */
+    loop_flag = 1;
+}
+
+/* Wird von HAL bei jedem Timer-Ueberlauf gerufen: Ersatztakt */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM2)
     {
-        if (loop_flag)
-            loop_missed++; /* vorheriger Zyklus war noch nicht fertig */
-        loop_flag = 1;
+        if (gyro_int_on)
+            loop_fallback++;
+        loop_trigger();
+    }
+}
+
+/* Gyro-Interrupt (PC3): neuer Messwert liegt bereit */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_3)
+    {
+        __HAL_TIM_SET_COUNTER(&htim2, 0); /* Ersatztakt zurueckstellen */
+        loop_trigger();
     }
 }
 
@@ -104,7 +135,7 @@ int main(void)
     printf("SysClock: %lu Hz\r\n", HAL_RCC_GetSysClockFreq());
     printf("Motoren: M1=PB0 M2=PB1 M3=PC6 M4=PC7, %lu Hz, Stopp %u us, Gas %.1f-%.1f us\r\n",
            Motor_UpdateRateHz(), MOTOR_US_STOP, MOTOR_US_MIN, MOTOR_US_MAX);
-    printf("Regeltakt: 1000 Hz | IMU: SPI1 10,5 MHz | Akku: PC0 | Strom: PC1 | Modus: ANGLE\r\n");
+    printf("Regeltakt: 1000 Hz vom Gyro-Interrupt PC3 (Ersatz TIM2) | IMU: SPI1 10,5 MHz | Akku: PC0 | Strom: PC1 | Modus: ANGLE\r\n");
     printf("ELRS: USART1 PA9/PA10, %d Baud (CRSF)\r\n", CRSF_BAUD);
     printf("GPS: USART3 PB10/PB11, %d Baud\r\n", GPS_BAUD);
     printf("Baro: %s | Kompass: %s\r\n", AuxSens_BaroOk() ? "OK" : "FEHLT",
@@ -168,9 +199,19 @@ int main(void)
         printf("Kein ICM-42688-P erkannt - Arming gesperrt\r\n");
     }
 
-    /* Watchdog und Regeltakt erst starten, wenn die Kalibrierung durch ist */
+    /* Watchdog und Regeltakt erst starten, wenn die Kalibrierung durch ist.
+     * TIM2 zuerst, weil der Gyro-Interrupt dessen Zaehler zuruecksetzt. */
     IWDG_Init();
-    TIM2_Loop_Init();
+    if (imu_ok)
+    {
+        TIM2_Loop_Init(LOOP_FALLBACK_US);
+        gyro_int_on = 1;
+        GyroInt_Init();
+    }
+    else
+    {
+        TIM2_Loop_Init(LOOP_TIM2_ONLY_US);
+    }
 
     printf(">> Bereit.\r\n");
 
@@ -512,15 +553,34 @@ static void USART3_Init(void)
     HAL_NVIC_EnableIRQ(USART3_IRQn);
 }
 
-/* TIM2 als Regeltakt: 84 MHz / 84 = 1 MHz Tick, 1000 Ticks = 1 ms = 1000 Hz */
-static void TIM2_Loop_Init(void)
+/* Gyro-Interrupt: PC3 als EXTI3, steigende Flanke (INT1 ist aktiv high,
+ * Push-Pull, siehe icm42688.c). Gleiche Prioritaet wie TIM2. */
+static void GyroInt_Init(void)
+{
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+
+    GPIO_InitTypeDef g = {0};
+    g.Pin = GPIO_PIN_3;
+    g.Mode = GPIO_MODE_IT_RISING;
+    g.Pull = GPIO_PULLDOWN; /* definierter Pegel, falls der Sensor fehlt */
+    HAL_GPIO_Init(GPIOC, &g);
+
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_3);
+    HAL_NVIC_SetPriority(EXTI3_IRQn, 4, 0);
+    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+}
+
+/* TIM2: 84 MHz / 84 = 1 MHz Tick, period_us Ticks pro Ueberlauf.
+ * Mit Gyro-Interrupt nur Ersatztakt (LOOP_FALLBACK_US), sonst 1 kHz. */
+static void TIM2_Loop_Init(uint32_t period_us)
 {
     __HAL_RCC_TIM2_CLK_ENABLE();
 
     htim2.Instance = TIM2;
     htim2.Init.Prescaler = 84 - 1;
     htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim2.Init.Period = 1000 - 1;
+    htim2.Init.Period = period_us - 1;
     htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     if (HAL_TIM_Base_Init(&htim2) != HAL_OK)

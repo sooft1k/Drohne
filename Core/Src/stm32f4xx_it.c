@@ -71,6 +71,12 @@ void TIM2_IRQHandler(void)
     HAL_TIM_IRQHandler(&htim2);
 }
 
+/* Data-Ready des Gyros (ICM-42688-P INT1 an PC3) startet den Regelzyklus */
+void EXTI3_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+}
+
 /* Baro und Kompass werden per Interrupt gelesen (auxsens.c) */
 void I2C1_EV_IRQHandler(void)
 {

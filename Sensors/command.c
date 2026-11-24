@@ -19,6 +19,8 @@
 /* aus main.c */
 extern uint32_t loop_hz;
 extern volatile uint32_t loop_missed;
+extern volatile uint32_t loop_fallback;
+extern uint8_t gyro_int_on;
 extern uint8_t imu_ok;
 
 static UART_HandleTypeDef *cmd_uart = 0;
@@ -226,6 +228,8 @@ void Command_Process(void)
     {
         printf(">> Regeltakt: %lu Hz | verpasste Zyklen: %lu\r\n",
                loop_hz, loop_missed);
+        printf("   Takt: %s | Zyklen ueber den Ersatztakt TIM2: %lu\r\n",
+               gyro_int_on ? "Gyro-Interrupt PC3" : "nur TIM2 (kein Sensor)", loop_fallback);
     }
 
     /* ---------- Baro, Kompass, GPS, ToF ---------- */

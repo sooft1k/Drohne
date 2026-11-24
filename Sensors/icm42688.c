@@ -65,6 +65,15 @@ float ICM42688_GetCompTau(void) { return comp_tau_s; }
 #define ACCEL_CONFIG0_VALUE 0x46
 /* Hardware-Tiefpass Accel und Gyro: max(400 Hz, ODR)/4, bei 1 kHz also 250 Hz */
 #define FILT_BW_VALUE 0x11
+/* INT1 (an PC3) meldet jeden neuen Messwert, der Regeltakt haengt daran.
+ * INT_CONFIG: INT1 gepulst (Bit 2 = 0), Push-Pull (Bit 1), aktiv high (Bit 0) */
+#define INT_CONFIG_VALUE 0x03
+/* INT_CONFIG1: Pulse 100 us (Bit 6 = 0), Abschalten nach dem Puls bleibt an
+ * (Bit 5 = 0, erst ab 4 kHz ODR noetig), INT_ASYNC_RESET (Bit 4) auf 0 - laut
+ * Datenblatt noetig, damit INT1/INT2 richtig arbeiten (Werkswert 1) */
+#define INT_CONFIG1_VALUE 0x00
+/* INT_SOURCE0: nur UI_DRDY_INT1_EN (Bit 3), "neue Daten" auf INT1 */
+#define INT_SOURCE0_VALUE 0x08
 /* Gyro und Accel im Low-Noise-Modus */
 #define PWR_MGMT0_VALUE 0x0F
 
@@ -139,6 +148,19 @@ HAL_StatusTypeDef ICM42688_Init(SPI_HandleTypeDef *hspi)
     if (st != HAL_OK)
         return st;
 
+    /* Data-Ready-Interrupt auf INT1. Kommt er spaeter nicht an, laeuft der
+     * Regeltakt ueber TIM2 weiter (main.c). Ein Fehler beim Zuruecklesen
+     * heisst dagegen, dass SPI nicht arbeitet - wie oben abbrechen. */
+    st = reg_write_check(hspi, ICM42688_INT_CONFIG, INT_CONFIG_VALUE);
+    if (st != HAL_OK)
+        return st;
+    st = reg_write_check(hspi, ICM42688_INT_CONFIG1, INT_CONFIG1_VALUE);
+    if (st != HAL_OK)
+        return st;
+    st = reg_write_check(hspi, ICM42688_INT_SOURCE0, INT_SOURCE0_VALUE);
+    if (st != HAL_OK)
+        return st;
+
     st = reg_write(hspi, ICM42688_PWR_MGMT0, PWR_MGMT0_VALUE);
     if (st != HAL_OK)
         return st;
@@ -158,7 +180,8 @@ HAL_StatusTypeDef ICM42688_Init(SPI_HandleTypeDef *hspi)
 
 /* Liest Temperatur, Accel und Gyro am Stueck: 14 Bytes ab TEMP_DATA1, MSB zuerst.
  * Bei 10,5 MHz dauert das rund 12 us, blockiert die Regelung also praktisch
- * nicht. Deshalb laeuft es ohne Interrupt direkt in der Hauptschleife. */
+ * nicht. Deshalb laeuft es direkt in der Hauptschleife, gleich nachdem der
+ * Data-Ready-Interrupt (INT1, PC3) den Regelzyklus gestartet hat. */
 static HAL_StatusTypeDef read_burst(SPI_HandleTypeDef *hspi, uint8_t *buf)
 {
     uint8_t tx[15] = {0};

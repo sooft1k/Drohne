@@ -20,7 +20,10 @@ und noch nicht auf der Platine getestet.
 | Strom | PC1 (ADC2 Kanal 11), Stromausgang „C“ des ESC – höchstens 3,3 V! |
 | Status-LED | PC13, aktiv-low (Low = an) |
 
-Regeltakt 1 kHz über TIM2. Flugmodi Angle (selbstaufrichtend) und Rate (Acro).
+Regeltakt 1 kHz, gestartet vom Data-Ready-Interrupt des Gyros (INT1 an PC3);
+TIM2 springt ein, wenn 1,5 ms lang kein Interrupt kommt (`loop` zeigt, wie
+oft). Ohne Sensor läuft TIM2 allein mit 1 kHz. Flugmodi Angle
+(selbstaufrichtend) und Rate (Acro).
 
 > **Arm-Schalter auf Kanal 8 (AUX4)**, Modus-Schalter auf Kanal 7. Mit Funk
 > zeigt `rc` beide Kanäle; Kanal 8 muss beim Umlegen zwischen etwa 1000 und
